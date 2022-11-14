@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "trunk.io",
+    "vadimcn.vscode-lldb",
+    "rust-lang.rust-analyzer"
+  ],
+  "unwantedRecommendations": ["rust-lang.rust"]
+}
