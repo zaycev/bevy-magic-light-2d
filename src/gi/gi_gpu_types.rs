@@ -11,6 +11,7 @@ pub(crate) struct GiGpuLightSource {
     pub(crate) intensity: f32,
     pub(crate) color:     Vec3,
     pub(crate) radius:    f32,
+    pub(crate) falloff:   Vec3,
 }
 
 impl GiGpuLightSource {
@@ -21,6 +22,7 @@ impl GiGpuLightSource {
             radius:    light.radius,
             intensity: light.intensity,
             color:     Vec3::new(color[0], color[1], color[2]),
+            falloff:   light.falloff,
         }
     }
 }
@@ -54,6 +56,7 @@ pub(crate) struct GiGpuLightOccluderBuffer {
 #[derive(Default, Clone, ShaderType)]
 pub(crate) struct GiGpuCameraParams {
     pub(crate) screen_size:       Vec2,
+    pub(crate) screen_size_inv:   Vec2,
     pub(crate) view_proj:         Mat4,
     pub(crate) inverse_view_proj: Mat4,
 }
@@ -62,8 +65,8 @@ pub(crate) struct GiGpuCameraParams {
 pub(crate) struct GiGpuState {
     pub gi_frame_counter:   i32,
     pub ss_probe_size:      i32,
-    pub ss_atlas_cols:       i32,
-    pub ss_atlas_rows:       i32,
+    pub ss_atlas_cols:      i32,
+    pub ss_atlas_rows:      i32,
     pub sdf_max_steps:      i32,
     pub sdf_jitter_contrib: f32,
     pub gi_ambient:         Vec3,
@@ -105,4 +108,23 @@ impl Default for GiGpuProbeDataBuffer {
             data:  vec![GiGpuProbeData { camera_pose: Vec2::ZERO }; size],
         }
     }
+}
+
+#[derive(Clone, ShaderType, Default)]
+pub struct GiGpuAmbientMaskData {
+    pub(crate) center: Vec2,
+    pub(crate) h_extent: Vec2,
+}
+
+impl GiGpuAmbientMaskData {
+    pub fn new(center: Vec2, h_extent: Vec2) -> Self {
+        Self { center, h_extent }
+    }
+}
+
+#[derive(Clone, ShaderType, Default)]
+pub struct GiGpuAmbientMaskBuffer {
+    pub(crate) count: u32,
+    #[size(runtime)]
+    pub(crate) data: Vec<GiGpuAmbientMaskData>,
 }

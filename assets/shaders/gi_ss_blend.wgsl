@@ -25,8 +25,8 @@ fn raymarch_occlusion(
     light_pose:    vec2<f32>,
 ) -> f32 {
 
-    let max_steps      = 6;
-    let ray_direction  = normalize(light_pose - ray_origin);
+    let max_steps      = 8;
+    let ray_direction  = fast_normalize_2d(light_pose - ray_origin);
     let stop_at        = distance_squared(ray_origin, light_pose);
 
     var ray_progress   = 0.0;
@@ -39,7 +39,7 @@ fn raymarch_occlusion(
         let h          = ray_origin + ray_progress * ray_direction;
         let scene_dist = get_sdf_screen(world_to_screen(h, camera_params.screen_size, camera_params.view_proj));
 
-        if (scene_dist <= 0.0) {
+        if (scene_dist <= 0.1) {
             return 0.0;
         }
 
@@ -76,7 +76,9 @@ fn read_probe(
     let probe_pose     = screen_to_world(
         probe_screen_pose,
         camera_params.screen_size,
-        camera_params.inverse_view_proj) + halton_offset - motion_offset;
+        camera_params.inverse_view_proj,
+        camera_params.screen_size_inv,
+    ) + halton_offset - motion_offset;
 
     return ProbeVal(
         val,
@@ -137,7 +139,6 @@ fn estimate_probes_at(
         state.ss_probe_size,
     );
 
-    // Use current "central" tile probe as a base.
     let base_offset = vec2<i32>(0, 0);
     let base_probe  = read_probe(
         curr_probe_origin,
@@ -153,45 +154,12 @@ fn estimate_probes_at(
         return SampleResult(vec3<f32>(0.0), 0.0);
     }
 
-    // Bilateral filter kernel size.
-    // 4x4 kernel: [-1, 0, 1, 2] x [-1, 0, 1, 2]
-    let kernel_hl   = 1;
-    let kernel_hr   = 1;
+    // Compute bilateral filter with gauss function
+    let d = distance(base_probe.pose, sample_pose);
+    let g = gauss(d);
 
-    var total_q = vec3<f32>(0.0);
-    var total_w = 0.0;
-    for (var i = -kernel_hl; i <= kernel_hr; i++) {
-        for (var j = -kernel_hl; j <= kernel_hr; j++) {
-
-            let offset = vec2<i32>(i, j);
-            let p = read_probe(curr_probe_origin, reproj_tile_probe_pose, offset, probe_camera_motion, tile_size, probe_size_f32);
-            let d = distance(p.pose, sample_pose);
-
-            // // Discard if probe is too far away.
-            // if d > probe_size_f32 * 2.5 {
-            //     continue;
-            // }
-
-            // Discard if offscreen.
-            let p_ndc = world_to_ndc(p.pose, camera_params.view_proj);
-            if any(p_ndc < vec2<f32>(-1.0)) || any(p_ndc > vec2<f32>(1.0)) {
-                continue;
-            }
-
-            // Discard occluded probes.
-            if raymarch_occlusion(sample_pose, p.pose) <= 0.0 {
-                continue;
-            }
-
-            // Compute bilateral filter with gauss function
-            let x = distance(p.val, base_probe.val);
-            let g = gauss(x) * gauss(d);
-
-            total_q += p.val * g;
-            total_w += g;
-
-        }
-    }
+    var total_q = base_probe.val * g;
+    var total_w = g;
 
     return SampleResult(
         clamp(total_q, vec3<f32>(0.0), vec3<f32>(1e+4)),
@@ -200,10 +168,15 @@ fn estimate_probes_at(
 }
 
 
-@compute @workgroup_size(5, 5, 1)
+@compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     let screen_pose  = vec2<i32>(invocation_id.xy) * state.ss_probe_size + state.ss_probe_size / 2;
-    let sample_pose  = screen_to_world(screen_pose, camera_params.screen_size, camera_params.inverse_view_proj);
+    let sample_pose  = screen_to_world(
+        screen_pose,
+        camera_params.screen_size,
+        camera_params.inverse_view_proj,
+        camera_params.screen_size_inv,
+    );
 
     let reservoir_size     = 8;
     let curr_probe_id      = state.gi_frame_counter % reservoir_size;

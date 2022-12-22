@@ -10,7 +10,7 @@ use super::gi_gpu_types::{
     GiGpuCameraParams,
     GiGpuLightOccluderBuffer,
     GiGpuLightSourceBuffer,
-    GiGpuState, GiGpuProbeDataBuffer,
+    GiGpuState, GiGpuProbeDataBuffer, GiGpuAmbientMaskBuffer,
 };
 use super::gi_pipeline_assets::GiComputeAssets;
 
@@ -40,7 +40,12 @@ pub struct GiBlendTarget;
 pub struct GiFilterTarget;
 
 #[allow(dead_code)]
-#[derive(Clone, Resource, ExtractResource)]
+#[derive(Clone, Resource, ExtractResource, Default)]
+pub struct GiPipelineTargetsWrapper {
+    pub(crate) targets: Option<GiPipelineTargets>,
+}
+
+#[derive(Clone)]
 pub struct GiPipelineTargets {
     pub(crate) sdf_target:        Handle<Image>,
     pub(crate) ss_probe_target:   Handle<Image>,
@@ -90,9 +95,10 @@ fn create_texture_2d(size: (u32, u32), format: TextureFormat) -> Image {
 }
 
 pub fn system_setup_gi_pipeline(
-    mut commands: Commands,
-    mut images: ResMut<Assets<Image>>,
-    windows: Res<Windows>,
+    mut commands:           Commands,
+    mut images:             ResMut<Assets<Image>>,
+    mut gi_compute_targets: ResMut<GiPipelineTargetsWrapper>,
+    windows:                Res<Windows>,
 ) {
     let window = windows.get_primary().expect("failed to get window");
     let target_size = Extent3d {
@@ -128,7 +134,7 @@ pub fn system_setup_gi_pipeline(
         })
         .insert(sdf_target.clone())
         .insert(Transform {
-            translation: Vec3::new(0.0, 0.0, 450.0),
+            translation: Vec3::new(0.0, 0.0, 0.0),
             ..Default::default()
         })
         .insert(GlobalTransform::default())
@@ -150,7 +156,7 @@ pub fn system_setup_gi_pipeline(
         })
         .insert(ss_probe_target.clone())
         .insert(Transform {
-            translation: Vec3::new(0.0, 0.0, 451.0),
+            translation: Vec3::new(0.0, 0.0, 0.0),
             ..Default::default()
         })
         .insert(GlobalTransform::default())
@@ -172,7 +178,7 @@ pub fn system_setup_gi_pipeline(
         })
         .insert(ss_bounce_target.clone())
         .insert(Transform {
-            translation: Vec3::new(0.0, 0.0, 453.0),
+            translation: Vec3::new(0.0, 0.0, 0.0),
             ..Default::default()
         })
         .insert(GlobalTransform::default())
@@ -194,7 +200,7 @@ pub fn system_setup_gi_pipeline(
         })
         .insert(ss_blend_target.clone())
         .insert(Transform {
-            translation: Vec3::new(0.0, 0.0, 452.0),
+            translation: Vec3::new(0.0, 0.0, 0.0),
             ..Default::default()
         })
         .insert(GlobalTransform::default())
@@ -216,11 +222,11 @@ pub fn system_setup_gi_pipeline(
         })
         .insert(ss_filter_target.clone())
         .insert(Transform {
-            translation: Vec3::new(0.0, 0.0, 453.0),
+            translation: Vec3::new(0.0, 0.0, 0.0),
             ..Default::default()
         })
         .insert(GlobalTransform::default())
-        .insert(Visibility { is_visible: true })
+        .insert(Visibility { is_visible: false })
         .insert(ComputedVisibility::default())
         .insert(GiFilterTarget)
         .insert(GiTarget)
@@ -237,7 +243,8 @@ pub fn system_setup_gi_pipeline(
         .add_child(ss_filter_image_entity);
 
     commands.spawn(Camera2dBundle::default());
-    commands.insert_resource(GiPipelineTargets {
+
+    gi_compute_targets.targets = Some(GiPipelineTargets {
         sdf_target,
         ss_probe_target,
         ss_bounce_target,
@@ -264,30 +271,33 @@ pub fn system_queue_bind_groups(
     mut commands:       Commands,
     pipeline:           Res<GiPipeline>,
     gpu_images:         Res<RenderAssets<Image>>,
-    gi_compute_targets: Res<GiPipelineTargets>,
+    targets_wrapper:    Res<GiPipelineTargetsWrapper>,
     gi_compute_assets:  Res<GiComputeAssets>,
     render_device:      Res<RenderDevice>,
 ) {
-    // Queue primary bind group.
     if let (
             Some(light_sources),
             Some(light_occluders),
             Some(camera_params),
             Some(gi_state),
             Some(probes),
+            Some(ambient_masks),
         ) = (
             gi_compute_assets.light_sources.binding(),
             gi_compute_assets.light_occluders.binding(),
             gi_compute_assets.camera_params.binding(),
             gi_compute_assets.gi_state.binding(),
             gi_compute_assets.probes.binding(),
+            gi_compute_assets.ambient_masks.binding(),
     ) {
 
-        let sdf_view_image  = &gpu_images[&gi_compute_targets.sdf_target];
-        let ss_probe_image  = &gpu_images[&gi_compute_targets.ss_probe_target];
-        let ss_bounce_image = &gpu_images[&gi_compute_targets.ss_bounce_target];
-        let ss_blend_image  = &gpu_images[&gi_compute_targets.ss_blend_target];
-        let ss_filter_image = &gpu_images[&gi_compute_targets.ss_filter_target];
+        let targets = targets_wrapper.targets.as_ref().expect("Targets should be initialized");
+
+        let sdf_view_image  = &gpu_images[&targets.sdf_target];
+        let ss_probe_image  = &gpu_images[&targets.ss_probe_target];
+        let ss_bounce_image = &gpu_images[&targets.ss_bounce_target];
+        let ss_blend_image  = &gpu_images[&targets.ss_blend_target];
+        let ss_filter_image = &gpu_images[&targets.ss_filter_target];
 
         let sdf_bind_group = render_device.create_bind_group(&BindGroupDescriptor {
             label: "gi_sdf_bind_group".into(),
@@ -326,14 +336,18 @@ pub fn system_queue_bind_groups(
                 },
                 BindGroupEntry {
                     binding: 3,
-                    resource: light_sources.clone(),
+                    resource: ambient_masks.clone(),
                 },
                 BindGroupEntry {
                     binding: 4,
-                    resource: BindingResource::TextureView(&sdf_view_image.texture_view),
+                    resource: light_sources.clone(),
                 },
                 BindGroupEntry {
                     binding: 5,
+                    resource: BindingResource::TextureView(&sdf_view_image.texture_view),
+                },
+                BindGroupEntry {
+                    binding: 6,
                     resource: BindingResource::TextureView(&ss_probe_image.texture_view),
                 },
             ],
@@ -444,7 +458,7 @@ impl FromWorld for GiPipeline {
         let render_device = world.resource::<RenderDevice>();
 
         let sdf_bind_group_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            label: Some("sdf_bind_group_layout".into()),
+            label: Some("sdf_bind_group_layout"),
             entries: &[
                 // Camera.
                 BindGroupLayoutEntry {
@@ -473,7 +487,7 @@ impl FromWorld for GiPipeline {
                     binding: 2,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::StorageTexture {
-                        access: StorageTextureAccess::WriteOnly,
+                        access: StorageTextureAccess::ReadWrite,
                         format: SDF_TARGET_FORMAT,
                         view_dimension: TextureViewDimension::D2,
                     },
@@ -483,7 +497,7 @@ impl FromWorld for GiPipeline {
         });
 
         let ss_probe_bind_group_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            label: Some("ss_probe_bind_group_layout".into()),
+            label: Some("ss_probe_bind_group_layout"),
             entries: &[
                 // Camera.
                 BindGroupLayoutEntry {
@@ -521,10 +535,21 @@ impl FromWorld for GiPipeline {
                     count: None,
                 },
 
+                // AmbientMasks.
+                BindGroupLayoutEntry {
+                    binding: 3,
+                    visibility: ShaderStages::COMPUTE,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: Some(GiGpuAmbientMaskBuffer::min_size()),
+                    },
+                    count: None,
+                },
 
                 // Light sources.
                 BindGroupLayoutEntry {
-                    binding: 3,
+                    binding: 4,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::Buffer {
                         ty: BufferBindingType::Storage { read_only: true },
@@ -536,7 +561,7 @@ impl FromWorld for GiPipeline {
 
                 // SDF.
                 BindGroupLayoutEntry {
-                    binding: 4,
+                    binding: 5,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::StorageTexture {
                         access: StorageTextureAccess::ReadOnly,
@@ -548,7 +573,7 @@ impl FromWorld for GiPipeline {
 
                 // SS Probe.
                 BindGroupLayoutEntry {
-                    binding: 5,
+                    binding: 6,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::StorageTexture {
                         access: StorageTextureAccess::WriteOnly,

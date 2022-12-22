@@ -25,8 +25,8 @@ fn raymarch_occlusion(
     light_pose:    vec2<f32>,
 ) -> f32 {
 
-    let max_steps      = 6;
-    let ray_direction  = normalize(light_pose - ray_origin);
+    let max_steps      = 8;
+    let ray_direction  = fast_normalize_2d(light_pose - ray_origin);
     let stop_at        = distance_squared(ray_origin, light_pose);
 
     var ray_progress   = 0.0;
@@ -39,7 +39,7 @@ fn raymarch_occlusion(
         let h          = ray_origin + ray_progress * ray_direction;
         let scene_dist = get_sdf_screen(world_to_screen(h, camera_params.screen_size, camera_params.view_proj));
 
-        if (scene_dist <= 0.0) {
+        if (scene_dist <= 0.1) {
             return 0.0;
         }
 
@@ -59,23 +59,14 @@ fn gauss(x: f32) -> f32 {
     return a * exp(- (x - b) * (x - b) / d);
 }
 
-fn lin_to_srgb(color: vec3<f32>) -> vec3<f32> {
-   let x = color * 12.92;
-   let y = 1.055 * pow(clamp(color, vec3<f32>(0.0), vec3<f32>(1.0)), vec3<f32>(0.4166667)) - vec3<f32>(0.055);
-   var clr = color;
-   clr.x = select(x.x, y.x, (color.x < 0.0031308));
-   clr.y = select(x.y, y.y, (color.y < 0.0031308));
-   clr.z = select(x.z, y.z, (color.z < 0.0031308));
-   return clr;
-}
-
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     let screen_pose        = vec2<i32>(invocation_id.xy);
     let sample_world_pose  = screen_to_world(
         screen_pose,
         camera_params.screen_size,
-        camera_params.inverse_view_proj
+        camera_params.inverse_view_proj,
+        camera_params.screen_size_inv,
     );
 
     let base_probe_screen_pose = screen_pose;
@@ -84,11 +75,12 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     let base_probe_world_pose  = screen_to_world(
         base_probe_screen_pose,
         camera_params.screen_size,
-        camera_params.inverse_view_proj
+        camera_params.inverse_view_proj,
+        camera_params.screen_size_inv,
     );
 
-    let kernel_hl = 2;
-    let kernel_hr = 2;
+    let kernel_hl = 1;
+    let kernel_hr = 1;
 
     var total_w = 0.0;
     var total_q = vec3<f32>(0.0);
@@ -103,7 +95,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
             let p_screen_pose = (base_probe_grid_pose + offset) * state.ss_probe_size;
 
             // Discard offscreen;
-            let p_ndc = screen_to_ndc(p_screen_pose, camera_params.screen_size);
+            let p_ndc = screen_to_ndc(p_screen_pose, camera_params.screen_size, camera_params.screen_size_inv);
             if any(p_ndc < vec2<f32>(-1.0)) || any(p_ndc > vec2<f32>(1.0)) {
                 continue;
             }
@@ -111,7 +103,9 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
             let p_world_pose = screen_to_world(
                 p_screen_pose,
                 camera_params.screen_size,
-                camera_params.inverse_view_proj);
+                camera_params.inverse_view_proj,
+                camera_params.screen_size_inv,
+            );
 
             let p_sample = textureLoad(ss_blend_in, p_grid_pose).xyz;
 
@@ -120,8 +114,8 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
                 continue;
             }
 
-            let d = distance(p_world_pose, sample_world_pose);
-            let x = distance(p_sample, base_probe_sample);
+            let d = fast_distance_2d(p_world_pose, sample_world_pose);
+            let x = fast_distance_3d(p_sample, base_probe_sample);
             let g = gauss(x) * gauss(d);
 
             total_q += p_sample * g;
@@ -129,7 +123,11 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
         }
     }
 
-    let irradiance = total_q / total_w;
+    var irradiance = vec3<f32>(0.0);
+    if (total_w > 0.0) {
+        irradiance = total_q / total_w;
+        // irradiance = lin_to_srgb(total_q / total_w);
+    }
 
     textureStore(ss_filter_out, screen_pose, vec4<f32>(irradiance.xyz, 1.0));
 }

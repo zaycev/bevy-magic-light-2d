@@ -9,12 +9,12 @@ crate-type = ["cdylib", "lib", "staticlib"]
 path = "src/lib.rs"
 
 [dependencies]
-anyhow = "1.0.66"
-bevy = { version = "0.9.0", default-features = false, features = ["bevy_asset", "bevy_render", "bevy_winit", "filesystem_watcher", "png"]}
-bevy_egui = { version = "0.17.1", default-features = false }
-bevy-inspector-egui = "0.14.0"
-egui = { version = "0.19.0", features = ["bytemuck"] }
-encase = "0.4.0"
+anyhow = "1.0.68"
+bevy = { version = "0.9.1", default-features = false, features = ["bevy_asset", "bevy_render", "bevy_winit", "filesystem_watcher", "png"]}
+bevy_egui = { version = "0.18.0", default-features = false }
+bevy-inspector-egui = "0.15.0"
+egui = { version = "0.20.1", features = ["bytemuck"] }
+encase = "0.4.1"
 log = "0.4.17"
 rand = "0.8.5"
 

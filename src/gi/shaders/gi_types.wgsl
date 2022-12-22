@@ -5,6 +5,7 @@ struct LightSource {
     intensity: f32,
     color:     vec3<f32>,
     radius:    f32,
+    falloff:   vec3<f32>,
 }
 
 struct LightSourceBuffer {
@@ -39,4 +40,14 @@ struct GiState {
     sdf_max_steps:      i32,
     sdf_jitter_contrib: f32,
     gi_ambient:         vec3<f32>,
+}
+
+struct AmbientMask {
+    center:   vec2<f32>,
+    h_extent: vec2<f32>,
+}
+
+struct AmbientMaskBuffer {
+    count: u32,
+    data:  array<LightOccluder>,
 }

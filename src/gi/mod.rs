@@ -2,15 +2,24 @@ mod gi_pipeline_assets;
 mod gi_gpu_types;
 mod gi_pipeline;
 mod gi_config;
+pub mod gi_post_processing;
 pub mod gi_component;
+pub mod gi_floor_material;
 
-use bevy::asset::load_internal_asset;
 use bevy::prelude::*;
+use bevy::asset::load_internal_asset;
+use bevy::sprite::Material2dPlugin;
 use bevy::render::extract_resource::{ExtractResourcePlugin};
 use bevy::render::render_graph::{self, RenderGraph};
 use bevy::render::render_resource::*;
 use bevy::render::renderer::{RenderContext};
 use bevy::render::{RenderApp, RenderStage};
+use crate::gi::gi_post_processing::{
+    PostProcessingTarget,
+    PostProcessingMaterial,
+    setup_post_processing_camera,
+};
+pub use crate::gi::gi_pipeline::{GiBlendTarget, GiTarget};
 
 use self::gi_config::{
     SHADER_GI_CAMERA,
@@ -22,7 +31,6 @@ use self::gi_config::{
 };
 use self::gi_pipeline::{
     GiPipeline,
-    GiPipelineTargets,
     GiPipelineBindGroups,
     system_setup_gi_pipeline,
     system_queue_bind_groups,
@@ -38,19 +46,35 @@ pub use crate::gi::gi_component::{
     LightSource,
     LightOccluder,
 };
-pub use crate::gi::gi_pipeline::{GiBlendTarget, GiTarget};
+use crate::gi::gi_pipeline::GiPipelineTargetsWrapper;
 
 
 const SIZE: (u32, u32) = (SCREEN_SIZE.0 as u32, SCREEN_SIZE.1 as u32);
 const WORKGROUP_SIZE: u32 = 8;
+
+/// Scaler for resolution of SDF texture.
+///
+pub enum SdfResolutionFactor {
+    FULL,
+    HALF,
+    QUARTER,
+}
+
+pub struct GiComputePluginSettings {
+    pub sdf_resolution_factor: SdfResolutionFactor,
+}
 
 pub struct GiComputePlugin;
 
 impl Plugin for GiComputePlugin {
     fn build(&self, app: &mut App) {
 
-        app.add_plugin(ExtractResourcePlugin::<GiPipelineTargets>::default())
-           .add_startup_system(system_setup_gi_pipeline);
+        app.add_plugin(ExtractResourcePlugin::<GiPipelineTargetsWrapper>::default())
+           .add_plugin(Material2dPlugin::<PostProcessingMaterial>::default())
+           .init_resource::<PostProcessingTarget>()
+           .init_resource::<GiPipelineTargetsWrapper>()
+           .add_startup_system(system_setup_gi_pipeline)
+           .add_startup_system(setup_post_processing_camera.after(system_setup_gi_pipeline));
 
         load_internal_asset!(
             app,
@@ -162,7 +186,7 @@ impl render_graph::Node for GiComputeNode {
                 }
 
                 {
-                    let workgroup_size = 5;
+                    let workgroup_size = 8;
                     let grid_w = (SIZE.0 / GI_SCREEN_PROBE_SIZE as u32) / workgroup_size;
                     let grid_h = (SIZE.1 / GI_SCREEN_PROBE_SIZE as u32) / workgroup_size;
                     pass.set_bind_group(0, &pipeline_bind_groups.ss_probe_bind_group, &[]);
@@ -175,7 +199,7 @@ impl render_graph::Node for GiComputeNode {
                 }
 
                 {
-                    let workgroup_size = 5;
+                    let workgroup_size = 8;
                     let grid_w = (SIZE.0 / GI_SCREEN_PROBE_SIZE as u32) / workgroup_size;
                     let grid_h = (SIZE.1 / GI_SCREEN_PROBE_SIZE as u32) / workgroup_size;
                     pass.set_bind_group(0, &pipeline_bind_groups.ss_bounce_bind_group, &[]);
@@ -188,7 +212,7 @@ impl render_graph::Node for GiComputeNode {
                 }
 
                 {
-                    let workgroup_size = 5;
+                    let workgroup_size = 8;
                     let grid_w = (SIZE.0 / GI_SCREEN_PROBE_SIZE as u32) / workgroup_size;
                     let grid_h = (SIZE.1 / GI_SCREEN_PROBE_SIZE as u32) / workgroup_size;
                     pass.set_bind_group(0, &pipeline_bind_groups.ss_blend_bind_group, &[]);
