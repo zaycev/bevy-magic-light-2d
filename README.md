@@ -4,6 +4,14 @@
 
 Experimental dynamic 2D global illumination system for Bevy, based on SDF ray-marching and screen space irradiance cache probes.
 
+## Demo
+
+```shell
+cargo run --example maze
+```
+
+![Bevy Magic Light 2D – Demo](https://github.com/zaycev/bevy-magic-light-2d/blob/main/static/demo.gif?raw=true)
+
 Implementation is based on several approaches:
 
 - First pass computes SDF for all occluders and stores it in a texture with one channel.
