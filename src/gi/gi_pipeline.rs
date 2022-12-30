@@ -62,7 +62,7 @@ pub struct GiPipelineBindGroups {
     pub(crate) ss_filter_bind_group: BindGroup,
 }
 
-fn create_texture_2d(size: (u32, u32), format: TextureFormat) -> Image {
+fn create_texture_2d(size: (u32, u32), format: TextureFormat, filter: FilterMode) -> Image {
     let mut image = Image::new_fill(
         Extent3d {
             width: size.0,
@@ -81,8 +81,8 @@ fn create_texture_2d(size: (u32, u32), format: TextureFormat) -> Image {
         TextureUsages::COPY_DST | TextureUsages::STORAGE_BINDING | TextureUsages::TEXTURE_BINDING;
 
     image.sampler_descriptor = ImageSampler::Descriptor(SamplerDescriptor {
-        mag_filter: FilterMode::Nearest,
-        min_filter: FilterMode::Nearest,
+        mag_filter: filter,
+        min_filter: filter,
         address_mode_u: AddressMode::ClampToBorder,
         address_mode_v: AddressMode::ClampToBorder,
         address_mode_w: AddressMode::ClampToBorder,
@@ -105,14 +105,20 @@ pub fn system_setup_gi_pipeline(
         ..default()
     };
 
-    let sdf_tex = create_texture_2d((target_size.width, target_size.height), SDF_TARGET_FORMAT);
+    let sdf_tex = create_texture_2d(
+        (target_size.width, target_size.height),
+        SDF_TARGET_FORMAT,
+        FilterMode::Nearest,
+    );
     let ss_probe_tex = create_texture_2d(
         (target_size.width, target_size.height),
         SS_PROBE_TARGET_FORMAT,
+        FilterMode::Nearest,
     );
     let ss_bounce_tex = create_texture_2d(
         (target_size.width, target_size.height),
         SS_BOUNCE_TARGET_FORMAT,
+        FilterMode::Nearest,
     );
     let ss_blend_tex = create_texture_2d(
         (
@@ -120,10 +126,12 @@ pub fn system_setup_gi_pipeline(
             target_size.height / (GI_SCREEN_PROBE_SIZE as u32),
         ),
         SS_BLEND_TARGET_FORMAT,
+        FilterMode::Nearest,
     );
     let ss_filter_tex = create_texture_2d(
         (target_size.width, target_size.height),
         SS_FILTER_TARGET_FORMAT,
+        FilterMode::Nearest,
     );
 
     let sdf_target = images.add(sdf_tex);
@@ -360,6 +368,10 @@ pub fn system_queue_bind_groups(
                 },
                 BindGroupEntry {
                     binding: 6,
+                    resource: BindingResource::Sampler(&sdf_view_image.sampler),
+                },
+                BindGroupEntry {
+                    binding: 7,
                     resource: BindingResource::TextureView(&ss_probe_image.texture_view),
                 },
             ],
@@ -383,10 +395,14 @@ pub fn system_queue_bind_groups(
                 },
                 BindGroupEntry {
                     binding: 3,
-                    resource: BindingResource::TextureView(&ss_probe_image.texture_view),
+                    resource: BindingResource::Sampler(&sdf_view_image.sampler),
                 },
                 BindGroupEntry {
                     binding: 4,
+                    resource: BindingResource::TextureView(&ss_probe_image.texture_view),
+                },
+                BindGroupEntry {
+                    binding: 5,
                     resource: BindingResource::TextureView(&ss_bounce_image.texture_view),
                 },
             ],
@@ -414,10 +430,14 @@ pub fn system_queue_bind_groups(
                 },
                 BindGroupEntry {
                     binding: 4,
-                    resource: BindingResource::TextureView(&ss_bounce_image.texture_view),
+                    resource: BindingResource::Sampler(&sdf_view_image.sampler),
                 },
                 BindGroupEntry {
                     binding: 5,
+                    resource: BindingResource::TextureView(&ss_bounce_image.texture_view),
+                },
+                BindGroupEntry {
+                    binding: 6,
                     resource: BindingResource::TextureView(&ss_blend_image.texture_view),
                 },
             ],
@@ -445,10 +465,14 @@ pub fn system_queue_bind_groups(
                 },
                 BindGroupEntry {
                     binding: 4,
-                    resource: BindingResource::TextureView(&ss_blend_image.texture_view),
+                    resource: BindingResource::Sampler(&sdf_view_image.sampler),
                 },
                 BindGroupEntry {
                     binding: 5,
+                    resource: BindingResource::TextureView(&ss_blend_image.texture_view),
+                },
+                BindGroupEntry {
+                    binding: 6,
                     resource: BindingResource::TextureView(&ss_filter_image.texture_view),
                 },
             ],
@@ -571,16 +595,23 @@ impl FromWorld for GiPipeline {
                     BindGroupLayoutEntry {
                         binding: 5,
                         visibility: ShaderStages::COMPUTE,
-                        ty: BindingType::StorageTexture {
-                            access: StorageTextureAccess::ReadOnly,
-                            format: SDF_TARGET_FORMAT,
+                        ty: BindingType::Texture {
+                            sample_type: TextureSampleType::Float { filterable: true },
                             view_dimension: TextureViewDimension::D2,
+                            multisampled: false,
                         },
+                        count: None,
+                    },
+                    // SDF Sampler.
+                    BindGroupLayoutEntry {
+                        binding: 6,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Sampler(SamplerBindingType::Filtering),
                         count: None,
                     },
                     // SS Probe.
                     BindGroupLayoutEntry {
-                        binding: 6,
+                        binding: 7,
                         visibility: ShaderStages::COMPUTE,
                         ty: BindingType::StorageTexture {
                             access: StorageTextureAccess::WriteOnly,
@@ -622,16 +653,23 @@ impl FromWorld for GiPipeline {
                     BindGroupLayoutEntry {
                         binding: 2,
                         visibility: ShaderStages::COMPUTE,
-                        ty: BindingType::StorageTexture {
-                            access: StorageTextureAccess::ReadOnly,
-                            format: SDF_TARGET_FORMAT,
+                        ty: BindingType::Texture {
+                            sample_type: TextureSampleType::Float { filterable: true },
                             view_dimension: TextureViewDimension::D2,
+                            multisampled: false,
                         },
+                        count: None,
+                    },
+                    // SDF Sampler.
+                    BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Sampler(SamplerBindingType::Filtering),
                         count: None,
                     },
                     // SS Probe.
                     BindGroupLayoutEntry {
-                        binding: 3,
+                        binding: 4,
                         visibility: ShaderStages::COMPUTE,
                         ty: BindingType::StorageTexture {
                             access: StorageTextureAccess::ReadOnly,
@@ -642,7 +680,7 @@ impl FromWorld for GiPipeline {
                     },
                     // SS Bounce.
                     BindGroupLayoutEntry {
-                        binding: 4,
+                        binding: 5,
                         visibility: ShaderStages::COMPUTE,
                         ty: BindingType::StorageTexture {
                             access: StorageTextureAccess::WriteOnly,
@@ -695,16 +733,23 @@ impl FromWorld for GiPipeline {
                     BindGroupLayoutEntry {
                         binding: 3,
                         visibility: ShaderStages::COMPUTE,
-                        ty: BindingType::StorageTexture {
-                            access: StorageTextureAccess::ReadOnly,
-                            format: SDF_TARGET_FORMAT,
+                        ty: BindingType::Texture {
+                            sample_type: TextureSampleType::Float { filterable: true },
                             view_dimension: TextureViewDimension::D2,
+                            multisampled: false,
                         },
+                        count: None,
+                    },
+                    // SDF Sampler.
+                    BindGroupLayoutEntry {
+                        binding: 4,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Sampler(SamplerBindingType::Filtering),
                         count: None,
                     },
                     // SS Bounces.
                     BindGroupLayoutEntry {
-                        binding: 4,
+                        binding: 5,
                         visibility: ShaderStages::COMPUTE,
                         ty: BindingType::StorageTexture {
                             access: StorageTextureAccess::ReadOnly,
@@ -715,7 +760,7 @@ impl FromWorld for GiPipeline {
                     },
                     // SS Blend.
                     BindGroupLayoutEntry {
-                        binding: 5,
+                        binding: 6,
                         visibility: ShaderStages::COMPUTE,
                         ty: BindingType::StorageTexture {
                             access: StorageTextureAccess::WriteOnly,
@@ -768,16 +813,23 @@ impl FromWorld for GiPipeline {
                     BindGroupLayoutEntry {
                         binding: 3,
                         visibility: ShaderStages::COMPUTE,
-                        ty: BindingType::StorageTexture {
-                            access: StorageTextureAccess::ReadOnly,
-                            format: SDF_TARGET_FORMAT,
+                        ty: BindingType::Texture {
+                            sample_type: TextureSampleType::Float { filterable: true },
                             view_dimension: TextureViewDimension::D2,
+                            multisampled: false,
                         },
+                        count: None,
+                    },
+                    // SDF Sampler.
+                    BindGroupLayoutEntry {
+                        binding: 4,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Sampler(SamplerBindingType::Filtering),
                         count: None,
                     },
                     // SS Blend.
                     BindGroupLayoutEntry {
-                        binding: 4,
+                        binding: 5,
                         visibility: ShaderStages::COMPUTE,
                         ty: BindingType::StorageTexture {
                             access: StorageTextureAccess::ReadOnly,
@@ -788,7 +840,7 @@ impl FromWorld for GiPipeline {
                     },
                     // SS Filter.
                     BindGroupLayoutEntry {
-                        binding: 5,
+                        binding: 6,
                         visibility: ShaderStages::COMPUTE,
                         ty: BindingType::StorageTexture {
                             access: StorageTextureAccess::WriteOnly,

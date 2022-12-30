@@ -5,6 +5,8 @@ struct CameraParams {
     screen_size_inv:     vec2<f32>,
     view_proj:           mat4x4<f32>,
     inverse_view_proj :  mat4x4<f32>,
+    sdf_scale: vec2<f32>,
+    inv_sdf_scale: vec2<f32>,
 }
 
 fn screen_to_ndc(
@@ -43,4 +45,36 @@ fn world_to_screen(
     screen_size: vec2<f32>,
     view_proj:   mat4x4<f32>) -> vec2<i32> {
     return ndc_to_screen(world_to_ndc(world_pose, view_proj), screen_size);
+}
+
+fn world_to_sdf_uv(world_pose: vec2<f32>, view_proj: mat4x4<f32>, inv_sdf_scale: vec2<f32>) -> vec2<f32> {
+    let ndc = world_to_ndc(world_pose, view_proj);
+    let ndc_sdf = ndc * inv_sdf_scale;
+    let uv = (ndc_sdf + 1.0) * 0.5;
+    let y = 1.0 - uv.y;
+    return vec2<f32>(uv.x, y);
+}
+
+fn sdf_uv_to_world(uv: vec2<f32>, inverse_view_proj: mat4x4<f32>, sdf_scale: vec2<f32>) -> vec2<f32> {
+    let y = 1.0 - uv.y;
+    let uv = vec2<f32>(uv.x, y);
+    let ndc_sdf = (uv * 2.0) - 1.0;
+    let ndc = ndc_sdf * sdf_scale;
+    return (inverse_view_proj * vec4<f32>(ndc, 0.0, 1.0)).xy;
+}
+
+fn bilinearSample(channel: i32, t: texture_2d<f32>, s: sampler, uv: vec2<f32>) -> f32 {
+    // texels.x = -u, +v
+    // texels.y = +u, +v,
+    // texels.z = +u, -v,
+    // texels.w = -u, -v
+    let texels = textureGather(0, t, s, uv);
+    // return texels.x;
+    let dims = textureDimensions(t);
+    let scaled_uv = uv * vec2<f32>(dims);
+    let f = fract(scaled_uv - vec2<f32>(0.5));
+    // let min_uv = floor(scaled_uv) + vec2<f32>(0.5);
+    // let diff = scaled_uv - min_uv;
+    // let max_uv = ceil(scaled_uv) + vec2<f32>(0.5);
+    return mix(mix(texels.w, texels.z, f.x), mix(texels.x, texels.y, f.x), f.y);
 }

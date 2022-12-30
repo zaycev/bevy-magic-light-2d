@@ -119,6 +119,10 @@ pub(crate) fn system_extract_gi_assets(
             camera_params.screen_size_inv =
                 Vec2::new(1.0 / SCREEN_SIZE.0 as f32, 1.0 / SCREEN_SIZE.1 as f32);
 
+            let scale = 2.0;
+            camera_params.sdf_scale = Vec2::splat(scale);
+            camera_params.inv_sdf_scale = Vec2::splat(1. / scale);
+
             let probes = gi_compute_assets.probes.get_mut();
             probes.data[*frame_counter as usize].camera_pose =
                 camera_global_transform.translation().truncate();

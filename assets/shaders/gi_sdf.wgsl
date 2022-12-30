@@ -27,13 +27,14 @@ fn round_merge(s1: f32, s2: f32, r: f32) -> f32 {
 
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
-     let screen_pose  = vec2<i32>(invocation_id.xy);
-     let world_pose   = screen_to_world(
-        screen_pose,
-        camera_params.screen_size,
+     let texel_pos  = vec2<i32>(invocation_id.xy);
+     let dims = textureDimensions(sdf_out);
+     let uv = (vec2<f32>(texel_pos) + 0.5) / vec2<f32>(dims);
+    //  let uv = vec2<f32>(uv.x, 1.0 - uv.y);
+
+     let world_pose = sdf_uv_to_world(uv, 
         camera_params.inverse_view_proj,
-        camera_params.screen_size_inv,
-     );
+        camera_params.sdf_scale);
 
      var sdf_min      = sdf_aabb_occluder(world_pose.xy, 0);
      var sdf_merged   = sdf_min;
@@ -52,5 +53,5 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
      }
 
 
-     textureStore(sdf_out, screen_pose, vec4<f32>(sdf, 0.0, 0.0, 0.0));
+     textureStore(sdf_out, texel_pos, vec4<f32>(sdf, 0.0, 0.0, 0.0));
 }

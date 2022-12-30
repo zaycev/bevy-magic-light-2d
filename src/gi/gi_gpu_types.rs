@@ -59,6 +59,8 @@ pub(crate) struct GiGpuCameraParams {
     pub(crate) screen_size_inv: Vec2,
     pub(crate) view_proj: Mat4,
     pub(crate) inverse_view_proj: Mat4,
+    pub(crate) sdf_scale: Vec2,
+    pub(crate) inv_sdf_scale: Vec2,
 }
 
 #[derive(Clone, ShaderType, Debug)]
