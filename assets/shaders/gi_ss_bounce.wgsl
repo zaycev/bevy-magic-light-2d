@@ -48,7 +48,7 @@ fn raymarch(
         h = ray_origin + ray_progress * ray_direction;
 
         if (ray_progress * ray_progress >= stop_at) {
-            return RayMarchResult(1.0, i, h_prev);
+            return RayMarchResult(0.0, i, h_prev);
         }
 
 
@@ -59,7 +59,7 @@ fn raymarch(
 
         let scene_dist = bilinearSample(0, sdf_in, sdf_in_sampler, uv);
         if (scene_dist <= min_sdf) {
-            return RayMarchResult(0.0, i, h_prev);
+            return RayMarchResult(1.0, i, h);
         }
 
         // Jitter step.
@@ -153,7 +153,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
                 32,
             );
 
-            if raymarch_sample_to_probe.val <= 0.0 && raymarch_sample_to_probe.step < 1 {
+            if raymarch_sample_to_probe.val <= 0.0 || raymarch_sample_to_probe.step < 1 {
                 continue;
             }
 
@@ -189,8 +189,12 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
         }
     }
 
-    indirect_irradiance = indirect_irradiance / f32(total_rays);
-    total_irradiance  = 0.8 * indirect_irradiance + 0.2 * direct_irradiance;
+    if (total_rays > 0) {
+        indirect_irradiance = indirect_irradiance / f32(total_rays);
+        total_irradiance  = 0.8 * indirect_irradiance + 0.2 * direct_irradiance;   
+    } else {
+        total_irradiance  = 0.2 * direct_irradiance;  
+    }
 
     textureStore(ss_bounce_out, out_atlas_tile_pose, vec4(total_irradiance, probe.w));
 }
