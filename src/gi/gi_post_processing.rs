@@ -1,19 +1,14 @@
+use crate::gi::gi_pipeline::GiPipelineTargetsWrapper;
 use bevy::core_pipeline::bloom::BloomSettings;
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
 use bevy::render::render_resource::{
-    AsBindGroup,
-    Extent3d,
-    ShaderRef,
-    TextureDescriptor,
-    TextureDimension,
-    TextureFormat,
+    AsBindGroup, Extent3d, ShaderRef, TextureDescriptor, TextureDimension, TextureFormat,
     TextureUsages,
 };
 use bevy::render::texture::BevyDefault;
-use bevy::sprite::{Material2d, MaterialMesh2dBundle};
 use bevy::render::view::RenderLayers;
-use crate::gi::gi_pipeline::{ GiPipelineTargetsWrapper};
+use bevy::sprite::{Material2d, MaterialMesh2dBundle};
 
 #[derive(Component)]
 pub(crate) struct MainCube;
@@ -42,25 +37,28 @@ impl Material2d for PostProcessingMaterial {
 }
 
 pub fn setup_post_processing_camera(
-    mut commands:                  Commands,
-    mut window:                    ResMut<Windows>,
-    mut meshes:                    ResMut<Assets<Mesh>>,
+    mut commands: Commands,
+    mut window: ResMut<Windows>,
+    mut meshes: ResMut<Assets<Mesh>>,
     mut post_processing_materials: ResMut<Assets<PostProcessingMaterial>>,
-    mut images:                    ResMut<Assets<Image>>,
-    mut post_processing_target:    ResMut<PostProcessingTarget>,
-        gi_compute_targets:        Res<GiPipelineTargetsWrapper>,
+    mut images: ResMut<Assets<Image>>,
+    mut post_processing_target: ResMut<PostProcessingTarget>,
+    gi_compute_targets: Res<GiPipelineTargetsWrapper>,
 ) {
-
-    let window      = window.get_primary_mut().expect("No primary window");
+    let window = window.get_primary_mut().expect("No primary window");
     let window_size = Extent3d {
-        width:  (window.physical_width() as f64 / window.backend_scale_factor()) as u32,
+        width: (window.physical_width() as f64 / window.backend_scale_factor()) as u32,
         height: (window.physical_height() as f64 / window.backend_scale_factor()) as u32,
         ..default()
     };
 
-    log::info!("Window size: {:?} {:?}", window_size, window.backend_scale_factor());
+    log::info!(
+        "Window size: {:?} {:?}",
+        window_size,
+        window.backend_scale_factor()
+    );
 
-    let mut image = Image{
+    let mut image = Image {
         texture_descriptor: TextureDescriptor {
             label: Some("Post Processing Image"),
             size: window_size,
@@ -69,8 +67,8 @@ pub fn setup_post_processing_camera(
             mip_level_count: 1,
             sample_count: 1,
             usage: TextureUsages::TEXTURE_BINDING
-                |  TextureUsages::COPY_DST
-                |  TextureUsages::RENDER_ATTACHMENT,
+                | TextureUsages::COPY_DST
+                | TextureUsages::RENDER_ATTACHMENT,
         },
         ..default()
     };
@@ -92,10 +90,12 @@ pub fn setup_post_processing_camera(
     post_processing_target.handle = Some(image_handle.clone());
     let material_handle = post_processing_materials.add(PostProcessingMaterial {
         source_image: image_handle,
-        irradiance_image: gi_compute_targets.targets
+        irradiance_image: gi_compute_targets
+            .targets
             .as_ref()
             .expect("Targets must be initialized")
-            .ss_filter_target.clone(),
+            .ss_filter_target
+            .clone(),
     });
 
     commands.spawn((
@@ -122,7 +122,7 @@ pub fn setup_post_processing_camera(
             },
             ..Camera2dBundle::default()
         },
-        BloomSettings{
+        BloomSettings {
             intensity: 0.1,
             ..default()
         },
