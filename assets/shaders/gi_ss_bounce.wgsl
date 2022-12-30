@@ -57,7 +57,7 @@ fn raymarch(
             return RayMarchResult(0.0, i, h_prev);
         }
 
-        let scene_dist = bilinearSample(0, sdf_in, sdf_in_sampler, uv);
+        let scene_dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
         if (scene_dist <= min_sdf) {
             return RayMarchResult(1.0, i, h);
         }

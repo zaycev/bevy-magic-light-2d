@@ -35,7 +35,7 @@ fn raymarch_occlusion(
 
         let h          = ray_origin + ray_progress * ray_direction;
         let uv = world_to_sdf_uv(h, camera_params.view_proj, camera_params.inv_sdf_scale);
-        let scene_dist = bilinearSample(0, sdf_in, sdf_in_sampler, uv);
+        let scene_dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
 
         if (scene_dist <= 0.1) {
             return 0.0;

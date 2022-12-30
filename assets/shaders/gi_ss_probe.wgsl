@@ -52,7 +52,7 @@ fn raymarch(
 
         let h              = ray_origin + ray_progress * ray_direction;
         let uv = world_to_sdf_uv(h, camera_params.view_proj, camera_params.inv_sdf_scale);
-        let new_scene_dist = bilinearSample(0, sdf_in, sdf_in_sampler, uv);
+        let new_scene_dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
 
         if any(uv < vec2<f32>(0.0)) || any(uv > vec2<f32>(1.0)) {
             let dist_to_light    = distance_squared(h, light_pose);
@@ -119,7 +119,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     var probe_irradiance = vec3<f32>(0.0);
     
     let uv = world_to_sdf_uv(probe_center_world, camera_params.view_proj, camera_params.inv_sdf_scale);
-    let dist = bilinearSample(0, sdf_in, sdf_in_sampler, uv);
+    let dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
     if dist > 0.0 {
 
         let ambient = state.gi_ambient * is_masked;;

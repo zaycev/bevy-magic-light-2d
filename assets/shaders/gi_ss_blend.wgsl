@@ -17,10 +17,6 @@ fn distance_squared(a: vec2<f32>, b: vec2<f32>) -> f32 {
     return dot(c, c);
 }
 
-// fn get_sdf_screen(screen_pose: vec2<i32>) -> f32 {
-//     return textureLoad(sdf_in, screen_pose, 0).r;
-// }
-
 fn raymarch_occlusion(
     ray_origin:    vec2<f32>,
     light_pose:    vec2<f32>,
@@ -40,7 +36,7 @@ fn raymarch_occlusion(
         let h          = ray_origin + ray_progress * ray_direction;
         
         let uv = world_to_sdf_uv(h, camera_params.view_proj, camera_params.inv_sdf_scale);
-        let scene_dist = bilinearSample(0, sdf_in, sdf_in_sampler, uv);
+        let scene_dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
 
         if (scene_dist <= 0.1) {
             return 0.0;
