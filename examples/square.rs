@@ -28,7 +28,7 @@ pub struct Movable;
 fn main() {
     // Basic setup.
     App::new()
-        .insert_resource(ClearColor(Color::rgb_u8(0, 0, 0)))
+        .insert_resource(ClearColor(Color::rgb_u8(255, 255, 255)))
         .add_plugins(
             DefaultPlugins
                 .set(AssetPlugin {
@@ -77,14 +77,6 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
-
-    
-    commands.spawn(SpriteBundle {
-        texture: asset_server.load("art/white_bg.png"),
-        ..default()
-    })
-    .insert(Name::new("background"));
-
     let mut occluders = vec![];
     let occluder_entity = commands
     .spawn((
@@ -160,15 +152,6 @@ fn setup(
         .spawn(SpatialBundle::default())
         .insert(Name::new("lights"))
         .push_children(&lights);
-
-    // Add ambient light.
-    // commands.spawn((
-    //     GiAmbientLight {
-    //         color: Color::rgb_u8(93, 158, 179),
-    //         intensity: 0.04,
-    //     },
-    //     Name::new("ambient_light"),
-    // ));
 
     // Add light source.
     // commands
