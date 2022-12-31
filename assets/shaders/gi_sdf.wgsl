@@ -36,22 +36,13 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
         camera_params.inverse_view_proj,
         camera_params.sdf_scale);
 
-     var sdf_min      = sdf_aabb_occluder(world_pose.xy, 0);
-     var sdf_merged   = sdf_min;
+     let sdf_min      = 0.9;
+     var sdf_merged   = sdf_aabb_occluder(world_pose.xy, 0);
      for (var i: i32 = 1; i < i32(light_occluder_buffer.count); i++) {
-         let s = sdf_aabb_occluder(world_pose.xy, i);
-
-         sdf_min = min(sdf_min, s);
-         sdf_merged = round_merge(sdf_merged, s, 0.9);
-
+         sdf_merged = round_merge(sdf_merged, sdf_aabb_occluder(world_pose.xy, i), sdf_min);
      }
 
-     let r = 8.0;
-     var sdf = sdf_merged;
-     if sdf_min >= -r && sdf_min <= 0.0 {
-         sdf = sdf_merged;
-     }
-
+     var sdf = clamp(sdf_merged, sdf_min, 1e+4);
 
      textureStore(sdf_out, texel_pos, vec4<f32>(sdf, 0.0, 0.0, 0.0));
 }

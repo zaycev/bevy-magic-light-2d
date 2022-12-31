@@ -126,14 +126,15 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
 
     let r_bias = 4.0;
     let r_step = 14.0;
-    let k_max  = 3;
+    let k_max  = 5;
+    let jitter = 0.5;
 
     for (var k = 1; k <= k_max; k++) {
 
         let angle_bias   = pi2 * f32(k) / f32(k_max);
 
-        var r = r_bias + f32(pow(3.333, f32(k))) * r_step;
-            r = r + r * (0.5 - h) * 0.5;
+        var r = r_bias + f32(pow(1.5, f32(k))) * r_step;
+            r = r + r * h * jitter;
 
         for (var ray_i = 0; ray_i < rays_per_sample; ray_i++) {
 
@@ -189,12 +190,8 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
         }
     }
 
-    if (total_rays > 0) {
-        indirect_irradiance = indirect_irradiance / f32(total_rays);
-        total_irradiance  = 0.8 * indirect_irradiance + 0.2 * direct_irradiance;   
-    } else {
-        total_irradiance  = 0.2 * direct_irradiance;  
-    }
+    indirect_irradiance = indirect_irradiance / f32(total_rays);
+    total_irradiance  = 0.8 * indirect_irradiance + 0.2 * direct_irradiance;
 
     textureStore(ss_bounce_out, out_atlas_tile_pose, vec4(total_irradiance, probe.w));
 }

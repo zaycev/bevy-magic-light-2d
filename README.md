@@ -24,7 +24,7 @@ The main performance gain is coming from computing value of only 1 / 64 number o
 ### Usage
 
 ```shell
-cargo run --example maze
+cargo run --example krypta
 ```
 
 - WASD to control camera.

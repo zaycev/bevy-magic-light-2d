@@ -77,8 +77,8 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
         camera_params.screen_size_inv,
     );
 
-    let kernel_hl = 1;
-    let kernel_hr = 1;
+    let kernel_hl = 3;
+    let kernel_hr = 3;
 
     var total_w = 0.0;
     var total_q = vec3<f32>(0.0);
