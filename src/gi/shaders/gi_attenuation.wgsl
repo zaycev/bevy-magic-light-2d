@@ -1,4 +1,4 @@
-#define_import_path bevy_2d_gi_experiment::gi_attenuation
+#define_import_path bevy_magic_light_2d::gi_attenuation
 
 fn distance_squared2(a: vec2<f32>, b: vec2<f32>) -> f32 {
     let c = a - b;

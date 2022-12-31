@@ -3,12 +3,12 @@ use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::{FilterMode, SamplerDescriptor};
 use bevy::sprite::MaterialMesh2dBundle;
-use bevy_2d_gi_experiment::gi::gi_component::{AmbientMask, GiAmbientLight};
-use bevy_2d_gi_experiment::gi::gi_post_processing::{
+use bevy_magic_light_2d::gi::gi_component::{AmbientMask, GiAmbientLight};
+use bevy_magic_light_2d::gi::gi_post_processing::{
     setup_post_processing_camera, PostProcessingTarget,
 };
-use bevy_2d_gi_experiment::gi::{self, GiTarget, LightOccluder, LightSource};
-use bevy_2d_gi_experiment::{MainCamera, SCREEN_SIZE};
+use bevy_magic_light_2d::gi::{self, GiTarget, LightOccluder, LightSource};
+use bevy_magic_light_2d::{MainCamera, SCREEN_SIZE};
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
 use rand::prelude::*;
 

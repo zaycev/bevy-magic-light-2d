@@ -7,7 +7,7 @@ Experimental dynamic 2D global illumination system for Bevy, based on SDF ray-ma
 ## Demo
 
 ```shell
-cargo run --example maze
+cargo run --example krypta
 ```
 
 ![Bevy Magic Light 2D – Demo](https://github.com/zaycev/bevy-magic-light-2d/blob/main/static/demo.gif?raw=true)

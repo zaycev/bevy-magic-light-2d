@@ -1,6 +1,6 @@
-#import bevy_2d_gi_experiment::gi_math
-#import bevy_2d_gi_experiment::gi_types
-#import bevy_2d_gi_experiment::gi_camera
+#import bevy_magic_light_2d::gi_math
+#import bevy_magic_light_2d::gi_types
+#import bevy_magic_light_2d::gi_camera
 
 @group(0) @binding(0) var<uniform> camera_params:         CameraParams;
 @group(0) @binding(1) var<storage> light_occluder_buffer: LightOccluderBuffer;

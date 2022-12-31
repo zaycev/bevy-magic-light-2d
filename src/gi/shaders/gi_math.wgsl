@@ -1,4 +1,4 @@
-#define_import_path bevy_2d_gi_experiment::gi_math
+#define_import_path bevy_magic_light_2d::gi_math
 
 // [Drobot2014a] Low Level Optimizations for GCN
 fn fast_sqrt(x: f32) -> f32 {

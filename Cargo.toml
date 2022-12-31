@@ -1,10 +1,10 @@
 [package]
 edition = "2021"
-name = "bevy_2d_gi_experiment"
-version = "0.1.0"
+name = "bevy_magic_light_2d"
+version = "0.2.1"
 
 [lib]
-name = "bevy_2d_gi_experiment"
+name = "bevy_magic_light_2d"
 crate-type = ["cdylib", "lib", "staticlib"]
 path = "src/lib.rs"
 

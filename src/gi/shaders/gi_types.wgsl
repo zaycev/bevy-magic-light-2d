@@ -1,4 +1,4 @@
-#define_import_path bevy_2d_gi_experiment::gi_types
+#define_import_path bevy_magic_light_2d::gi_types
 
 struct LightSource {
     center:    vec2<f32>,
