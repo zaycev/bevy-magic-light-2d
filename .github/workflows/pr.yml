@@ -28,8 +28,11 @@ jobs:
         with:
           toolchain: nightly
 
+      - name: Install alsa and udev
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
+
       - name: Cargo Build
-        run: cargo build --example krypta
+        run: cargo build --example krypta --features wayland
 
       - name: Trunk Check
         uses: trunk-io/trunk-action@v1
