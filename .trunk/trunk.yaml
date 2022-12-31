@@ -16,6 +16,7 @@ lint:
     - rustfmt@1.65.0
     - prettier@2.8.1
     - gitleaks@8.15.2
+
 runtimes:
   enabled:
     - go@1.18.3
@@ -29,6 +30,3 @@ actions:
     - trunk-fmt-pre-commit
     - trunk-cache-prune
     - trunk-upgrade-available
-
-required_statuses:
-    - build
