@@ -27,3 +27,8 @@ actions:
     - trunk-fmt-pre-commit
   enabled:
     - trunk-upgrade-available
+
+required_statuses:
+    - Trunk Check
+    - Unit tests & test coverage
+    - Integration tests
