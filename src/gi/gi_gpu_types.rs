@@ -1,9 +1,9 @@
-use crate::gi::gi_component::LightSource;
-use crate::SCREEN_SIZE;
 use bevy::prelude::{Mat4, Vec2, Vec3};
 use bevy::render::render_resource::ShaderType;
 
 use super::gi_config::{GI_SCREEN_PROBE_SIZE, GI_SDF_JITTER_CONTRIB, GI_SDF_MAX_STEPS};
+use crate::gi::gi_component::LightSource;
+use crate::SCREEN_SIZE;
 
 #[derive(Default, Clone, ShaderType)]
 pub(crate) struct GiGpuLightSource {
@@ -18,7 +18,7 @@ impl GiGpuLightSource {
     pub fn new(light: LightSource, center: Vec2) -> Self {
         let color = light.color.as_rgba_f32();
         Self {
-            center: center,
+            center,
             radius: light.radius,
             intensity: light.intensity,
             color: Vec3::new(color[0], color[1], color[2]),

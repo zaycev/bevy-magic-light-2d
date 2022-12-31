@@ -1,5 +1,4 @@
-use bevy::prelude::*;
-use bevy::prelude::{Color, Component, Vec2};
+use bevy::prelude::{Color, Component, Vec2, *};
 use bevy_inspector_egui::Inspectable;
 
 #[derive(Reflect, Component, Clone, Copy, Default, Inspectable)]

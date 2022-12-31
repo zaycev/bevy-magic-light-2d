@@ -1,17 +1,14 @@
+use bevy::core_pipeline::bloom::BloomSettings;
+use bevy::prelude::*;
+use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::{FilterMode, SamplerDescriptor};
-use bevy::{
-    core_pipeline::bloom::BloomSettings, prelude::*, render::camera::RenderTarget,
-    sprite::MaterialMesh2dBundle,
+use bevy::sprite::MaterialMesh2dBundle;
+use bevy_2d_gi_experiment::gi::gi_component::{AmbientMask, GiAmbientLight};
+use bevy_2d_gi_experiment::gi::gi_post_processing::{
+    setup_post_processing_camera, PostProcessingTarget,
 };
-use bevy_2d_gi_experiment::gi::gi_post_processing::setup_post_processing_camera;
-use bevy_2d_gi_experiment::gi::gi_post_processing::PostProcessingTarget;
-use bevy_2d_gi_experiment::{
-    gi::{
-        self, gi_component::AmbientMask, gi_component::GiAmbientLight, GiTarget, LightOccluder,
-        LightSource,
-    },
-    MainCamera, SCREEN_SIZE,
-};
+use bevy_2d_gi_experiment::gi::{self, GiTarget, LightOccluder, LightSource};
+use bevy_2d_gi_experiment::{MainCamera, SCREEN_SIZE};
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
 use rand::prelude::*;
 
@@ -353,7 +350,7 @@ fn setup(
                         scale: Vec2::splat(4.0).extend(0.0),
                         ..Default::default()
                     },
-                    sprite: sprite,
+                    sprite,
                     texture_atlas: texture_atlas_handle.clone(),
                     ..Default::default()
                 })
@@ -375,7 +372,7 @@ fn setup(
                         scale: Vec2::splat(4.0).extend(0.0),
                         ..Default::default()
                     },
-                    sprite: sprite,
+                    sprite,
                     texture_atlas: texture_atlas_handle.clone(),
                     ..Default::default()
                 })
@@ -397,7 +394,7 @@ fn setup(
                         scale: Vec2::splat(4.0).extend(0.0),
                         ..Default::default()
                     },
-                    sprite: sprite,
+                    sprite,
                     texture_atlas: texture_atlas_handle.clone(),
                     ..Default::default()
                 })
@@ -419,7 +416,7 @@ fn setup(
                         scale: Vec2::splat(4.0).extend(0.0),
                         ..Default::default()
                     },
-                    sprite: sprite,
+                    sprite,
                     texture_atlas: texture_atlas_handle.clone(),
                     ..Default::default()
                 })
@@ -441,7 +438,7 @@ fn setup(
                         scale: Vec2::splat(4.0).extend(0.0),
                         ..Default::default()
                     },
-                    sprite: sprite,
+                    sprite,
                     texture_atlas: texture_atlas_handle.clone(),
                     ..Default::default()
                 })
@@ -462,7 +459,7 @@ fn setup(
                     scale: Vec2::splat(4.0).extend(0.0),
                     ..Default::default()
                 },
-                sprite: sprite,
+                sprite,
                 texture_atlas: texture_atlas_handle.clone(),
                 ..Default::default()
             });

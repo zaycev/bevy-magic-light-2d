@@ -1,4 +1,3 @@
-use crate::gi::gi_pipeline::GiPipelineTargetsWrapper;
 use bevy::core_pipeline::bloom::BloomSettings;
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
@@ -9,6 +8,8 @@ use bevy::render::render_resource::{
 use bevy::render::texture::BevyDefault;
 use bevy::render::view::RenderLayers;
 use bevy::sprite::{Material2d, MaterialMesh2dBundle};
+
+use crate::gi::gi_pipeline::GiPipelineTargetsWrapper;
 
 #[derive(Component)]
 pub(crate) struct MainCube;

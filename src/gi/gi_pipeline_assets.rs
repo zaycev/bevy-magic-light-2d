@@ -6,7 +6,6 @@ use rand::{thread_rng, Rng};
 
 use super::gi_config::GI_SCREEN_PROBE_SIZE;
 use super::gi_gpu_types::GiGpuState;
-
 use crate::gi::gi_component::{AmbientMask, GiAmbientLight, LightOccluder, LightSource};
 use crate::gi::gi_gpu_types::{
     GiGpuAmbientMaskBuffer, GiGpuAmbientMaskData, GiGpuCameraParams, GiGpuLightOccluder,

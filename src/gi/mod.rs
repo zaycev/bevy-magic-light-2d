@@ -6,10 +6,6 @@ mod gi_pipeline;
 mod gi_pipeline_assets;
 pub mod gi_post_processing;
 
-pub use crate::gi::gi_pipeline::{GiBlendTarget, GiTarget};
-use crate::gi::gi_post_processing::{
-    setup_post_processing_camera, PostProcessingMaterial, PostProcessingTarget,
-};
 use bevy::asset::load_internal_asset;
 use bevy::prelude::*;
 use bevy::render::extract_resource::ExtractResourcePlugin;
@@ -29,9 +25,12 @@ use self::gi_pipeline::{
 use self::gi_pipeline_assets::{
     system_extract_gi_assets, system_prepare_gi_assets, GiComputeAssets,
 };
-
 pub use crate::gi::gi_component::{LightOccluder, LightSource};
 use crate::gi::gi_pipeline::GiPipelineTargetsWrapper;
+pub use crate::gi::gi_pipeline::{GiBlendTarget, GiTarget};
+use crate::gi::gi_post_processing::{
+    setup_post_processing_camera, PostProcessingMaterial, PostProcessingTarget,
+};
 use crate::SCREEN_SIZE;
 
 const SIZE: (u32, u32) = (SCREEN_SIZE.0 as u32, SCREEN_SIZE.1 as u32);
