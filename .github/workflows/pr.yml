@@ -24,8 +24,11 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-check-unused-dependencies-${{ hashFiles('**/Cargo.toml') }}
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
 
-      # - name: Trunk Check
-      #   uses: trunk-io/trunk-action@v1
-      #   with:
-      #     cache: true
+      - name: Trunk Check
+        uses: trunk-io/trunk-action@v1
+        with:
+          cache: true
