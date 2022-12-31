@@ -8,7 +8,7 @@ pub struct BevyMagicLight2DSettings {
 }
 
 #[rustfmt::skip]
-#[derive(Reflect, Resource, Inspectable, Copy, Clone)]
+#[derive(Reflect, Inspectable, Copy, Clone, Debug)]
 pub struct LightPassParams {
     #[inspectable(min = 1, max = 64)]
     pub reservoir_size: u32,
