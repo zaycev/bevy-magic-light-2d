@@ -5,7 +5,7 @@
 #import bevy_magic_light_2d::gi_attenuation
 
 @group(0) @binding(0) var<uniform> camera_params:     CameraParams;
-@group(0) @binding(1) var<uniform> state:             GiState;
+@group(0) @binding(1) var<uniform> cfg:               LightPassParams;
 @group(0) @binding(2) var          sdf_in:            texture_2d<f32>;
 @group(0) @binding(3) var          sdf_in_sampler:    sampler;
 @group(0) @binding(4) var          ss_probe_in:       texture_storage_2d<rgba16float, read>;
@@ -76,24 +76,24 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     let tile_xy      = vec2<i32>(invocation_id.xy);
 
     // Screen-space position of the probe.
-    let reservoir_size           = 8;
-    let probe_size_f32           = f32(state.ss_probe_size);
-    let probe_cols               = state.ss_atlas_cols;
-    let probe_rows               = state.ss_atlas_rows;
-    let frames_max               = state.ss_probe_size * state.ss_probe_size;
-    let frame_index              = state.gi_frame_counter % reservoir_size;
+    let reservoir_size           = i32(cfg.reservoir_size);
+    let probe_size_f32           = f32(cfg.probe_size);
+    let probe_cols               = cfg.probe_atlas_cols;
+    let probe_rows               = cfg.probe_atlas_rows;
+    let frames_max               = cfg.probe_size * cfg.probe_size;
+    let frame_index              = cfg.frame_counter % reservoir_size;
     let halton                   = hammersley2d(frame_index, reservoir_size);
-    let probe_tile_origin_screen = tile_xy * state.ss_probe_size;
+    let probe_tile_origin_screen = tile_xy * cfg.probe_size;
 
-    let atlas_row = frame_index / state.ss_probe_size;
-    let atlas_col = frame_index % state.ss_probe_size;
+    let atlas_row = frame_index / cfg.probe_size;
+    let atlas_col = frame_index % cfg.probe_size;
 
-    let probe_cols               = state.ss_atlas_cols;
-    let probe_rows               = state.ss_atlas_rows;
+    let probe_cols               = cfg.probe_atlas_cols;
+    let probe_rows               = cfg.probe_atlas_rows;
 
     let out_atlas_tile_offset = vec2<i32>(
-        state.ss_atlas_cols * atlas_col,
-        state.ss_atlas_rows * atlas_row,
+        cfg.probe_atlas_cols * atlas_col,
+        cfg.probe_atlas_rows * atlas_row,
     );
 
     let out_atlas_tile_pose = out_atlas_tile_offset + tile_xy;
@@ -101,9 +101,9 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     let probe             = textureLoad(ss_probe_in, out_atlas_tile_pose);
     let direct_irradiance = probe.xyz;
     var total_irradiance  = direct_irradiance;
-    let probe_size_f32    = f32(state.ss_probe_size);
+    let probe_size_f32    = f32(cfg.probe_size);
     let halton            = unpack2x16float(bitcast<u32>(probe.w));
-    let probe_tile_origin_screen = tile_xy * state.ss_probe_size;
+    let probe_tile_origin_screen = tile_xy * cfg.probe_size;
 
     let probe_offset_world  = halton * probe_size_f32;
     let probe_center_world  = screen_to_world(
@@ -163,7 +163,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
                 camera_params.screen_size,
                 camera_params.view_proj);
 
-            let sample_tile_pose = sample_screen / state.ss_probe_size;
+            let sample_tile_pose = sample_screen / cfg.probe_size;
             let sample_atlas_pose = out_atlas_tile_offset + sample_tile_pose;
 
             let sample_kernel  = 0;
@@ -191,7 +191,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     }
 
     indirect_irradiance = indirect_irradiance / f32(total_rays);
-    total_irradiance  = 0.8 * indirect_irradiance + 0.2 * direct_irradiance;
+    total_irradiance  = cfg.indirect_light_contrib * indirect_irradiance + cfg.direct_light_contrib * direct_irradiance;
 
     textureStore(ss_bounce_out, out_atlas_tile_pose, vec4(total_irradiance, probe.w));
 }

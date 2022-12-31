@@ -1,3 +1,4 @@
+use crate::gi::resource::ComputedTargetSizes;
 use bevy::prelude::*;
 use bevy::render::extract_resource::ExtractResource;
 use bevy::render::render_asset::RenderAssets;
@@ -5,12 +6,12 @@ use bevy::render::render_resource::*;
 use bevy::render::renderer::RenderDevice;
 use bevy::render::texture::ImageSampler;
 
-use super::gi_config::GI_SCREEN_PROBE_SIZE;
-use super::gi_gpu_types::{
-    GiGpuAmbientMaskBuffer, GiGpuCameraParams, GiGpuLightOccluderBuffer, GiGpuLightSourceBuffer,
-    GiGpuProbeDataBuffer, GiGpuState,
+use super::constants::GI_SCREEN_PROBE_SIZE;
+use super::pipeline_assets::LightPassPipelineAssets;
+use super::types_gpu::{
+    GpuCameraParams, GpuLightOccluderBuffer, GpuLightPassParams, GpuLightSourceBuffer,
+    GpuProbeDataBuffer, GpuSkylightMaskBuffer,
 };
-use super::gi_pipeline_assets::GiComputeAssets;
 
 const SDF_TARGET_FORMAT: TextureFormat = TextureFormat::R16Float;
 const SS_PROBE_TARGET_FORMAT: TextureFormat = TextureFormat::Rgba16Float;
@@ -39,7 +40,7 @@ pub struct GiFilterTarget;
 
 #[allow(dead_code)]
 #[derive(Clone, Resource, ExtractResource, Default)]
-pub struct GiPipelineTargetsWrapper {
+pub struct PipelineTargetsWrapper {
     pub(crate) targets: Option<GiPipelineTargets>,
 }
 
@@ -54,7 +55,7 @@ pub struct GiPipelineTargets {
 
 #[allow(dead_code)]
 #[derive(Resource)]
-pub struct GiPipelineBindGroups {
+pub struct LightPassPipelineBindGroups {
     pub(crate) sdf_bind_group: BindGroup,
     pub(crate) ss_blend_bind_group: BindGroup,
     pub(crate) ss_probe_bind_group: BindGroup,
@@ -62,6 +63,7 @@ pub struct GiPipelineBindGroups {
     pub(crate) ss_filter_bind_group: BindGroup,
 }
 
+#[rustfmt::skip]
 fn create_texture_2d(size: (u32, u32), format: TextureFormat, filter: FilterMode) -> Image {
     let mut image = Image::new_fill(
         Extent3d {
@@ -71,8 +73,10 @@ fn create_texture_2d(size: (u32, u32), format: TextureFormat, filter: FilterMode
         },
         TextureDimension::D2,
         &[
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
         ],
         format,
     );
@@ -92,16 +96,16 @@ fn create_texture_2d(size: (u32, u32), format: TextureFormat, filter: FilterMode
     image
 }
 
+#[rustfmt::skip]
 pub fn system_setup_gi_pipeline(
-    mut commands: Commands,
-    mut images: ResMut<Assets<Image>>,
-    mut gi_compute_targets: ResMut<GiPipelineTargetsWrapper>,
-    windows: Res<Windows>,
+    mut commands:        Commands,
+    mut images:          ResMut<Assets<Image>>,
+    mut targets_wrapper: ResMut<PipelineTargetsWrapper>,
+        targets_sizes:   ResMut<ComputedTargetSizes>,
 ) {
-    let window = windows.get_primary().expect("failed to get window");
     let target_size = Extent3d {
-        width: window.width() as u32,
-        height: window.height() as u32,
+        width:  targets_sizes.primary_target_usize.x,
+        height: targets_sizes.primary_target_usize.y,
         ..default()
     };
 
@@ -134,10 +138,10 @@ pub fn system_setup_gi_pipeline(
         FilterMode::Nearest,
     );
 
-    let sdf_target = images.add(sdf_tex);
-    let ss_probe_target = images.add(ss_probe_tex);
+    let sdf_target       = images.add(sdf_tex);
+    let ss_probe_target  = images.add(ss_probe_tex);
     let ss_bounce_target = images.add(ss_bounce_tex);
-    let ss_blend_target = images.add(ss_blend_tex);
+    let ss_blend_target  = images.add(ss_blend_tex);
     let ss_filter_target = images.add(ss_filter_tex);
 
     let sdf_image_entity = commands
@@ -262,7 +266,7 @@ pub fn system_setup_gi_pipeline(
 
     commands.spawn(Camera2dBundle::default());
 
-    gi_compute_targets.targets = Some(GiPipelineTargets {
+    targets_wrapper.targets = Some(GiPipelineTargets {
         sdf_target,
         ss_probe_target,
         ss_bounce_target,
@@ -272,7 +276,7 @@ pub fn system_setup_gi_pipeline(
 }
 
 #[derive(Resource)]
-pub struct GiPipeline {
+pub struct LightPassPipeline {
     pub sdf_bind_group_layout: BindGroupLayout,
     pub sdf_pipeline: CachedComputePipelineId,
     pub ss_probe_bind_group_layout: BindGroupLayout,
@@ -285,12 +289,12 @@ pub struct GiPipeline {
     pub ss_filter_pipeline: CachedComputePipelineId,
 }
 
-pub fn system_queue_bind_groups(
+pub(crate) fn system_queue_bind_groups(
     mut commands: Commands,
-    pipeline: Res<GiPipeline>,
+    pipeline: Res<LightPassPipeline>,
     gpu_images: Res<RenderAssets<Image>>,
-    targets_wrapper: Res<GiPipelineTargetsWrapper>,
-    gi_compute_assets: Res<GiComputeAssets>,
+    targets_wrapper: Res<PipelineTargetsWrapper>,
+    gi_compute_assets: Res<LightPassPipelineAssets>,
     render_device: Res<RenderDevice>,
 ) {
     if let (
@@ -299,14 +303,14 @@ pub fn system_queue_bind_groups(
         Some(camera_params),
         Some(gi_state),
         Some(probes),
-        Some(ambient_masks),
+        Some(skylight_masks),
     ) = (
         gi_compute_assets.light_sources.binding(),
         gi_compute_assets.light_occluders.binding(),
         gi_compute_assets.camera_params.binding(),
-        gi_compute_assets.gi_state.binding(),
+        gi_compute_assets.light_pass_params.binding(),
         gi_compute_assets.probes.binding(),
-        gi_compute_assets.ambient_masks.binding(),
+        gi_compute_assets.skylight_masks.binding(),
     ) {
         let targets = targets_wrapper
             .targets
@@ -356,7 +360,7 @@ pub fn system_queue_bind_groups(
                 },
                 BindGroupEntry {
                     binding: 3,
-                    resource: ambient_masks.clone(),
+                    resource: skylight_masks.clone(),
                 },
                 BindGroupEntry {
                     binding: 4,
@@ -478,7 +482,7 @@ pub fn system_queue_bind_groups(
             ],
         });
 
-        commands.insert_resource(GiPipelineBindGroups {
+        commands.insert_resource(LightPassPipelineBindGroups {
             sdf_bind_group,
             ss_probe_bind_group,
             ss_bounce_bind_group,
@@ -488,7 +492,7 @@ pub fn system_queue_bind_groups(
     }
 }
 
-impl FromWorld for GiPipeline {
+impl FromWorld for LightPassPipeline {
     fn from_world(world: &mut World) -> Self {
         let render_device = world.resource::<RenderDevice>();
 
@@ -503,7 +507,7 @@ impl FromWorld for GiPipeline {
                         ty: BindingType::Buffer {
                             ty: BufferBindingType::Uniform,
                             has_dynamic_offset: false,
-                            min_binding_size: Some(GiGpuCameraParams::min_size()),
+                            min_binding_size: Some(GpuCameraParams::min_size()),
                         },
                         count: None,
                     },
@@ -514,7 +518,7 @@ impl FromWorld for GiPipeline {
                         ty: BindingType::Buffer {
                             ty: BufferBindingType::Storage { read_only: true },
                             has_dynamic_offset: false,
-                            min_binding_size: Some(GiGpuLightOccluderBuffer::min_size()),
+                            min_binding_size: Some(GpuLightOccluderBuffer::min_size()),
                         },
                         count: None,
                     },
@@ -543,7 +547,7 @@ impl FromWorld for GiPipeline {
                         ty: BindingType::Buffer {
                             ty: BufferBindingType::Uniform,
                             has_dynamic_offset: false,
-                            min_binding_size: Some(GiGpuCameraParams::min_size()),
+                            min_binding_size: Some(GpuCameraParams::min_size()),
                         },
                         count: None,
                     },
@@ -554,7 +558,7 @@ impl FromWorld for GiPipeline {
                         ty: BindingType::Buffer {
                             ty: BufferBindingType::Uniform,
                             has_dynamic_offset: false,
-                            min_binding_size: Some(GiGpuState::min_size()),
+                            min_binding_size: Some(GpuLightPassParams::min_size()),
                         },
                         count: None,
                     },
@@ -565,18 +569,18 @@ impl FromWorld for GiPipeline {
                         ty: BindingType::Buffer {
                             ty: BufferBindingType::Storage { read_only: true },
                             has_dynamic_offset: false,
-                            min_binding_size: Some(GiGpuProbeDataBuffer::min_size()),
+                            min_binding_size: Some(GpuProbeDataBuffer::min_size()),
                         },
                         count: None,
                     },
-                    // AmbientMasks.
+                    // SkylightMasks.
                     BindGroupLayoutEntry {
                         binding: 3,
                         visibility: ShaderStages::COMPUTE,
                         ty: BindingType::Buffer {
                             ty: BufferBindingType::Storage { read_only: true },
                             has_dynamic_offset: false,
-                            min_binding_size: Some(GiGpuAmbientMaskBuffer::min_size()),
+                            min_binding_size: Some(GpuSkylightMaskBuffer::min_size()),
                         },
                         count: None,
                     },
@@ -587,7 +591,7 @@ impl FromWorld for GiPipeline {
                         ty: BindingType::Buffer {
                             ty: BufferBindingType::Storage { read_only: true },
                             has_dynamic_offset: false,
-                            min_binding_size: Some(GiGpuLightSourceBuffer::min_size()),
+                            min_binding_size: Some(GpuLightSourceBuffer::min_size()),
                         },
                         count: None,
                     },
@@ -634,7 +638,7 @@ impl FromWorld for GiPipeline {
                         ty: BindingType::Buffer {
                             ty: BufferBindingType::Uniform,
                             has_dynamic_offset: false,
-                            min_binding_size: Some(GiGpuCameraParams::min_size()),
+                            min_binding_size: Some(GpuCameraParams::min_size()),
                         },
                         count: None,
                     },
@@ -645,7 +649,7 @@ impl FromWorld for GiPipeline {
                         ty: BindingType::Buffer {
                             ty: BufferBindingType::Uniform,
                             has_dynamic_offset: false,
-                            min_binding_size: Some(GiGpuState::min_size()),
+                            min_binding_size: Some(GpuLightPassParams::min_size()),
                         },
                         count: None,
                     },
@@ -703,7 +707,7 @@ impl FromWorld for GiPipeline {
                         ty: BindingType::Buffer {
                             ty: BufferBindingType::Uniform,
                             has_dynamic_offset: false,
-                            min_binding_size: Some(GiGpuCameraParams::min_size()),
+                            min_binding_size: Some(GpuCameraParams::min_size()),
                         },
                         count: None,
                     },
@@ -714,7 +718,7 @@ impl FromWorld for GiPipeline {
                         ty: BindingType::Buffer {
                             ty: BufferBindingType::Uniform,
                             has_dynamic_offset: false,
-                            min_binding_size: Some(GiGpuState::min_size()),
+                            min_binding_size: Some(GpuLightPassParams::min_size()),
                         },
                         count: None,
                     },
@@ -725,7 +729,7 @@ impl FromWorld for GiPipeline {
                         ty: BindingType::Buffer {
                             ty: BufferBindingType::Storage { read_only: true },
                             has_dynamic_offset: false,
-                            min_binding_size: Some(GiGpuProbeDataBuffer::min_size()),
+                            min_binding_size: Some(GpuProbeDataBuffer::min_size()),
                         },
                         count: None,
                     },
@@ -783,7 +787,7 @@ impl FromWorld for GiPipeline {
                         ty: BindingType::Buffer {
                             ty: BufferBindingType::Uniform,
                             has_dynamic_offset: false,
-                            min_binding_size: Some(GiGpuCameraParams::min_size()),
+                            min_binding_size: Some(GpuCameraParams::min_size()),
                         },
                         count: None,
                     },
@@ -794,7 +798,7 @@ impl FromWorld for GiPipeline {
                         ty: BindingType::Buffer {
                             ty: BufferBindingType::Uniform,
                             has_dynamic_offset: false,
-                            min_binding_size: Some(GiGpuState::min_size()),
+                            min_binding_size: Some(GpuLightPassParams::min_size()),
                         },
                         count: None,
                     },
@@ -805,7 +809,7 @@ impl FromWorld for GiPipeline {
                         ty: BindingType::Buffer {
                             ty: BufferBindingType::Storage { read_only: true },
                             has_dynamic_offset: false,
-                            min_binding_size: Some(GiGpuProbeDataBuffer::min_size()),
+                            min_binding_size: Some(GpuProbeDataBuffer::min_size()),
                         },
                         count: None,
                     },
@@ -905,7 +909,7 @@ impl FromWorld for GiPipeline {
             entry_point: SS_FILTER_PIPELINE_ENTRY.into(),
         });
 
-        GiPipeline {
+        LightPassPipeline {
             //
             sdf_bind_group_layout,
             sdf_pipeline,

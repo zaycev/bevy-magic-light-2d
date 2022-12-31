@@ -5,7 +5,7 @@
 #import bevy_magic_light_2d::gi_attenuation
 
 @group(0) @binding(0) var<uniform> camera_params:     CameraParams;
-@group(0) @binding(1) var<uniform> state:             GiState;
+@group(0) @binding(1) var<uniform> cfg:             LightPassParams;
 @group(0) @binding(2) var<storage> probes:            ProbeDataBuffer;
 @group(0) @binding(3) var          sdf_in:            texture_2d<f32>;
 @group(0) @binding(4) var          sdf_in_sampler:    sampler;
@@ -68,7 +68,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     );
 
     let base_probe_screen_pose = screen_pose;
-    let base_probe_grid_pose   = screen_pose / state.ss_probe_size;
+    let base_probe_grid_pose   = screen_pose / cfg.probe_size;
     let base_probe_sample      = textureLoad(ss_blend_in, base_probe_screen_pose).xyz;
     let base_probe_world_pose  = screen_to_world(
         base_probe_screen_pose,
@@ -77,8 +77,8 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
         camera_params.screen_size_inv,
     );
 
-    let kernel_hl = 3;
-    let kernel_hr = 3;
+    let kernel_hl = i32(cfg.smooth_kernel_size_w);
+    let kernel_hr = i32(cfg.smooth_kernel_size_h);
 
     var total_w = 0.0;
     var total_q = vec3<f32>(0.0);
@@ -90,7 +90,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
             let offset = vec2<i32>(i, j);
 
             let p_grid_pose   = base_probe_grid_pose + offset;
-            let p_screen_pose = (base_probe_grid_pose + offset) * state.ss_probe_size;
+            let p_screen_pose = (base_probe_grid_pose + offset) * cfg.probe_size;
 
             // Discard offscreen;
             let p_ndc = screen_to_ndc(p_screen_pose, camera_params.screen_size, camera_params.screen_size_inv);

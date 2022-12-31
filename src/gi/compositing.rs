@@ -9,10 +9,8 @@ use bevy::render::texture::BevyDefault;
 use bevy::render::view::RenderLayers;
 use bevy::sprite::{Material2d, MaterialMesh2dBundle};
 
-use crate::gi::gi_pipeline::GiPipelineTargetsWrapper;
-
-#[derive(Component)]
-pub(crate) struct MainCube;
+use crate::gi::pipeline::PipelineTargetsWrapper;
+use crate::gi::resource::ComputedTargetSizes;
 
 #[derive(AsBindGroup, TypeUuid, Clone)]
 #[uuid = "bc2f08eb-a0fb-43f1-a908-54871ea597d5"]
@@ -39,25 +37,19 @@ impl Material2d for PostProcessingMaterial {
 
 pub fn setup_post_processing_camera(
     mut commands: Commands,
-    mut window: ResMut<Windows>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut post_processing_materials: ResMut<Assets<PostProcessingMaterial>>,
     mut images: ResMut<Assets<Image>>,
     mut post_processing_target: ResMut<PostProcessingTarget>,
-    gi_compute_targets: Res<GiPipelineTargetsWrapper>,
+
+    gpu_targets_sizes: Res<ComputedTargetSizes>,
+    gpu_targets_wrapper: Res<PipelineTargetsWrapper>,
 ) {
-    let window = window.get_primary_mut().expect("No primary window");
     let window_size = Extent3d {
-        width: (window.physical_width() as f64 / window.backend_scale_factor()) as u32,
-        height: (window.physical_height() as f64 / window.backend_scale_factor()) as u32,
+        width: gpu_targets_sizes.primary_target_usize.x,
+        height: gpu_targets_sizes.primary_target_usize.y,
         ..default()
     };
-
-    log::info!(
-        "Window size: {:?} {:?}",
-        window_size,
-        window.backend_scale_factor()
-    );
 
     let mut image = Image {
         texture_descriptor: TextureDescriptor {
@@ -83,15 +75,15 @@ pub fn setup_post_processing_camera(
     let image_handle = images.add(image);
 
     let quad_handle = meshes.add(Mesh::from(shape::Quad::new(Vec2::new(
-        window_size.width as f32,
-        window_size.height as f32,
+        gpu_targets_sizes.primary_target_size.x,
+        gpu_targets_sizes.primary_target_size.y,
     ))));
 
     // This material has the texture that has been rendered.
     post_processing_target.handle = Some(image_handle.clone());
     let material_handle = post_processing_materials.add(PostProcessingMaterial {
         source_image: image_handle,
-        irradiance_image: gi_compute_targets
+        irradiance_image: gpu_targets_wrapper
             .targets
             .as_ref()
             .expect("Targets must be initialized")

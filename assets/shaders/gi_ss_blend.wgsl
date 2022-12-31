@@ -5,7 +5,7 @@
 #import bevy_magic_light_2d::gi_attenuation
 
 @group(0) @binding(0) var<uniform> camera_params:     CameraParams;
-@group(0) @binding(1) var<uniform> state:             GiState;
+@group(0) @binding(1) var<uniform> cfg:               LightPassParams;
 @group(0) @binding(2) var<storage> probes:            ProbeDataBuffer;
 @group(0) @binding(3) var          sdf_in:            texture_2d<f32>;
 @group(0) @binding(4) var          sdf_in_sampler:    sampler;
@@ -64,7 +64,7 @@ fn read_probe(
     let clamped_offset = clamp(probe_tile_pose + probe_offset, vec2<i32>(0), tile_size - vec2<i32>(1));
 
     // Get position
-    let probe_screen_pose = clamped_offset * state.ss_probe_size;
+    let probe_screen_pose = clamped_offset * cfg.probe_size;
     let probe_atlas_pose  = probe_tile_origin + clamped_offset;
 
     //
@@ -128,14 +128,14 @@ fn estimate_probes_at(
     let reproj_screen_pose     = ndc_to_screen(reproj_ndc.xy, camera_params.screen_size);
 
     // Probe pose in tile.
-    let reproj_tile_probe_pose = reproj_screen_pose / state.ss_probe_size;
+    let reproj_tile_probe_pose = reproj_screen_pose / cfg.probe_size;
 
     // Get origin position of the probe tile in the atlas.
     let curr_probe_origin      = get_probe_tile_origin(
         probe_id,
-        state.ss_atlas_rows,
-        state.ss_atlas_cols,
-        state.ss_probe_size,
+        cfg.probe_atlas_rows,
+        cfg.probe_atlas_cols,
+        cfg.probe_size,
     );
 
     let base_offset = vec2<i32>(0, 0);
@@ -169,7 +169,7 @@ fn estimate_probes_at(
 
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
-    let screen_pose  = vec2<i32>(invocation_id.xy) * state.ss_probe_size + state.ss_probe_size / 2;
+    let screen_pose  = vec2<i32>(invocation_id.xy) * cfg.probe_size + cfg.probe_size / 2;
     let sample_pose  = screen_to_world(
         screen_pose,
         camera_params.screen_size,
@@ -177,15 +177,15 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
         camera_params.screen_size_inv,
     );
 
-    let reservoir_size     = 8;
-    let curr_probe_id      = state.gi_frame_counter % reservoir_size;
+    let reservoir_size     = i32(cfg.reservoir_size);
+    let curr_probe_id      = cfg.frame_counter % reservoir_size;
 
-    let camera_buffer_size = state.ss_probe_size * state.ss_probe_size;
-    let camera_buffer_id   = state.gi_frame_counter;
+    let camera_buffer_size = cfg.probe_size * cfg.probe_size;
+    let camera_buffer_id   = cfg.frame_counter;
     let curr_camera_pose   = probes.data[camera_buffer_id].pose;
-    let probe_size_f32     = f32(state.ss_probe_size);
+    let probe_size_f32     = f32(cfg.probe_size);
 
-    let tile_size          = vec2<i32>(camera_params.screen_size / (f32(state.ss_probe_size) - 0.001));
+    let tile_size          = vec2<i32>(camera_params.screen_size / (f32(cfg.probe_size) - 0.001));
     let min_irradiance     = vec3<f32>(0.0);
     let max_irradiance     = vec3<f32>(1e+4);
     var total_irradiance   = min_irradiance;

@@ -1,14 +1,10 @@
 #import bevy_pbr::mesh_view_bindings
 #import bevy_pbr::utils
 
-@group(1) @binding(0)
-var in_diffuse_texture: texture_2d<f32>;
-@group(1) @binding(1)
-var in_diffuse_sampler: sampler;
-@group(1) @binding(2)
-var in_irradiance_texture: texture_2d<f32>;
-@group(1) @binding(3)
-var in_irradiance_texture_sampler: sampler;
+@group(1) @binding(0) var in_diffuse_texture: texture_2d<f32>;
+@group(1) @binding(1) var in_diffuse_sampler: sampler;
+@group(1) @binding(2) var in_irradiance_texture: texture_2d<f32>;
+@group(1) @binding(3) var in_irradiance_texture_sampler: sampler;
 
 fn lin_to_srgb(color: vec3<f32>) -> vec3<f32> {
    let x = color * 12.92;
