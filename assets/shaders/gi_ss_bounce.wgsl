@@ -48,7 +48,7 @@ fn raymarch(
         h = ray_origin + ray_progress * ray_direction;
 
         if (ray_progress * ray_progress >= stop_at) {
-            return RayMarchResult(0.0, i, h_prev);
+            return RayMarchResult(1.0, i, h_prev);
         }
 
 
@@ -59,7 +59,7 @@ fn raymarch(
 
         let scene_dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
         if (scene_dist <= min_sdf) {
-            return RayMarchResult(1.0, i, h);
+            return RayMarchResult(0.0, i, h);
         }
 
         // Jitter step.
