@@ -1,0 +1,7 @@
+reorder_imports = true
+use_field_init_shorthand = true
+newline_style = "Unix"
+indent_style = "Block"
+unstable_features = true
+imports_granularity = "Module"
+group_imports = "StdExternalCrate"
