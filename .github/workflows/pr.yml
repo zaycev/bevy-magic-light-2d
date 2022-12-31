@@ -17,7 +17,8 @@ jobs:
     steps:
 
     - uses: actions/checkout@v3
-    - name: Checkout
+    - name: Build
+      run: cargo build --verbose
 
     - name: Trunk Check
       uses: trunk-io/trunk-action@v1
