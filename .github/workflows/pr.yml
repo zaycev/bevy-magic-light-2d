@@ -28,6 +28,9 @@ jobs:
         with:
           toolchain: nightly
 
+      - name: Cargo Build
+        run: cargo build --example krypta
+
       - name: Trunk Check
         uses: trunk-io/trunk-action@v1
         with:
