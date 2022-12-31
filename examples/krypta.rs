@@ -356,7 +356,7 @@ fn setup(
                 })
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
-                }).id());
+                }).insert(Name::new("candle_1")).id());
 
         }
 
@@ -380,7 +380,7 @@ fn setup(
                 })
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
-                }).id());
+                }).insert(Name::new("candle_2")).id());
         }
 
         // Candle 3.
@@ -403,10 +403,10 @@ fn setup(
                 })
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
-                }).id());
+                }).insert(Name::new("candle_3")).id());
         }
 
-        // Candle 3.
+        // Candle 4.
         {
             let x = 413.0;
             let y = -124.6;
@@ -426,7 +426,7 @@ fn setup(
                 })
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
-                }).id());
+                }).insert(Name::new("candle_4")).id());
         }
 
         // Tomb 1.
@@ -448,7 +448,7 @@ fn setup(
                 })
                 .insert(LightOccluder2D {
                     h_size: Vec2::new(72.8, 31.0),
-                }).id());
+                }).insert(Name::new("tomb_1")).id());
         }
 
         // Sewerage 1.
@@ -467,7 +467,7 @@ fn setup(
                 sprite,
                 texture_atlas: texture_atlas_handle.clone(),
                 ..default()
-            }).id());
+            }).insert(Name::new("sewerage_1")).id());
         }
     }
     commands

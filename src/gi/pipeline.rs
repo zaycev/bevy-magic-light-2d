@@ -264,8 +264,6 @@ pub fn system_setup_gi_pipeline(
         .add_child(ss_blend_image_entity)
         .add_child(ss_filter_image_entity);
 
-    commands.spawn(Camera2dBundle::default());
-
     targets_wrapper.targets = Some(GiPipelineTargets {
         sdf_target,
         ss_probe_target,
