@@ -22,7 +22,7 @@ use crate::gi::pipeline_assets::{
     system_extract_pipeline_assets, system_prepare_pipeline_assets, LightPassPipelineAssets,
 };
 use crate::gi::resource::ComputedTargetSizes;
-use crate::prelude::LightPassParams;
+use crate::prelude::BevyMagicLight2DSettings;
 
 mod constants;
 mod dispatch;
@@ -44,7 +44,7 @@ impl Plugin for BevyMagicLight2DPlugin {
             .add_plugin(Material2dPlugin::<PostProcessingMaterial>::default())
             .init_resource::<PostProcessingTarget>()
             .init_resource::<PipelineTargetsWrapper>()
-            .init_resource::<LightPassParams>()
+            .init_resource::<BevyMagicLight2DSettings>()
             .init_resource::<ComputedTargetSizes>()
             .add_startup_system(detect_target_sizes)
             .add_startup_system(system_setup_gi_pipeline.after(detect_target_sizes))

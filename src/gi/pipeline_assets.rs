@@ -12,7 +12,7 @@ use crate::gi::types_gpu::{
     GpuLightSourceBuffer, GpuOmniLightSource, GpuProbeDataBuffer, GpuSkylightMaskBuffer,
     GpuSkylightMaskData,
 };
-use crate::prelude::LightPassParams;
+use crate::prelude::BevyMagicLight2DSettings;
 use crate::MainCamera;
 
 #[rustfmt::skip]
@@ -48,7 +48,7 @@ pub(crate) fn system_prepare_pipeline_assets(
 
 #[rustfmt::skip]
 pub(crate) fn system_extract_pipeline_assets(
-    res_light_pass_config:      Extract<Res<LightPassParams>>,
+    res_light_settings:      Extract<Res<BevyMagicLight2DSettings>>,
     res_target_sizes:           Extract<Res<ComputedTargetSizes>>,
 
     query_lights:               Extract<Query<(&Transform, &OmniLightSource2D, &ComputedVisibility)>>,
@@ -61,6 +61,7 @@ pub(crate) fn system_extract_pipeline_assets(
     mut gpu_pipeline_assets:    ResMut<LightPassPipelineAssets>,
     mut gpu_frame_counter:      Local<i32>,
 ) {
+    let light_pass_config = &res_light_settings.light_pass_params;
 
     *gpu_target_sizes = **res_target_sizes;
 
@@ -158,11 +159,11 @@ pub(crate) fn system_extract_pipeline_assets(
         light_pass_params.probe_size = GI_SCREEN_PROBE_SIZE;
         light_pass_params.probe_atlas_cols = cols;
         light_pass_params.probe_atlas_rows = rows;
-        light_pass_params.reservoir_size = res_light_pass_config.reservoir_size;
-        light_pass_params.smooth_kernel_size_h = res_light_pass_config.smooth_kernel_size.0;
-        light_pass_params.smooth_kernel_size_w = res_light_pass_config.smooth_kernel_size.1;
-        light_pass_params.direct_light_contrib = res_light_pass_config.direct_light_contrib;
-        light_pass_params.indirect_light_contrib = res_light_pass_config.indirect_light_contrib;
+        light_pass_params.reservoir_size = light_pass_config.reservoir_size;
+        light_pass_params.smooth_kernel_size_h = light_pass_config.smooth_kernel_size.0;
+        light_pass_params.smooth_kernel_size_w = light_pass_config.smooth_kernel_size.1;
+        light_pass_params.direct_light_contrib = light_pass_config.direct_light_contrib;
+        light_pass_params.indirect_light_contrib = light_pass_config.indirect_light_contrib;
     }
 
     {

@@ -47,22 +47,22 @@ fn main() {
                     },
                 }),
         )
-        .add_plugin(BevyMagicLight2DPlugin)
         .insert_resource(BevyMagicLight2DSettings {
             light_pass_params: LightPassParams {
                 reservoir_size: 8,
-                smooth_kernel_size: (2, 1),
+                smooth_kernel_size: (3, 3),
                 direct_light_contrib: 0.5,
                 indirect_light_contrib: 0.5,
             },
         })
+        .add_plugin(BevyMagicLight2DPlugin)
         .add_plugin(WorldInspectorPlugin::new())
-        .add_plugin(InspectorPlugin::<LightPassParams>::new())
+        .add_plugin(InspectorPlugin::<BevyMagicLight2DSettings>::new())
         .register_inspectable::<LightOccluder2D>()
         .register_inspectable::<OmniLightSource2D>()
         .register_inspectable::<SkylightMask2D>()
         .register_inspectable::<SkylightLight2D>()
-        .register_inspectable::<LightPassParams>()
+        .register_inspectable::<BevyMagicLight2DSettings>()
         .add_startup_system(setup.after(setup_post_processing_camera))
         .add_system(system_move_camera)
         .add_system(system_control_mouse_light.after(system_move_camera))
