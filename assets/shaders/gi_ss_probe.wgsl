@@ -9,8 +9,9 @@
 @group(0) @binding(2) var<storage> probes:                ProbeDataBuffer;
 @group(0) @binding(3) var<storage> ambient_masks_buffer:  AmbientMaskBuffer;
 @group(0) @binding(4) var<storage> lights_source_buffer:  LightSourceBuffer;
-@group(0) @binding(5) var          sdf_in:                texture_storage_2d<r16float,    read>;
-@group(0) @binding(6) var          ss_probe_out:          texture_storage_2d<rgba16float, write>;
+@group(0) @binding(5) var          sdf_in:            texture_2d<f32>;
+@group(0) @binding(6) var          sdf_in_sampler:    sampler;
+@group(0) @binding(7) var          ss_probe_out:          texture_storage_2d<rgba16float, write>;
 
 
 fn hash(p: vec2<f32>) -> f32 {
@@ -22,15 +23,9 @@ fn distance_squared(a: vec2<f32>, b: vec2<f32>) -> f32 {
     return dot(c, c);
 }
 
-fn get_sdf_screen(screen_pose: vec2<i32>) -> f32 {
-    return textureLoad(sdf_in, screen_pose).r;
-}
-
-fn get_sdf_world(world_pose: vec2<f32>) -> f32 {
-    let ndc = vec4<f32>(world_pose, 0.0, 1.0) * camera_params.view_proj;
-    let screen_pose = ndc_to_screen(ndc.xy, camera_params.screen_size);
-    return get_sdf_screen(screen_pose);
-}
+// fn get_sdf_screen(screen_pose: vec2<i32>) -> f32 {
+//     return textureLoad(sdf_in, screen_pose).r;
+// }
 
 fn raymarch(
     ray_origin:    vec2<f32>,
@@ -56,11 +51,10 @@ fn raymarch(
         }
 
         let h              = ray_origin + ray_progress * ray_direction;
-        let h_ndc          = world_to_ndc(h, camera_params.view_proj);
-        let h_screen       = ndc_to_screen(h_ndc, camera_params.screen_size);
-        let new_scene_dist = get_sdf_screen(h_screen);
+        let uv = world_to_sdf_uv(h, camera_params.view_proj, camera_params.inv_sdf_scale);
+        let new_scene_dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
 
-        if any(h_ndc < vec2<f32>(-1.0)) || any(h_ndc > vec2<f32>(1.0)) {
+        if any(uv < vec2<f32>(0.0)) || any(uv > vec2<f32>(1.0)) {
             let dist_to_light    = distance_squared(h, light_pose);
             let dist_to_occluder = scene_dist * scene_dist;
             if dist_to_light > dist_to_occluder && scene_dist < new_scene_dist * 0.5 {
@@ -123,7 +117,10 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     }
 
     var probe_irradiance = vec3<f32>(0.0);
-    if get_sdf_screen(probe_screen) > 0.0 {
+    
+    let uv = world_to_sdf_uv(probe_center_world, camera_params.view_proj, camera_params.inv_sdf_scale);
+    let dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
+    if dist > 0.0 {
 
         let ambient = state.gi_ambient * is_masked;;
 

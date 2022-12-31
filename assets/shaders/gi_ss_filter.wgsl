@@ -7,17 +7,14 @@
 @group(0) @binding(0) var<uniform> camera_params:     CameraParams;
 @group(0) @binding(1) var<uniform> state:             GiState;
 @group(0) @binding(2) var<storage> probes:            ProbeDataBuffer;
-@group(0) @binding(3) var          sdf_in:            texture_storage_2d<r16float,    read>;
-@group(0) @binding(4) var          ss_blend_in:       texture_storage_2d<rgba32float, read>;
-@group(0) @binding(5) var          ss_filter_out:     texture_storage_2d<rgba32float, write>;
+@group(0) @binding(3) var          sdf_in:            texture_2d<f32>;
+@group(0) @binding(4) var          sdf_in_sampler:    sampler;
+@group(0) @binding(5) var          ss_blend_in:       texture_storage_2d<rgba32float, read>;
+@group(0) @binding(6) var          ss_filter_out:     texture_storage_2d<rgba32float, write>;
 
 fn distance_squared(a: vec2<f32>, b: vec2<f32>) -> f32 {
     let c = a - b;
     return dot(c, c);
-}
-
-fn get_sdf_screen(screen_pose: vec2<i32>) -> f32 {
-    return textureLoad(sdf_in, screen_pose).r;
 }
 
 fn raymarch_occlusion(
@@ -37,7 +34,8 @@ fn raymarch_occlusion(
         }
 
         let h          = ray_origin + ray_progress * ray_direction;
-        let scene_dist = get_sdf_screen(world_to_screen(h, camera_params.screen_size, camera_params.view_proj));
+        let uv = world_to_sdf_uv(h, camera_params.view_proj, camera_params.inv_sdf_scale);
+        let scene_dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
 
         if (scene_dist <= 0.1) {
             return 0.0;

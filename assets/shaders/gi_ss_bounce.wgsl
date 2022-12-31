@@ -6,9 +6,10 @@
 
 @group(0) @binding(0) var<uniform> camera_params:     CameraParams;
 @group(0) @binding(1) var<uniform> state:             GiState;
-@group(0) @binding(2) var          sdf_in:            texture_storage_2d<r16float,    read>;
-@group(0) @binding(3) var          ss_probe_in:       texture_storage_2d<rgba16float, read>;
-@group(0) @binding(4) var          ss_bounce_out:     texture_storage_2d<rgba32float, write>;
+@group(0) @binding(2) var          sdf_in:            texture_2d<f32>;
+@group(0) @binding(3) var          sdf_in_sampler:    sampler;
+@group(0) @binding(4) var          ss_probe_in:       texture_storage_2d<rgba16float, read>;
+@group(0) @binding(5) var          ss_bounce_out:     texture_storage_2d<rgba32float, write>;
 
 
 fn hash(p: vec2<f32>) -> f32 {
@@ -18,16 +19,6 @@ fn hash(p: vec2<f32>) -> f32 {
 fn distance_squared(a: vec2<f32>, b: vec2<f32>) -> f32 {
     let c = a - b;
     return dot(c, c);
-}
-
-fn get_sdf_screen(screen_pose: vec2<i32>) -> f32 {
-    return textureLoad(sdf_in, screen_pose).r;
-}
-
-fn get_sdf_world(world_pose: vec2<f32>) -> f32 {
-    let ndc = vec4<f32>(world_pose, 0.0, 1.0) * camera_params.view_proj;
-    let screen_pose = ndc_to_screen(ndc.xy, camera_params.screen_size);
-    return get_sdf_screen(screen_pose);
 }
 
 struct RayMarchResult {
@@ -57,19 +48,18 @@ fn raymarch(
         h = ray_origin + ray_progress * ray_direction;
 
         if (ray_progress * ray_progress >= stop_at) {
-            return RayMarchResult(1.0, i, h_prev);
-        }
-
-        let h_ndc     = world_to_ndc(h, camera_params.view_proj);
-        let h_screen  = ndc_to_screen(h_ndc, camera_params.screen_size);
-
-        if any(h_ndc < vec2<f32>(-1.0)) || any(h_ndc > vec2<f32>(1.0)) {
             return RayMarchResult(0.0, i, h_prev);
         }
 
-        let scene_dist  = get_sdf_screen(h_screen);
+
+        let uv = world_to_sdf_uv(h, camera_params.view_proj, camera_params.inv_sdf_scale);
+        if any(uv < vec2<f32>(0.0)) || any(uv > vec2<f32>(1.0)) {
+            return RayMarchResult(0.0, i, h_prev);
+        }
+
+        let scene_dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
         if (scene_dist <= min_sdf) {
-            return RayMarchResult(0.0, i, h_prev);
+            return RayMarchResult(1.0, i, h);
         }
 
         // Jitter step.
@@ -163,7 +153,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
                 32,
             );
 
-            if raymarch_sample_to_probe.val <= 0.0 && raymarch_sample_to_probe.step < 1 {
+            if raymarch_sample_to_probe.val <= 0.0 || raymarch_sample_to_probe.step < 1 {
                 continue;
             }
 
@@ -199,8 +189,12 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
         }
     }
 
-    indirect_irradiance = indirect_irradiance / f32(total_rays);
-    total_irradiance  = 0.8 * indirect_irradiance + 0.2 * direct_irradiance;
+    if (total_rays > 0) {
+        indirect_irradiance = indirect_irradiance / f32(total_rays);
+        total_irradiance  = 0.8 * indirect_irradiance + 0.2 * direct_irradiance;   
+    } else {
+        total_irradiance  = 0.2 * direct_irradiance;  
+    }
 
     textureStore(ss_bounce_out, out_atlas_tile_pose, vec4(total_irradiance, probe.w));
 }

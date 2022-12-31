@@ -7,23 +7,21 @@ use bevy::render::texture::ImageSampler;
 
 use super::gi_config::GI_SCREEN_PROBE_SIZE;
 use super::gi_gpu_types::{
-    GiGpuCameraParams,
-    GiGpuLightOccluderBuffer,
-    GiGpuLightSourceBuffer,
-    GiGpuState, GiGpuProbeDataBuffer, GiGpuAmbientMaskBuffer,
+    GiGpuAmbientMaskBuffer, GiGpuCameraParams, GiGpuLightOccluderBuffer, GiGpuLightSourceBuffer,
+    GiGpuProbeDataBuffer, GiGpuState,
 };
 use super::gi_pipeline_assets::GiComputeAssets;
 
-const SDF_TARGET_FORMAT:       TextureFormat = TextureFormat::R16Float;
-const SS_PROBE_TARGET_FORMAT:  TextureFormat = TextureFormat::Rgba16Float;
+const SDF_TARGET_FORMAT: TextureFormat = TextureFormat::R16Float;
+const SS_PROBE_TARGET_FORMAT: TextureFormat = TextureFormat::Rgba16Float;
 const SS_BOUNCE_TARGET_FORMAT: TextureFormat = TextureFormat::Rgba32Float;
-const SS_BLEND_TARGET_FORMAT:  TextureFormat = TextureFormat::Rgba32Float;
+const SS_BLEND_TARGET_FORMAT: TextureFormat = TextureFormat::Rgba32Float;
 const SS_FILTER_TARGET_FORMAT: TextureFormat = TextureFormat::Rgba32Float;
 
-const SDF_PIPELINE_ENTRY:       &str = "main";
-const SS_PROBE_PIPELINE_ENTRY:  &str = "main";
+const SDF_PIPELINE_ENTRY: &str = "main";
+const SS_PROBE_PIPELINE_ENTRY: &str = "main";
 const SS_BOUNCE_PIPELINE_ENTRY: &str = "main";
-const SS_BLEND_PIPELINE_ENTRY:  &str = "main";
+const SS_BLEND_PIPELINE_ENTRY: &str = "main";
 const SS_FILTER_PIPELINE_ENTRY: &str = "main";
 
 #[derive(Component)]
@@ -47,44 +45,44 @@ pub struct GiPipelineTargetsWrapper {
 
 #[derive(Clone)]
 pub struct GiPipelineTargets {
-    pub(crate) sdf_target:        Handle<Image>,
-    pub(crate) ss_probe_target:   Handle<Image>,
-    pub(crate) ss_bounce_target:  Handle<Image>,
-    pub(crate) ss_blend_target:   Handle<Image>,
-    pub(crate) ss_filter_target:  Handle<Image>,
+    pub(crate) sdf_target: Handle<Image>,
+    pub(crate) ss_probe_target: Handle<Image>,
+    pub(crate) ss_bounce_target: Handle<Image>,
+    pub(crate) ss_blend_target: Handle<Image>,
+    pub(crate) ss_filter_target: Handle<Image>,
 }
 
 #[allow(dead_code)]
 #[derive(Resource)]
 pub struct GiPipelineBindGroups {
-    pub(crate) sdf_bind_group:        BindGroup,
-    pub(crate) ss_blend_bind_group:   BindGroup,
-    pub(crate) ss_probe_bind_group:   BindGroup,
-    pub(crate) ss_bounce_bind_group:  BindGroup,
-    pub(crate) ss_filter_bind_group:  BindGroup,
+    pub(crate) sdf_bind_group: BindGroup,
+    pub(crate) ss_blend_bind_group: BindGroup,
+    pub(crate) ss_probe_bind_group: BindGroup,
+    pub(crate) ss_bounce_bind_group: BindGroup,
+    pub(crate) ss_filter_bind_group: BindGroup,
 }
 
-fn create_texture_2d(size: (u32, u32), format: TextureFormat) -> Image {
-
-    let mut image = Image::new_fill(Extent3d {
-        width: size.0,
-        height: size.1,
-        ..Default::default()
-    }, TextureDimension::D2, &[
-        0, 0, 0, 0,  0, 0, 0, 0,
-        0, 0, 0, 0,  0, 0, 0, 0,
-        0, 0, 0, 0,  0, 0, 0, 0,
-        0, 0, 0, 0,  0, 0, 0, 0,
-    ], format);
+fn create_texture_2d(size: (u32, u32), format: TextureFormat, filter: FilterMode) -> Image {
+    let mut image = Image::new_fill(
+        Extent3d {
+            width: size.0,
+            height: size.1,
+            ..Default::default()
+        },
+        TextureDimension::D2,
+        &[
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ],
+        format,
+    );
 
     image.texture_descriptor.usage =
-        TextureUsages::COPY_DST |
-        TextureUsages::STORAGE_BINDING |
-        TextureUsages::TEXTURE_BINDING;
+        TextureUsages::COPY_DST | TextureUsages::STORAGE_BINDING | TextureUsages::TEXTURE_BINDING;
 
     image.sampler_descriptor = ImageSampler::Descriptor(SamplerDescriptor {
-        mag_filter: FilterMode::Nearest,
-        min_filter: FilterMode::Nearest,
+        mag_filter: filter,
+        min_filter: filter,
         address_mode_u: AddressMode::ClampToBorder,
         address_mode_v: AddressMode::ClampToBorder,
         address_mode_w: AddressMode::ClampToBorder,
@@ -95,10 +93,10 @@ fn create_texture_2d(size: (u32, u32), format: TextureFormat) -> Image {
 }
 
 pub fn system_setup_gi_pipeline(
-    mut commands:           Commands,
-    mut images:             ResMut<Assets<Image>>,
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
     mut gi_compute_targets: ResMut<GiPipelineTargetsWrapper>,
-    windows:                Res<Windows>,
+    windows: Res<Windows>,
 ) {
     let window = windows.get_primary().expect("failed to get window");
     let target_size = Extent3d {
@@ -107,19 +105,39 @@ pub fn system_setup_gi_pipeline(
         ..default()
     };
 
-    let sdf_tex       = create_texture_2d((target_size.width, target_size.height), SDF_TARGET_FORMAT);
-    let ss_probe_tex  = create_texture_2d((target_size.width, target_size.height), SS_PROBE_TARGET_FORMAT);
-    let ss_bounce_tex = create_texture_2d((target_size.width, target_size.height), SS_BOUNCE_TARGET_FORMAT);
-    let ss_blend_tex  = create_texture_2d((
-        target_size.width  / (GI_SCREEN_PROBE_SIZE as u32),
-        target_size.height / (GI_SCREEN_PROBE_SIZE as u32)
-    ), SS_BLEND_TARGET_FORMAT);
-    let ss_filter_tex = create_texture_2d((target_size.width, target_size.height), SS_FILTER_TARGET_FORMAT);
+    let sdf_tex = create_texture_2d(
+        (target_size.width, target_size.height),
+        SDF_TARGET_FORMAT,
+        FilterMode::Nearest,
+    );
+    let ss_probe_tex = create_texture_2d(
+        (target_size.width, target_size.height),
+        SS_PROBE_TARGET_FORMAT,
+        FilterMode::Nearest,
+    );
+    let ss_bounce_tex = create_texture_2d(
+        (target_size.width, target_size.height),
+        SS_BOUNCE_TARGET_FORMAT,
+        FilterMode::Nearest,
+    );
+    let ss_blend_tex = create_texture_2d(
+        (
+            target_size.width / (GI_SCREEN_PROBE_SIZE as u32),
+            target_size.height / (GI_SCREEN_PROBE_SIZE as u32),
+        ),
+        SS_BLEND_TARGET_FORMAT,
+        FilterMode::Nearest,
+    );
+    let ss_filter_tex = create_texture_2d(
+        (target_size.width, target_size.height),
+        SS_FILTER_TARGET_FORMAT,
+        FilterMode::Nearest,
+    );
 
-    let sdf_target       = images.add(sdf_tex);
-    let ss_probe_target  = images.add(ss_probe_tex);
+    let sdf_target = images.add(sdf_tex);
+    let ss_probe_target = images.add(ss_probe_tex);
     let ss_bounce_target = images.add(ss_bounce_tex);
-    let ss_blend_target  = images.add(ss_blend_tex);
+    let ss_blend_target = images.add(ss_blend_tex);
     let ss_filter_target = images.add(ss_filter_tex);
 
     let sdf_image_entity = commands
@@ -255,48 +273,50 @@ pub fn system_setup_gi_pipeline(
 
 #[derive(Resource)]
 pub struct GiPipeline {
-    pub sdf_bind_group_layout:        BindGroupLayout,
-    pub sdf_pipeline:                 CachedComputePipelineId,
-    pub ss_probe_bind_group_layout:   BindGroupLayout,
-    pub ss_probe_pipeline:            CachedComputePipelineId,
-    pub ss_bounce_bind_group_layout:  BindGroupLayout,
-    pub ss_bounce_pipeline:           CachedComputePipelineId,
-    pub ss_blend_bind_group_layout:   BindGroupLayout,
-    pub ss_blend_pipeline:            CachedComputePipelineId,
-    pub ss_filter_bind_group_layout:  BindGroupLayout,
-    pub ss_filter_pipeline:           CachedComputePipelineId,
+    pub sdf_bind_group_layout: BindGroupLayout,
+    pub sdf_pipeline: CachedComputePipelineId,
+    pub ss_probe_bind_group_layout: BindGroupLayout,
+    pub ss_probe_pipeline: CachedComputePipelineId,
+    pub ss_bounce_bind_group_layout: BindGroupLayout,
+    pub ss_bounce_pipeline: CachedComputePipelineId,
+    pub ss_blend_bind_group_layout: BindGroupLayout,
+    pub ss_blend_pipeline: CachedComputePipelineId,
+    pub ss_filter_bind_group_layout: BindGroupLayout,
+    pub ss_filter_pipeline: CachedComputePipelineId,
 }
 
 pub fn system_queue_bind_groups(
-    mut commands:       Commands,
-    pipeline:           Res<GiPipeline>,
-    gpu_images:         Res<RenderAssets<Image>>,
-    targets_wrapper:    Res<GiPipelineTargetsWrapper>,
-    gi_compute_assets:  Res<GiComputeAssets>,
-    render_device:      Res<RenderDevice>,
+    mut commands: Commands,
+    pipeline: Res<GiPipeline>,
+    gpu_images: Res<RenderAssets<Image>>,
+    targets_wrapper: Res<GiPipelineTargetsWrapper>,
+    gi_compute_assets: Res<GiComputeAssets>,
+    render_device: Res<RenderDevice>,
 ) {
     if let (
-            Some(light_sources),
-            Some(light_occluders),
-            Some(camera_params),
-            Some(gi_state),
-            Some(probes),
-            Some(ambient_masks),
-        ) = (
-            gi_compute_assets.light_sources.binding(),
-            gi_compute_assets.light_occluders.binding(),
-            gi_compute_assets.camera_params.binding(),
-            gi_compute_assets.gi_state.binding(),
-            gi_compute_assets.probes.binding(),
-            gi_compute_assets.ambient_masks.binding(),
+        Some(light_sources),
+        Some(light_occluders),
+        Some(camera_params),
+        Some(gi_state),
+        Some(probes),
+        Some(ambient_masks),
+    ) = (
+        gi_compute_assets.light_sources.binding(),
+        gi_compute_assets.light_occluders.binding(),
+        gi_compute_assets.camera_params.binding(),
+        gi_compute_assets.gi_state.binding(),
+        gi_compute_assets.probes.binding(),
+        gi_compute_assets.ambient_masks.binding(),
     ) {
+        let targets = targets_wrapper
+            .targets
+            .as_ref()
+            .expect("Targets should be initialized");
 
-        let targets = targets_wrapper.targets.as_ref().expect("Targets should be initialized");
-
-        let sdf_view_image  = &gpu_images[&targets.sdf_target];
-        let ss_probe_image  = &gpu_images[&targets.ss_probe_target];
+        let sdf_view_image = &gpu_images[&targets.sdf_target];
+        let ss_probe_image = &gpu_images[&targets.ss_probe_target];
         let ss_bounce_image = &gpu_images[&targets.ss_bounce_target];
-        let ss_blend_image  = &gpu_images[&targets.ss_blend_target];
+        let ss_blend_image = &gpu_images[&targets.ss_blend_target];
         let ss_filter_image = &gpu_images[&targets.ss_filter_target];
 
         let sdf_bind_group = render_device.create_bind_group(&BindGroupDescriptor {
@@ -348,6 +368,10 @@ pub fn system_queue_bind_groups(
                 },
                 BindGroupEntry {
                     binding: 6,
+                    resource: BindingResource::Sampler(&sdf_view_image.sampler),
+                },
+                BindGroupEntry {
+                    binding: 7,
                     resource: BindingResource::TextureView(&ss_probe_image.texture_view),
                 },
             ],
@@ -371,10 +395,14 @@ pub fn system_queue_bind_groups(
                 },
                 BindGroupEntry {
                     binding: 3,
-                    resource: BindingResource::TextureView(&ss_probe_image.texture_view),
+                    resource: BindingResource::Sampler(&sdf_view_image.sampler),
                 },
                 BindGroupEntry {
                     binding: 4,
+                    resource: BindingResource::TextureView(&ss_probe_image.texture_view),
+                },
+                BindGroupEntry {
+                    binding: 5,
                     resource: BindingResource::TextureView(&ss_bounce_image.texture_view),
                 },
             ],
@@ -402,10 +430,14 @@ pub fn system_queue_bind_groups(
                 },
                 BindGroupEntry {
                     binding: 4,
-                    resource: BindingResource::TextureView(&ss_bounce_image.texture_view),
+                    resource: BindingResource::Sampler(&sdf_view_image.sampler),
                 },
                 BindGroupEntry {
                     binding: 5,
+                    resource: BindingResource::TextureView(&ss_bounce_image.texture_view),
+                },
+                BindGroupEntry {
+                    binding: 6,
                     resource: BindingResource::TextureView(&ss_blend_image.texture_view),
                 },
             ],
@@ -433,10 +465,14 @@ pub fn system_queue_bind_groups(
                 },
                 BindGroupEntry {
                     binding: 4,
-                    resource: BindingResource::TextureView(&ss_blend_image.texture_view),
+                    resource: BindingResource::Sampler(&sdf_view_image.sampler),
                 },
                 BindGroupEntry {
                     binding: 5,
+                    resource: BindingResource::TextureView(&ss_blend_image.texture_view),
+                },
+                BindGroupEntry {
+                    binding: 6,
                     resource: BindingResource::TextureView(&ss_filter_image.texture_view),
                 },
             ],
@@ -454,365 +490,369 @@ pub fn system_queue_bind_groups(
 
 impl FromWorld for GiPipeline {
     fn from_world(world: &mut World) -> Self {
-
         let render_device = world.resource::<RenderDevice>();
 
-        let sdf_bind_group_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            label: Some("sdf_bind_group_layout"),
-            entries: &[
-                // Camera.
-                BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: Some(GiGpuCameraParams::min_size()),
+        let sdf_bind_group_layout =
+            render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+                label: Some("sdf_bind_group_layout"),
+                entries: &[
+                    // Camera.
+                    BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: Some(GiGpuCameraParams::min_size()),
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-                // Light occluders.
-                BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: Some(GiGpuLightOccluderBuffer::min_size()),
+                    // Light occluders.
+                    BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: Some(GiGpuLightOccluderBuffer::min_size()),
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-                // SDF texture.
-                BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::StorageTexture {
-                        access: StorageTextureAccess::ReadWrite,
-                        format: SDF_TARGET_FORMAT,
-                        view_dimension: TextureViewDimension::D2,
+                    // SDF texture.
+                    BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::StorageTexture {
+                            access: StorageTextureAccess::ReadWrite,
+                            format: SDF_TARGET_FORMAT,
+                            view_dimension: TextureViewDimension::D2,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-            ],
-        });
+                ],
+            });
 
-        let ss_probe_bind_group_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            label: Some("ss_probe_bind_group_layout"),
-            entries: &[
-                // Camera.
-                BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: Some(GiGpuCameraParams::min_size()),
+        let ss_probe_bind_group_layout =
+            render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+                label: Some("ss_probe_bind_group_layout"),
+                entries: &[
+                    // Camera.
+                    BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: Some(GiGpuCameraParams::min_size()),
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // GI State.
-                BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: Some(GiGpuState::min_size()),
+                    // GI State.
+                    BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: Some(GiGpuState::min_size()),
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // Probes.
-                BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: Some(GiGpuProbeDataBuffer::min_size()),
+                    // Probes.
+                    BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: Some(GiGpuProbeDataBuffer::min_size()),
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // AmbientMasks.
-                BindGroupLayoutEntry {
-                    binding: 3,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: Some(GiGpuAmbientMaskBuffer::min_size()),
+                    // AmbientMasks.
+                    BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: Some(GiGpuAmbientMaskBuffer::min_size()),
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // Light sources.
-                BindGroupLayoutEntry {
-                    binding: 4,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: Some(GiGpuLightSourceBuffer::min_size()),
+                    // Light sources.
+                    BindGroupLayoutEntry {
+                        binding: 4,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: Some(GiGpuLightSourceBuffer::min_size()),
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // SDF.
-                BindGroupLayoutEntry {
-                    binding: 5,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::StorageTexture {
-                        access: StorageTextureAccess::ReadOnly,
-                        format: SDF_TARGET_FORMAT,
-                        view_dimension: TextureViewDimension::D2,
+                    // SDF.
+                    BindGroupLayoutEntry {
+                        binding: 5,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Texture {
+                            sample_type: TextureSampleType::Float { filterable: true },
+                            view_dimension: TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // SS Probe.
-                BindGroupLayoutEntry {
-                    binding: 6,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::StorageTexture {
-                        access: StorageTextureAccess::WriteOnly,
-                        format: SS_PROBE_TARGET_FORMAT,
-                        view_dimension: TextureViewDimension::D2,
+                    // SDF Sampler.
+                    BindGroupLayoutEntry {
+                        binding: 6,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Sampler(SamplerBindingType::Filtering),
+                        count: None,
                     },
-                    count: None,
-                },
-            ],
-        });
-
-        let ss_bounce_bind_group_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            label: Some("ss_bounce_bind_group_layout".into()),
-            entries: &[
-                // Camera.
-                BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: Some(GiGpuCameraParams::min_size()),
+                    // SS Probe.
+                    BindGroupLayoutEntry {
+                        binding: 7,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::StorageTexture {
+                            access: StorageTextureAccess::WriteOnly,
+                            format: SS_PROBE_TARGET_FORMAT,
+                            view_dimension: TextureViewDimension::D2,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
+                ],
+            });
 
-                // GI State.
-                BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: Some(GiGpuState::min_size()),
+        let ss_bounce_bind_group_layout =
+            render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+                label: Some("ss_bounce_bind_group_layout".into()),
+                entries: &[
+                    // Camera.
+                    BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: Some(GiGpuCameraParams::min_size()),
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // SDF.
-                BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::StorageTexture {
-                        access: StorageTextureAccess::ReadOnly,
-                        format: SDF_TARGET_FORMAT,
-                        view_dimension: TextureViewDimension::D2,
+                    // GI State.
+                    BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: Some(GiGpuState::min_size()),
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // SS Probe.
-                BindGroupLayoutEntry {
-                    binding: 3,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::StorageTexture {
-                        access: StorageTextureAccess::ReadOnly,
-                        format: SS_PROBE_TARGET_FORMAT,
-                        view_dimension: TextureViewDimension::D2,
+                    // SDF.
+                    BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Texture {
+                            sample_type: TextureSampleType::Float { filterable: true },
+                            view_dimension: TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // SS Bounce.
-                BindGroupLayoutEntry {
-                    binding: 4,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::StorageTexture {
-                        access: StorageTextureAccess::WriteOnly,
-                        format: SS_BOUNCE_TARGET_FORMAT,
-                        view_dimension: TextureViewDimension::D2,
+                    // SDF Sampler.
+                    BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Sampler(SamplerBindingType::Filtering),
+                        count: None,
                     },
-                    count: None,
-                },
-            ],
-        });
-
-
-        let ss_blend_bind_group_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            label: Some("ss_blend_bind_group_layout".into()),
-            entries: &[
-                // Camera.
-                BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: Some(GiGpuCameraParams::min_size()),
+                    // SS Probe.
+                    BindGroupLayoutEntry {
+                        binding: 4,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::StorageTexture {
+                            access: StorageTextureAccess::ReadOnly,
+                            format: SS_PROBE_TARGET_FORMAT,
+                            view_dimension: TextureViewDimension::D2,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // GI State.
-                BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: Some(GiGpuState::min_size()),
+                    // SS Bounce.
+                    BindGroupLayoutEntry {
+                        binding: 5,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::StorageTexture {
+                            access: StorageTextureAccess::WriteOnly,
+                            format: SS_BOUNCE_TARGET_FORMAT,
+                            view_dimension: TextureViewDimension::D2,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
+                ],
+            });
 
-                // Probes.
-                BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: Some(GiGpuProbeDataBuffer::min_size()),
+        let ss_blend_bind_group_layout =
+            render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+                label: Some("ss_blend_bind_group_layout".into()),
+                entries: &[
+                    // Camera.
+                    BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: Some(GiGpuCameraParams::min_size()),
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // SDF.
-                BindGroupLayoutEntry {
-                    binding: 3,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::StorageTexture {
-                        access: StorageTextureAccess::ReadOnly,
-                        format: SDF_TARGET_FORMAT,
-                        view_dimension: TextureViewDimension::D2,
+                    // GI State.
+                    BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: Some(GiGpuState::min_size()),
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // SS Bounces.
-                BindGroupLayoutEntry {
-                    binding: 4,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::StorageTexture {
-                        access: StorageTextureAccess::ReadOnly,
-                        format: SS_BOUNCE_TARGET_FORMAT,
-                        view_dimension: TextureViewDimension::D2,
+                    // Probes.
+                    BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: Some(GiGpuProbeDataBuffer::min_size()),
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // SS Blend.
-                BindGroupLayoutEntry {
-                    binding: 5,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::StorageTexture {
-                        access: StorageTextureAccess::WriteOnly,
-                        format: SS_BLEND_TARGET_FORMAT,
-                        view_dimension: TextureViewDimension::D2,
+                    // SDF.
+                    BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Texture {
+                            sample_type: TextureSampleType::Float { filterable: true },
+                            view_dimension: TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-            ],
-        });
-
-
-        let ss_filter_bind_group_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            label: Some("ss_filter_bind_group_layout".into()),
-            entries: &[
-                // Camera.
-                BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: Some(GiGpuCameraParams::min_size()),
+                    // SDF Sampler.
+                    BindGroupLayoutEntry {
+                        binding: 4,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Sampler(SamplerBindingType::Filtering),
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // GI State.
-                BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: Some(GiGpuState::min_size()),
+                    // SS Bounces.
+                    BindGroupLayoutEntry {
+                        binding: 5,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::StorageTexture {
+                            access: StorageTextureAccess::ReadOnly,
+                            format: SS_BOUNCE_TARGET_FORMAT,
+                            view_dimension: TextureViewDimension::D2,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // Probes.
-                BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: Some(GiGpuProbeDataBuffer::min_size()),
+                    // SS Blend.
+                    BindGroupLayoutEntry {
+                        binding: 6,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::StorageTexture {
+                            access: StorageTextureAccess::WriteOnly,
+                            format: SS_BLEND_TARGET_FORMAT,
+                            view_dimension: TextureViewDimension::D2,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
+                ],
+            });
 
-                // SDF.
-                BindGroupLayoutEntry {
-                    binding: 3,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::StorageTexture {
-                        access: StorageTextureAccess::ReadOnly,
-                        format: SDF_TARGET_FORMAT,
-                        view_dimension: TextureViewDimension::D2,
+        let ss_filter_bind_group_layout =
+            render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+                label: Some("ss_filter_bind_group_layout".into()),
+                entries: &[
+                    // Camera.
+                    BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: Some(GiGpuCameraParams::min_size()),
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // SS Blend.
-                BindGroupLayoutEntry {
-                    binding: 4,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::StorageTexture {
-                        access: StorageTextureAccess::ReadOnly,
-                        format: SS_BLEND_TARGET_FORMAT,
-                        view_dimension: TextureViewDimension::D2,
+                    // GI State.
+                    BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: Some(GiGpuState::min_size()),
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-
-                // SS Filter.
-                BindGroupLayoutEntry {
-                    binding: 5,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::StorageTexture {
-                        access: StorageTextureAccess::WriteOnly,
-                        format: SS_FILTER_TARGET_FORMAT,
-                        view_dimension: TextureViewDimension::D2,
+                    // Probes.
+                    BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: Some(GiGpuProbeDataBuffer::min_size()),
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-            ],
-        });
+                    // SDF.
+                    BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Texture {
+                            sample_type: TextureSampleType::Float { filterable: true },
+                            view_dimension: TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    // SDF Sampler.
+                    BindGroupLayoutEntry {
+                        binding: 4,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Sampler(SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                    // SS Blend.
+                    BindGroupLayoutEntry {
+                        binding: 5,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::StorageTexture {
+                            access: StorageTextureAccess::ReadOnly,
+                            format: SS_BLEND_TARGET_FORMAT,
+                            view_dimension: TextureViewDimension::D2,
+                        },
+                        count: None,
+                    },
+                    // SS Filter.
+                    BindGroupLayoutEntry {
+                        binding: 6,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::StorageTexture {
+                            access: StorageTextureAccess::WriteOnly,
+                            format: SS_FILTER_TARGET_FORMAT,
+                            view_dimension: TextureViewDimension::D2,
+                        },
+                        count: None,
+                    },
+                ],
+            });
 
-        let (
-            shader_sdf,
-            gi_ss_probe,
-            gi_ss_bounce,
-            gi_ss_blend,
-            gi_ss_filter,
-        ) = {
+        let (shader_sdf, gi_ss_probe, gi_ss_bounce, gi_ss_blend, gi_ss_filter) = {
             let assets_server = world.resource::<AssetServer>();
             (
                 assets_server.load("shaders/gi_sdf.wgsl"),
@@ -824,7 +864,6 @@ impl FromWorld for GiPipeline {
         };
 
         let mut pipeline_cache = world.resource_mut::<PipelineCache>();
-
 
         let sdf_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
             label: Some("gi_sdf_pipeline".into()),
