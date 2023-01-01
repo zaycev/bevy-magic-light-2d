@@ -96,7 +96,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
                 sdf_in,
                 sdf_in_sampler,
                 camera_params,
-                0.0
+                0.5
             );
 
             if raymarch_sample_to_probe.success <= 0 || raymarch_sample_to_probe.step < 1 {
@@ -122,7 +122,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
 
             // Discrad if sample offscreen.
             let sample_ndc = world_to_ndc(sample_world, camera_params.view_proj);
-            if any(sample_ndc < vec2<f32>(-1.0)) || any(sample_ndc > vec2<f32>(1.0)) {
+            if any(sample_ndc < vec2<f32>(-1.0, -1.0)) || any(sample_ndc > vec2<f32>(1.0, 1.0)) {
                 continue;
             }
 
@@ -136,7 +136,8 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     }
 
     indirect_irradiance = indirect_irradiance / f32(total_rays);
-    total_irradiance  = cfg.indirect_light_contrib * indirect_irradiance + cfg.direct_light_contrib * direct_irradiance;
+    total_irradiance  = cfg.indirect_light_contrib * indirect_irradiance
+                      + cfg.direct_light_contrib   * direct_irradiance;
 
     textureStore(ss_bounce_out, out_atlas_tile_pose, vec4(total_irradiance, probe.w));
 }

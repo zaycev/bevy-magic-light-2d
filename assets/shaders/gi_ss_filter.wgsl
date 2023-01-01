@@ -75,7 +75,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
 
             // Discard occluded probes.
             if raymarch(sample_world_pose, p_world_pose,
-                32,
+                5,
                 sdf_in,
                 sdf_in_sampler,
                 camera_params,

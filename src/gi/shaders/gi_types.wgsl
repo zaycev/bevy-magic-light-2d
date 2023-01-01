@@ -59,23 +59,3 @@ struct SkylightMaskBuffer {
     count: u32,
     data:  array<SkylightMask>,
 }
-
-/// Quaternion Inverse
-fn quatInv(q: Quaternion) -> Quaternion {
-    let q = q.data;
-    // assume it's a unit quaternion, so just Conjugate
-    return Quaternion(vec4<f32>( -q.xyz, q.w ));
-}
-/// Quaternion multiplication
-fn quatDot(q1: Quaternion, q2: Quaternion) -> Quaternion {
-    let q1 = q1.data;
-    let q2 = q2.data;
-    let scalar = q1.w * q2.w - dot(q1.xyz, q2.xyz);
-    let v = cross(q1.xyz, q2.xyz) + q1.w * q2.xyz + q2.w * q1.xyz;
-    return Quaternion(vec4<f32>(v, scalar));
-}
-/// Apply unit quaternion to vector (rotate vector)
-fn quatMul(q: Quaternion, v: vec3<f32>) -> vec3<f32> {
-    let r = quatDot(q, quatDot(Quaternion(vec4<f32>(v, 0.0)), quatInv(q)));
-    return r.data.xyz;
-}

@@ -108,13 +108,8 @@ impl Plugin for BevyMagicLight2DPlugin {
     }
 }
 
+#[derive(Default)]
 struct LightPass2DNode {}
-
-impl Default for LightPass2DNode {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 #[rustfmt::skip]
 pub(crate) fn detect_target_sizes(
@@ -129,12 +124,12 @@ pub(crate) fn detect_target_sizes(
     );
 
     target_sizes.primary_target_size  = primary_size;
-    target_sizes.primary_target_isize = primary_size.as_ivec2();
-    target_sizes.primary_target_usize = primary_size.as_uvec2();
+    target_sizes.primary_target_isize = target_sizes.primary_target_size.as_ivec2();
+    target_sizes.primary_target_usize = target_sizes.primary_target_size.as_uvec2();
 
-    target_sizes.sdf_target_size      = primary_size * 2.0;
-    target_sizes.sdf_target_isize     = primary_size.as_ivec2() * 2;
-    target_sizes.sdf_target_usize     = primary_size.as_uvec2() * 2;
+    target_sizes.sdf_target_size      = primary_size / 2.0;
+    target_sizes.sdf_target_isize     = target_sizes.sdf_target_size.as_ivec2();
+    target_sizes.sdf_target_usize     = target_sizes.sdf_target_size.as_uvec2();
 }
 
 impl render_graph::Node for LightPass2DNode {

@@ -2,8 +2,8 @@ use std::f64::consts::PI;
 
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
-use bevy_magic_light_2d::prelude::*;
 use bevy_inspector_egui::prelude::*;
+use bevy_magic_light_2d::prelude::*;
 
 #[derive(Debug, Component)]
 struct Mover;
@@ -50,7 +50,7 @@ fn setup(mut commands: Commands, post_processing_target: Res<PostProcessingTarge
             LightOccluder2D {
                 h_size: Vec2::new(80.0, 40.0),
             },
-            Mover
+            Mover,
         ))
         .id();
 

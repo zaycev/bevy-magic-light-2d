@@ -1,6 +1,6 @@
-use bevy::prelude::{Mat4, Vec2, Vec3, Transform, Quat, Vec4};
-use bevy::render::render_resource::ShaderType;
 use bevy::math::Vec3Swizzles;
+use bevy::prelude::{Mat4, Transform, Vec2, Vec3, Vec4};
+use bevy::render::render_resource::ShaderType;
 
 use crate::gi::constants::GI_SCREEN_PROBE_SIZE;
 use crate::gi::types::OmniLightSource2D;
@@ -47,7 +47,11 @@ impl GpuLightOccluder2D {
         let center = transform.translation.xy();
         let rotation = transform.rotation.inverse().into();
         // let h_extent = h_extent * transform.scale.xy();
-        Self { center, rotation, h_extent }
+        Self {
+            center,
+            rotation,
+            h_extent,
+        }
     }
 }
 
