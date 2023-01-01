@@ -1,18 +1,18 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-      {
-        "type": "lldb",
-        "request": "launch",
-        "name": "Debug Executab;e",
-        "cargo": {
-          "args": ["build"],
-        },
-        "args": [],
-        "cwd": "${workspaceFolder}",
-        "env": {
-            "CARGO_MANIFEST_DIR": "${workspaceFolder}"
-        }
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug Executab;e",
+      "cargo": {
+        "args": ["build"]
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "CARGO_MANIFEST_DIR": "${workspaceFolder}"
       }
-    ]
-  }
+    }
+  ]
+}
