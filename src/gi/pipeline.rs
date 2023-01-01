@@ -1,4 +1,3 @@
-use crate::gi::resource::ComputedTargetSizes;
 use bevy::prelude::*;
 use bevy::render::extract_resource::ExtractResource;
 use bevy::render::render_asset::RenderAssets;
@@ -12,6 +11,7 @@ use super::types_gpu::{
     GpuCameraParams, GpuLightOccluderBuffer, GpuLightPassParams, GpuLightSourceBuffer,
     GpuProbeDataBuffer, GpuSkylightMaskBuffer,
 };
+use crate::gi::resource::ComputedTargetSizes;
 
 const SDF_TARGET_FORMAT: TextureFormat = TextureFormat::R16Float;
 const SS_PROBE_TARGET_FORMAT: TextureFormat = TextureFormat::Rgba16Float;
