@@ -9,7 +9,9 @@
 
 fn sdf_aabb_occluder(p: vec2<f32>, occluder_i: i32) -> f32 {
     let occluder = light_occluder_buffer.data[occluder_i];
-    let d        = abs(p - occluder.center) - occluder.h_extent;
+    let local_p = occluder.center - p;
+    let local_p = quatMul(occluder.rotation, vec3<f32>(local_p, 0.0)).xy;
+    let d        = abs(local_p) - occluder.h_extent;
     let d_max    = max(d, vec2<f32>(0.0));
     let d_o      = fast_length_2d(d_max);
     let d_i      = min(max(d.x, d.y), 0.0);
@@ -30,7 +32,6 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
      let texel_pos  = vec2<i32>(invocation_id.xy);
      let dims = textureDimensions(sdf_out);
      let uv = (vec2<f32>(texel_pos) + 0.5) / vec2<f32>(dims);
-    //  let uv = vec2<f32>(uv.x, 1.0 - uv.y);
 
      let world_pose = sdf_uv_to_world(uv, 
         camera_params.inverse_view_proj,

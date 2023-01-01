@@ -1,5 +1,6 @@
-use bevy::prelude::{Mat4, Vec2, Vec3};
+use bevy::prelude::{Mat4, Vec2, Vec3, Transform, Quat, Vec4};
 use bevy::render::render_resource::ShaderType;
+use bevy::math::Vec3Swizzles;
 
 use crate::gi::constants::GI_SCREEN_PROBE_SIZE;
 use crate::gi::types::OmniLightSource2D;
@@ -36,13 +37,17 @@ pub(crate) struct GpuLightSourceBuffer {
 #[rustfmt::skip]
 #[derive(Default, Clone, ShaderType)]
 pub(crate) struct GpuLightOccluder2D {
-    pub center:   Vec2,
+    pub center: Vec2,
+    pub rotation: Vec4,
     pub h_extent: Vec2,
 }
 
 impl GpuLightOccluder2D {
-    pub fn new(center: Vec2, h_extent: Vec2) -> Self {
-        Self { center, h_extent }
+    pub fn new(transform: &Transform, h_extent: Vec2) -> Self {
+        let center = transform.translation.xy();
+        let rotation = transform.rotation.inverse().into();
+        let h_extent = h_extent * transform.scale.xy();
+        Self { center, rotation, h_extent }
     }
 }
 

@@ -129,9 +129,9 @@ pub(crate) fn detect_target_sizes(
     target_sizes.primary_target_isize = primary_size.as_ivec2();
     target_sizes.primary_target_usize = primary_size.as_uvec2();
 
-    target_sizes.sdf_target_size      = primary_size;
-    target_sizes.sdf_target_isize     = primary_size.as_ivec2();
-    target_sizes.sdf_target_usize     = primary_size.as_uvec2();
+    target_sizes.sdf_target_size      = primary_size * 2.0;
+    target_sizes.sdf_target_isize     = primary_size.as_ivec2() * 2;
+    target_sizes.sdf_target_usize     = primary_size.as_uvec2() * 2;
 }
 
 impl render_graph::Node for LightPass2DNode {
@@ -167,6 +167,8 @@ impl render_graph::Node for LightPass2DNode {
 
                 let primary_w = target_sizes.primary_target_usize.x;
                 let primary_h = target_sizes.primary_target_usize.y;
+                let sdf_w = target_sizes.sdf_target_usize.x;
+                let sdf_h = target_sizes.sdf_target_usize.y;
 
                 let mut pass =
                     render_context
@@ -176,9 +178,8 @@ impl render_graph::Node for LightPass2DNode {
                         });
 
                 {
-                    // TODO: this should contain SDF target size.
-                    let grid_w = primary_w / WORKGROUP_SIZE;
-                    let grid_h = primary_h / WORKGROUP_SIZE;
+                    let grid_w = sdf_w / WORKGROUP_SIZE;
+                    let grid_h = sdf_h / WORKGROUP_SIZE;
                     pass.set_bind_group(0, &pipeline_bind_groups.sdf_bind_group, &[]);
                     pass.set_pipeline(sdf_pipeline);
                     pass.dispatch_workgroups(grid_w, grid_h, 1);

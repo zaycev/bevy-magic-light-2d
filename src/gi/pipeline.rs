@@ -110,7 +110,7 @@ pub fn system_setup_gi_pipeline(
     };
 
     let sdf_tex = create_texture_2d(
-        (target_size.width, target_size.height),
+        targets_sizes.sdf_target_usize.into(),
         SDF_TARGET_FORMAT,
         FilterMode::Linear,
     );
