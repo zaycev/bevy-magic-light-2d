@@ -6,7 +6,6 @@
 @group(0) @binding(1) var<storage> light_occluder_buffer: LightOccluderBuffer;
 @group(0) @binding(2) var          sdf_out:               texture_storage_2d<r16float, read_write>;
 
-
 fn sdf_aabb_occluder(p: vec2<f32>, occluder_i: i32) -> f32 {
     let occluder = light_occluder_buffer.data[occluder_i];
     let local_p = occluder.center - p;
@@ -37,13 +36,15 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
         camera_params.inverse_view_proj,
         camera_params.sdf_scale);
 
-     let sdf_min      = 0.9;
+    //  let sdf_min      = 0.9;
      var sdf_merged   = sdf_aabb_occluder(world_pose.xy, 0);
      for (var i: i32 = 1; i < i32(light_occluder_buffer.count); i++) {
-         sdf_merged = round_merge(sdf_merged, sdf_aabb_occluder(world_pose.xy, i), sdf_min);
+        //  sdf_merged = round_merge(sdf_merged, sdf_aabb_occluder(world_pose.xy, i), sdf_min);
+        sdf_merged = min(sdf_merged, sdf_aabb_occluder(world_pose.xy, i));
      }
 
-     var sdf = clamp(sdf_merged, sdf_min, 1e+4);
+    //  var sdf = clamp(sdf_merged, sdf_min, 1e+4);
+    let sdf = sdf_merged;
 
      textureStore(sdf_out, texel_pos, vec4<f32>(sdf, 0.0, 0.0, 0.0));
 }

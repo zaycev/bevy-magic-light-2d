@@ -3,6 +3,7 @@
 #import bevy_magic_light_2d::gi_camera
 #import bevy_magic_light_2d::gi_attenuation
 #import bevy_magic_light_2d::gi_halton
+#import bevy_magic_light_2d::gi_raymarch
 
 @group(0) @binding(0) var<uniform> camera_params:         CameraParams;
 @group(0) @binding(1) var<uniform> cfg:                   LightPassParams;
@@ -13,67 +14,57 @@
 @group(0) @binding(6) var          sdf_in_sampler:        sampler;
 @group(0) @binding(7) var          ss_probe_out:          texture_storage_2d<rgba16float, write>;
 
+// fn raymarch(
+//     ray_origin:    vec2<f32>,
+//     light_pose:    vec2<f32>,
+//     max_steps:     i32,
+// ) -> f32 {
 
-fn hash(p: vec2<f32>) -> f32 {
-    return fract(sin(dot(p, vec2<f32>(11.9898, 78.233))) * 43758.5453);
-}
+//     let rm_max_steps:      i32 = max_steps;
+//     let rm_jitter_contrib: f32 = 0.5;
+//     let rm_sdf_contrib:    f32 = 0.1;
 
-fn distance_squared(a: vec2<f32>, b: vec2<f32>) -> f32 {
-    let c = a - b;
-    return dot(c, c);
-}
+//     let ray_direction          = fast_normalize_2d(light_pose - ray_origin);
+//     let stop_at                = distance_squared(ray_origin, light_pose);
 
-fn raymarch(
-    ray_origin:    vec2<f32>,
-    light_pose:    vec2<f32>,
-    max_steps:     i32,
-) -> f32 {
+//     var ray_progress:   f32    = 0.0;
+//     var light_contrib:  f32    = 1.0;
+//     var scene_dist:     f32    = 0.0;
 
-    let rm_max_steps:      i32 = max_steps;
-    let rm_jitter_contrib: f32 = 0.5;
-    let rm_sdf_contrib:    f32 = 0.1;
+//     for (var i: i32 = 0; i < rm_max_steps; i++) {
 
-    let ray_direction          = fast_normalize_2d(light_pose - ray_origin);
-    let stop_at                = distance_squared(ray_origin, light_pose);
+//         if (ray_progress * ray_progress >= stop_at) {
+//             return light_contrib * rm_sdf_contrib + (1.0 - rm_sdf_contrib);
+//         }
 
-    var ray_progress:   f32    = 0.0;
-    var light_contrib:  f32    = 1.0;
-    var scene_dist:     f32    = 0.0;
+//         let h              = ray_origin + ray_progress * ray_direction;
+//         let uv = world_to_sdf_uv(h, camera_params.view_proj, camera_params.inv_sdf_scale);
+//         let new_scene_dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
 
-    for (var i: i32 = 0; i < rm_max_steps; i++) {
+//         if any(uv < vec2<f32>(0.0)) || any(uv > vec2<f32>(1.0)) {
+//             let dist_to_light    = distance_squared(h, light_pose);
+//             let dist_to_occluder = scene_dist * scene_dist;
+//             if dist_to_light > dist_to_occluder && scene_dist < new_scene_dist * 0.5 {
+//                 return 0.0;
+//             } else {
+//             return light_contrib * rm_sdf_contrib + (1.0 - rm_sdf_contrib);
+//             }
+//         }
 
-        if (ray_progress * ray_progress >= stop_at) {
-            return light_contrib * rm_sdf_contrib + (1.0 - rm_sdf_contrib);
-        }
+//         scene_dist = new_scene_dist;
+//         if (scene_dist <= 0.1) {
+//             return 0.0;
+//         }
 
-        let h              = ray_origin + ray_progress * ray_direction;
-        let uv = world_to_sdf_uv(h, camera_params.view_proj, camera_params.inv_sdf_scale);
-        let new_scene_dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
+//         light_contrib = min(light_contrib, scene_dist / ray_progress);
 
-        if any(uv < vec2<f32>(0.0)) || any(uv > vec2<f32>(1.0)) {
-            let dist_to_light    = distance_squared(h, light_pose);
-            let dist_to_occluder = scene_dist * scene_dist;
-            if dist_to_light > dist_to_occluder && scene_dist < new_scene_dist * 0.5 {
-                return 0.0;
-            } else {
-            return light_contrib * rm_sdf_contrib + (1.0 - rm_sdf_contrib);
-            }
-        }
+//         // Jitter step.
+//         let jitter = radical_inverse_vdc(i);
+//         ray_progress += scene_dist * (1.0 - rm_jitter_contrib) + rm_jitter_contrib * scene_dist * jitter;
+//     }
 
-        scene_dist = new_scene_dist;
-        if (scene_dist <= 0.1) {
-            return 0.0;
-        }
-
-        light_contrib = min(light_contrib, scene_dist / ray_progress);
-
-        // Jitter step.
-        let jitter = radical_inverse_vdc(i);
-        ray_progress += scene_dist * (1.0 - rm_jitter_contrib) + rm_jitter_contrib * scene_dist * jitter;
-    }
-
-    return 0.0;
-}
+//     return 0.0;
+// }
 
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
@@ -126,10 +117,14 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
 
             let light = lights_source_buffer.data[i];
 
-            let occlusion = raymarch(
+            let ray_result = raymarch(
                 probe_center_world,
                 light.center,
                 32,
+                sdf_in,
+                sdf_in_sampler,
+                camera_params,
+                0.0
             );
 
             let att = light_attenuation_r2(
@@ -140,7 +135,9 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
                 light.falloff.z,
             );
 
-            probe_irradiance += light.color * occlusion * att * light.intensity;
+            if (ray_result.success > 0) {
+                probe_irradiance += light.color * att * light.intensity;
+            }
         }
 
     }

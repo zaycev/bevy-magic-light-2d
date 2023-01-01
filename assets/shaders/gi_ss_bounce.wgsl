@@ -3,6 +3,7 @@
 #import bevy_magic_light_2d::gi_camera
 #import bevy_magic_light_2d::gi_halton
 #import bevy_magic_light_2d::gi_attenuation
+#import bevy_magic_light_2d::gi_raymarch
 
 @group(0) @binding(0) var<uniform> camera_params:     CameraParams;
 @group(0) @binding(1) var<uniform> cfg:               LightPassParams;
@@ -10,66 +11,6 @@
 @group(0) @binding(3) var          sdf_in_sampler:    sampler;
 @group(0) @binding(4) var          ss_probe_in:       texture_storage_2d<rgba16float, read>;
 @group(0) @binding(5) var          ss_bounce_out:     texture_storage_2d<rgba32float, write>;
-
-
-fn hash(p: vec2<f32>) -> f32 {
-    return fract(sin(dot(p, vec2<f32>(11.9898, 78.233))) * 43758.5453);
-}
-
-fn distance_squared(a: vec2<f32>, b: vec2<f32>) -> f32 {
-    let c = a - b;
-    return dot(c, c);
-}
-
-struct RayMarchResult {
-    val:  f32,          //
-    step: i32,          //
-    pose: vec2<f32>,    //
-}
-
-fn raymarch(
-    ray_origin:    vec2<f32>,
-    light_pose:    vec2<f32>,
-    max_steps:     i32,
-) -> RayMarchResult {
-
-    let rm_jitter_contrib: f32 = 0.0;
-    let ray_direction          = fast_normalize_2d(light_pose - ray_origin);
-    let stop_at                = distance_squared(ray_origin, light_pose);
-
-    var ray_progress:   f32    = 0.0;
-    var h                      = vec2<f32>(0.0);
-    var h_prev                 = h;
-    let min_sdf                = 0.5;
-
-    for (var i: i32 = 0; i < max_steps; i++) {
-
-        h_prev = h;
-        h = ray_origin + ray_progress * ray_direction;
-
-        if (ray_progress * ray_progress >= stop_at) {
-            return RayMarchResult(1.0, i, h_prev);
-        }
-
-
-        let uv = world_to_sdf_uv(h, camera_params.view_proj, camera_params.inv_sdf_scale);
-        if any(uv < vec2<f32>(0.0)) || any(uv > vec2<f32>(1.0)) {
-            return RayMarchResult(0.0, i, h_prev);
-        }
-
-        let scene_dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
-        if (scene_dist <= min_sdf) {
-            return RayMarchResult(0.0, i, h);
-        }
-
-        // Jitter step.
-        let jitter = radical_inverse_vdc(i);
-        ray_progress += scene_dist * (1.0 - rm_jitter_contrib) + rm_jitter_contrib * scene_dist * jitter;
-    }
-
-    return RayMarchResult(0.0, max_steps, h);
-}
-
 
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
@@ -152,9 +93,13 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
                 probe_center_world,
                 sample_world,
                 32,
+                sdf_in,
+                sdf_in_sampler,
+                camera_params,
+                0.0
             );
 
-            if raymarch_sample_to_probe.val <= 0.0 || raymarch_sample_to_probe.step < 1 {
+            if raymarch_sample_to_probe.success <= 0 || raymarch_sample_to_probe.step < 1 {
                 continue;
             }
 

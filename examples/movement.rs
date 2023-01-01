@@ -90,7 +90,7 @@ fn setup(mut commands: Commands, post_processing_target: Res<PostProcessingTarge
             OmniLightSource2D {
                 intensity: 10.0,
                 color: Color::rgb_u8(255, 255, 0),
-                falloff: Vec3::new(1.5, 10.0, 0.005),
+                falloff: Vec3::new(1.5, 10.0, 0.01),
                 ..default()
             },
         ));
@@ -102,7 +102,7 @@ fn setup(mut commands: Commands, post_processing_target: Res<PostProcessingTarge
             OmniLightSource2D {
                 intensity: 10.0,
                 color: Color::rgb_u8(0, 255, 255),
-                falloff: Vec3::new(1.5, 10.0, 0.005),
+                falloff: Vec3::new(1.5, 10.0, 0.01),
                 ..default()
             },
         ));

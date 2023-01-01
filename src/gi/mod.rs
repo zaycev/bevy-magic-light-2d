@@ -10,10 +10,7 @@ use bevy::sprite::Material2dPlugin;
 use crate::gi::compositing::{
     setup_post_processing_camera, PostProcessingMaterial, PostProcessingTarget,
 };
-use crate::gi::constants::{
-    GI_SCREEN_PROBE_SIZE, SHADER_GI_ATTENUATION, SHADER_GI_CAMERA, SHADER_GI_HALTON,
-    SHADER_GI_MATH, SHADER_GI_TYPES,
-};
+use crate::gi::constants::*;
 use crate::gi::pipeline::{
     system_queue_bind_groups, system_setup_gi_pipeline, LightPassPipeline,
     LightPassPipelineBindGroups, PipelineTargetsWrapper,
@@ -85,6 +82,12 @@ impl Plugin for BevyMagicLight2DPlugin {
             Shader::from_wgsl
         );
 
+        load_internal_asset!(
+            app,
+            SHADER_GI_RAYMARCH,
+            "shaders/gi_raymarch.wgsl",
+            Shader::from_wgsl
+        );
         let render_app = app.sub_app_mut(RenderApp);
         render_app
             .init_resource::<LightPassPipeline>()

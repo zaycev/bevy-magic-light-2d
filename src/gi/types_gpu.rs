@@ -46,7 +46,7 @@ impl GpuLightOccluder2D {
     pub fn new(transform: &Transform, h_extent: Vec2) -> Self {
         let center = transform.translation.xy();
         let rotation = transform.rotation.inverse().into();
-        let h_extent = h_extent * transform.scale.xy();
+        // let h_extent = h_extent * transform.scale.xy();
         Self { center, rotation, h_extent }
     }
 }
