@@ -65,8 +65,8 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     var rays_per_sample      = rays_per_sample_base;
     let golden_angle         = (2.0 * pi) / f32(rays_per_sample);
 
-    let r_bias = 4.0;
-    let r_step = 14.0;
+    let r_bias = 8.0;
+    let r_step = 24.0;
     let k_max  = 5;
     let jitter = 0.5;
 
@@ -74,7 +74,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
 
         let angle_bias   = pi2 * f32(k) / f32(k_max);
 
-        var r = r_bias + f32(pow(1.5, f32(k))) * r_step;
+        var r = r_bias + f32(pow(2.0, f32(k))) * r_step;
             r = r + r * h * jitter;
 
         for (var ray_i = 0; ray_i < rays_per_sample; ray_i++) {
