@@ -16,17 +16,17 @@ lint:
     - rustfmt@1.65.0
     - prettier@2.8.1
     - gitleaks@8.15.2
+
 runtimes:
   enabled:
     - go@1.18.3
     - node@16.14.2
 actions:
-  disabled:
-    - trunk-announce
-    - trunk-check-pre-push
-    - trunk-fmt-pre-commit
   enabled:
     - trunk-upgrade-available
-
-required_statuses:
-    - Rust
+    - trunk-announce
+    - git-lfs
+    - trunk-check-pre-push
+    - trunk-fmt-pre-commit
+    - trunk-cache-prune
+    - trunk-upgrade-available
