@@ -72,7 +72,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
                 sdf_in,
                 sdf_in_sampler,
                 camera_params,
-                0.5
+                0.3
             );
 
             let att = light_attenuation_r2(

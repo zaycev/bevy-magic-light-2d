@@ -61,9 +61,9 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     var indirect_irradiance  = vec3<f32>(0.0);
     var total_rays           = 0;
     var total_w              = 0.0;
-    var h                    = hash(probe_center_world);
     var rays_per_sample      = rays_per_sample_base;
     let golden_angle         = (2.0 * pi) / f32(rays_per_sample);
+
 
     let r_bias = 8.0;
     let r_step = 24.0;
@@ -73,16 +73,18 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     for (var k = 1; k <= k_max; k++) {
 
         let angle_bias   = pi2 * f32(k) / f32(k_max);
+        let h_r          = hash(angle_bias * probe_center_world);
 
         var r = r_bias + f32(pow(2.0, f32(k))) * r_step;
-            r = r + r * h * jitter;
+            r = r + r * h_r * jitter;
 
         for (var ray_i = 0; ray_i < rays_per_sample; ray_i++) {
 
             total_rays += 1;
 
             var base_angle  = angle_bias + golden_angle * f32(ray_i);
-                base_angle += radians(360.0) * (0.5 - h);
+            let h_angle     = hash(probe_center_world * base_angle);
+                base_angle += radians(360.0) * (0.5 - h_angle);
 
             var sample_world = probe_center_world + vec2<f32>(r) * fast_normalize_2d(vec2<f32>(
                 cos(base_angle),
@@ -96,10 +98,10 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
                 sdf_in,
                 sdf_in_sampler,
                 camera_params,
-                0.5
+                0.3
             );
 
-            if raymarch_sample_to_probe.success <= 0 || raymarch_sample_to_probe.step < 1 {
+            if raymarch_sample_to_probe.success <= 0 && raymarch_sample_to_probe.step == 1 {
                 continue;
             }
 
@@ -127,7 +129,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
             }
 
             let sample_irradiance = sample_xyz;
-            indirect_irradiance  += sample_irradiance * 0.5;
+            indirect_irradiance  += sample_irradiance * 0.6; // 0.4 is absorbed by surface.
         }
 
         if fast_distance_3d(vec3<f32>(0.0), indirect_irradiance) > 1.0 {

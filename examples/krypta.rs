@@ -47,15 +47,15 @@ fn main() {
                     },
                 }),
         )
+        .add_plugin(BevyMagicLight2DPlugin)
         .insert_resource(BevyMagicLight2DSettings {
             light_pass_params: LightPassParams {
-                reservoir_size: 8,
-                smooth_kernel_size: (3, 3),
-                direct_light_contrib: 0.5,
-                indirect_light_contrib: 0.5,
+                reservoir_size: 16,
+                smooth_kernel_size: (2, 1),
+                direct_light_contrib: 0.2,
+                indirect_light_contrib: 0.8,
             },
         })
-        .add_plugin(BevyMagicLight2DPlugin)
         .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(InspectorPlugin::<BevyMagicLight2DSettings>::new())
         .register_inspectable::<LightOccluder2D>()
@@ -101,7 +101,6 @@ fn setup(
         &[0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         &[0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0],
-        &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
