@@ -30,3 +30,7 @@ actions:
     - trunk-fmt-pre-commit
     - trunk-cache-prune
     - trunk-upgrade-available
+
+merge:
+  required_statuses:
+    - Build & Check
