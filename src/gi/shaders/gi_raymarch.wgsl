@@ -73,3 +73,60 @@ fn raymarch(
 
     return RayMarchResult(0, max_steps, h);
 }
+
+fn raymarch_bounce(
+    ray_origin:         vec2<f32>,
+    ray_target:         vec2<f32>,
+    max_steps:          i32,
+    sdf:                texture_2d<f32>,
+    sdf_sampler:        sampler,
+    camera_params:      CameraParams,
+    rm_jitter_contrib:  f32,
+) -> RayMarchResult {
+
+    var ray_origin  = ray_origin;
+    var ray_target  = ray_target;
+    let target_uv   = world_to_sdf_uv(ray_target, camera_params.view_proj, camera_params.inv_sdf_scale);
+    let target_dist = bilinear_sample_r(sdf, sdf_sampler, target_uv);
+
+    if (target_dist < 0.0) {
+        let temp = ray_target;
+        ray_target = ray_origin;
+        ray_origin = temp;
+    }
+
+    let ray_direction          = fast_normalize_2d(ray_target - ray_origin);
+    let stop_at                = distance_squared(ray_origin, ray_target);
+
+    var ray_progress:   f32    = 0.0;
+    var h                      = vec2<f32>(0.0);
+    var h_prev                 = h;
+    let min_sdf                = 0.5;
+
+    for (var i: i32 = 0; i < max_steps; i++) {
+
+        h_prev = h;
+        h = ray_origin + ray_progress * ray_direction;
+
+        if ray_progress * ray_progress >= stop_at {
+            return RayMarchResult(1, i, h_prev);
+        }
+
+        let uv = world_to_sdf_uv(h, camera_params.view_proj, camera_params.inv_sdf_scale);
+        if any(uv < vec2<f32>(0.0)) || any(uv > vec2<f32>(1.0)) {
+            return RayMarchResult(0, i, h_prev);
+        }
+
+        let scene_dist = bilinear_sample_r(sdf, sdf_sampler, uv);
+        if  scene_dist <= min_sdf {
+            return RayMarchResult(0, i, h);
+        }
+
+        let ray_travel = max(abs(scene_dist), 0.5);
+
+        ray_progress += ray_travel * (1.0 - rm_jitter_contrib)
+                      + rm_jitter_contrib * ray_travel * hash(h);
+    }
+
+    return RayMarchResult(0, max_steps, h);
+}

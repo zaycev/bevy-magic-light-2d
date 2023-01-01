@@ -20,6 +20,12 @@ pub struct LightPassParams {
 
     #[inspectable(min = 0.0, max = 1.0)]
     pub indirect_light_contrib: f32,
+
+    #[inspectable(min = 0, max = 512)]
+    pub indirect_rays_per_sample: i32,
+
+    #[inspectable(min = 1.0, max = 100.0)]
+    pub indirect_rays_radius_factor: f32,
 }
 
 impl Default for LightPassParams {
@@ -27,8 +33,10 @@ impl Default for LightPassParams {
         Self {
             reservoir_size: 8,
             smooth_kernel_size: (2, 1),
-            direct_light_contrib: 0.2,
-            indirect_light_contrib: 0.8,
+            direct_light_contrib: 0.5,
+            indirect_light_contrib: 0.5,
+            indirect_rays_per_sample: 40,
+            indirect_rays_radius_factor: 4.0,
         }
     }
 }

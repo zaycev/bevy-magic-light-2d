@@ -34,6 +34,7 @@ fn main() {
                 smooth_kernel_size: (3, 3),
                 direct_light_contrib: 0.5,
                 indirect_light_contrib: 0.5,
+                ..default()
             },
         })
         .run();

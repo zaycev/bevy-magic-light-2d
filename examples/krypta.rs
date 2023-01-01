@@ -10,7 +10,7 @@ pub const TILE_SIZE: f32 = 16.0;
 pub const SPRITE_SCALE: f32 = 4.0;
 pub const Z_BASE_FLOOR: f32 = 100.0; // Base z-coordinate for 2D layers.
 pub const Z_BASE_OBJECTS: f32 = 200.0; // Ground object sprites.
-pub const SCREEN_SIZE: (f32, f32) = (1024.0, 1024.0);
+pub const SCREEN_SIZE: (f32, f32) = (768.0, 960.0);
 
 // Misc components.
 #[derive(Component)]
@@ -54,6 +54,7 @@ fn main() {
                 smooth_kernel_size: (2, 1),
                 direct_light_contrib: 0.2,
                 indirect_light_contrib: 0.8,
+                ..default()
             },
         })
         .add_plugin(WorldInspectorPlugin::new())
@@ -104,6 +105,14 @@ fn setup(
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
@@ -607,7 +616,7 @@ fn setup(
         .insert(Name::new("lights"))
         .push_children(&lights);
 
-    // Add roof.
+    // Add roofs.
     commands
         .spawn(SpatialBundle {
             transform: Transform {
@@ -616,18 +625,30 @@ fn setup(
             },
             ..default()
         })
-        .insert(Name::new("skylight_mask"))
+        .insert(Name::new("skylight_mask_1"))
         .insert(SkylightMask2D {
             h_size: Vec2::new(430.0, 330.0),
+        });
+    commands
+        .spawn(SpatialBundle {
+            transform: Transform {
+                translation: Vec3::new(101.6, -989.4, 0.0),
+                ..default()
+            },
+            ..default()
+        })
+        .insert(Name::new("skylight_mask_2"))
+        .insert(SkylightMask2D {
+            h_size: Vec2::new(163.3, 156.1),
         });
 
     // Add skylight light.
     commands.spawn((
         SkylightLight2D {
             color: Color::rgb_u8(93, 158, 179),
-            intensity: 0.04,
+            intensity: 0.025,
         },
-        Name::new("skylight_light"),
+        Name::new("global_skylight"),
     ));
 
     // Add light source.
@@ -645,7 +666,7 @@ fn setup(
         .insert(Name::new("cursor_light"))
         .insert(OmniLightSource2D {
             intensity: 10.0,
-            color:     Color::rgb_u8(219, 104, 72),
+            color:     Color::rgb_u8(254, 100, 34),
             falloff:   Vec3::new(50.0, 20.0, 0.05),
             ..default()
         })

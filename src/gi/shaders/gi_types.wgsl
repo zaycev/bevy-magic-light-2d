@@ -48,6 +48,9 @@ struct LightPassParams {
     smooth_kernel_size_w:   u32,
     direct_light_contrib:   f32,
     indirect_light_contrib: f32,
+
+    indirect_rays_per_sample:    i32,
+    indirect_rays_radius_factor: f32,
 }
 
 struct SkylightMask {
