@@ -7,6 +7,10 @@ Experimental dynamic 2D global illumination system for Bevy, based on SDF ray-ma
 ## Demo
 
 ```shell
+cargo run --example minimal
+```
+
+```shell
 cargo run --example krypta
 ```
 
@@ -45,16 +49,16 @@ cargo run --example krypta
 - [ ] Arbitrary number of bounces via configuration.
 - [ ] Handle camera scale and rotation.
 - [ ] Support multiple layers.
-- [ ] Expose settings instead of harcoding them.
+- [x] Expose settings instead of harcoding them.
 - [ ] Support resize of targets.
 - [ ] Support transparent occluders.
 - [ ] Support color transfer from occluders.
-- [ ] Add inspector for GI settings.
+- [x] Add inspector for GI settings.
 - [ ] Add support for emissive materials and other types of light sources.
 
 **Address limitations**
 
-- [ ] SDF for offscreen occluders.
+- [x] SDF for offscreen occluders.
 
 **Others**
 
