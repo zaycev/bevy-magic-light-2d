@@ -11,6 +11,7 @@ path = "src/lib.rs"
 [dependencies]
 anyhow = "1.0.68"
 bevy = { version = "0.9.1", default-features = false, features = [
+  "wayland",
   "bevy_asset",
   "bevy_render",
   "bevy_winit",
