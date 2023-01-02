@@ -6,12 +6,13 @@
 [![dependency status](https://deps.rs/repo/github/zaycev/bevy-magic-light-2d/status.svg)](https://deps.rs/repo/github/zaycev/bevy-magic-light-2d)
 
 </div>
+
 > 🚧 Beware! This repo is heavily under construction and a lot of things may change.
-​
+
 Experimental dynamic 2D global illumination system for Bevy, based on SDF ray-marching and screen space irradiance cache probes.
-​
+
 ## Demo
-​
+
 ```shell
 cargo run --example minimal
 cargo run --example krypta
