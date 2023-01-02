@@ -83,8 +83,8 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
                 continue;
             }
 
-            let d = fast_distance_2d(p_world_pose, sample_world_pose);
-            let x = fast_distance_3d(p_sample, base_probe_sample);
+            let d = distance(p_world_pose, sample_world_pose);
+            let x = distance(p_sample, base_probe_sample);
             let g = gauss(x) * gauss(d);
 
             total_q += p_sample * g;

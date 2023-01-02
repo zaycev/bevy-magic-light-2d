@@ -37,11 +37,14 @@ fn fragment(
     let in_walls_diffuse   = textureSample(in_walls_texture,   in_walls_sampler, uv).xyz;
     let in_objects_diffuse = textureSample(in_objects_texture, in_objects_sampler, uv).xyz;
 
-//    let irradiance = textureSample(in_irradiance_texture, in_irradiance_texture_sampler, uv).xyz;
-//    let out_color = diffuse * lin_to_srgb(irradiance);
+    let in_irradiance = textureSample(in_irradiance_texture, in_irradiance_texture_sampler, uv).xyz;
 
 
-    let out = (in_floor_diffuse + in_walls_diffuse + in_objects_diffuse).xyz;
+
+    let floor_final_rgb = in_floor_diffuse * lin_to_srgb(in_irradiance);
+
+
+    let out = floor_final_rgb;
 
     return vec4<f32>(out, 1.0);
 }

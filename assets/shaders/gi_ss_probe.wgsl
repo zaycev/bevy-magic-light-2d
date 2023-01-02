@@ -27,32 +27,21 @@ fn raymarch_primary(
 
     var ray_origin  = ray_origin;
     var ray_target  = ray_target;
-    let target_uv   = world_to_sdf_uv(ray_target, camera_params.view_proj, camera_params.inv_sdf_scale);
-    let target_dist = bilinear_sample_r(sdf, sdf_sampler, target_uv);
 
-    if (target_dist < 0.0) {
-        let temp = ray_target;
-        ray_target = ray_origin;
-        ray_origin = temp;
-    }
-
-    let ray_direction          = fast_normalize_2d(ray_target - ray_origin);
+    let ray_direction          = normalize(ray_target - ray_origin);
     let stop_at                = distance_squared(ray_origin, ray_target);
 
     var ray_progress:   f32    = 0.0;
     var h                      = vec2<f32>(0.0);
     var h_prev                 = h;
-    let min_sdf                = 0.5;
-    var inside                 = true;
-    let max_inside_dist        = 20.0;
-    let max_inside_dist_sq     = max_inside_dist * max_inside_dist;
+    let min_sdf                = 1e-4;
 
     for (var i: i32 = 0; i < max_steps; i++) {
 
         h_prev = h;
         h = ray_origin + ray_progress * ray_direction;
 
-        if ((ray_progress * ray_progress >= stop_at) || (inside && (ray_progress * ray_progress > max_inside_dist))) {
+        if ray_progress * ray_progress >= stop_at {
             return RayMarchResult(1, i, h_prev);
         }
 
@@ -63,13 +52,11 @@ fn raymarch_primary(
         }
 
         let scene_dist = bilinear_sample_r(sdf, sdf_sampler, uv);
-        if ((scene_dist <= min_sdf && !inside)) {
+        if scene_dist <= min_sdf {
             return RayMarchResult(0, i, h);
         }
-        if (scene_dist > 0.0) {
-            inside = false;
-        }
-        let ray_travel = max(abs(scene_dist), 0.5);
+
+        let ray_travel = max(abs(scene_dist), 0.0);
 
         ray_progress += ray_travel * (1.0 - rm_jitter_contrib) + rm_jitter_contrib * ray_travel * hash(h);
    }
@@ -92,12 +79,13 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
 
     // Get current frame.
     let probe_offset_world  = halton_jitter * probe_size_f32;
-    let probe_center_world  = screen_to_world(
-        probe_tile_origin_screen,
-        camera_params.screen_size,
-        camera_params.inverse_view_proj,
-        camera_params.screen_size_inv,
-    ) + probe_offset_world;
+    let probe_center_world_unbiased = screen_to_world(
+                                              probe_tile_origin_screen,
+                                              camera_params.screen_size,
+                                              camera_params.inverse_view_proj,
+                                              camera_params.screen_size_inv,
+                                          );
+    let probe_center_world  =  probe_center_world_unbiased + probe_offset_world;
 
     let probe_ndc    = world_to_ndc(probe_center_world, camera_params.view_proj);
     let probe_screen = ndc_to_screen(probe_ndc, camera_params.screen_size);
@@ -117,7 +105,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
 
     var probe_irradiance = vec3<f32>(0.0);
 
-    let uv = world_to_sdf_uv(probe_center_world, camera_params.view_proj, camera_params.inv_sdf_scale);
+    let uv = world_to_sdf_uv(probe_center_world_unbiased, camera_params.view_proj, camera_params.inv_sdf_scale);
     let dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
     if dist > 0.0 {
 

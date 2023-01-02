@@ -12,7 +12,7 @@ fn sdf_aabb_occluder(p: vec2<f32>, occluder_i: i32) -> f32 {
     let local_p = quat_mul(occluder.rotation, vec3<f32>(local_p, 0.0)).xy;
     let d        = abs(local_p) - occluder.h_extent;
     let d_max    = max(d, vec2<f32>(0.0));
-    let d_o      = fast_length_2d(d_max);
+    let d_o      = length(d_max);
     let d_i      = min(max(d.x, d.y), 0.0);
     return d_o + d_i;
 }

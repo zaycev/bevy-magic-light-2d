@@ -13,7 +13,7 @@ use crate::gi::types_gpu::{
     GpuSkylightMaskData,
 };
 use crate::prelude::BevyMagicLight2DSettings;
-use crate::SpriteCamera;
+use crate::FloorCamera;
 
 #[rustfmt::skip]
 #[derive(Default, Resource)]
@@ -53,7 +53,7 @@ pub(crate) fn system_extract_pipeline_assets(
 
     query_lights:               Extract<Query<(&Transform, &OmniLightSource2D, &ComputedVisibility)>>,
     query_occluders:            Extract<Query<(&LightOccluder2D, &Transform, &ComputedVisibility)>>,
-    query_camera:               Extract<Query<(&Camera, &GlobalTransform), With<SpriteCamera>>>,
+    query_camera:               Extract<Query<(&Camera, &GlobalTransform), With<FloorCamera>>>,
     query_masks:                Extract<Query<(&Transform, &SkylightMask2D)>>,
     query_skylight_light:       Extract<Query<&SkylightLight2D>>,
 
@@ -138,13 +138,14 @@ pub(crate) fn system_extract_pipeline_assets(
             );
 
             let scale = 2.0;
-            camera_params.sdf_scale = Vec2::splat(scale);
+            camera_params.sdf_scale     = Vec2::splat(scale);
             camera_params.inv_sdf_scale = Vec2::splat(1. / scale);
 
             let probes = gpu_pipeline_assets.probes.get_mut();
             probes.data[*gpu_frame_counter as usize].camera_pose =
                 camera_global_transform.translation().truncate();
         } else {
+            log::warn!("Failed to get camera");
             let probes = gpu_pipeline_assets.probes.get_mut();
             probes.data[*gpu_frame_counter as usize].camera_pose = Vec2::ZERO;
         }

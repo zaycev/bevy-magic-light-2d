@@ -515,6 +515,7 @@ fn setup(
                         },
                         ..default()
                     })
+                    .insert(RenderLayers::all())
                     .id();
             };
 
@@ -716,6 +717,7 @@ fn setup(
             falloff:   Vec3::new(50.0, 20.0, 0.05),
             ..default()
         })
+        .insert(RenderLayers::all())
         .insert(MouseLight);
 
     let (floor_target, walls_target, objects_target) = post_processing_target
@@ -739,7 +741,7 @@ fn setup(
             Name::new("main_camera_floor"),
         ))
         .insert(SpriteCamera)
-        .insert(ObjectsCamera)
+        .insert(FloorCamera)
         .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR))
         .insert(UiCameraConfig {
             show_ui: false,
@@ -847,32 +849,36 @@ fn system_control_mouse_light(
 
 #[rustfmt::skip]
 fn system_move_camera(
-    mut camera_target: Local<Vec3>,
+    mut camera_current: Local<Vec2>,
+    mut camera_target:  Local<Vec2>,
     mut query_cameras:  Query<&mut Transform, With<SpriteCamera>>,
-        keyboard:      Res<Input<KeyCode>>,
+        keyboard:       Res<Input<KeyCode>>,
 ) {
+
+    let speed = 10.0;
+
+    if keyboard.pressed(KeyCode::W) {
+        camera_target.y += speed;
+    }
+    if keyboard.pressed(KeyCode::S) {
+        camera_target.y -= speed;
+    }
+    if keyboard.pressed(KeyCode::A) {
+        camera_target.x -= speed;
+    }
+    if keyboard.pressed(KeyCode::D) {
+        camera_target.x += speed;
+    }
+
+    // Smooth camera.
+    let blend_ratio = 0.18;
+    let movement = *camera_target - *camera_current;
+    *camera_current += movement * blend_ratio;
 
     // Update all sprite cameras.
     for mut camera_transform in query_cameras.iter_mut() {
-        let speed = 10.0;
-
-        if keyboard.pressed(KeyCode::W) {
-            camera_target.y += speed;
-        }
-        if keyboard.pressed(KeyCode::S) {
-            camera_target.y -= speed;
-        }
-        if keyboard.pressed(KeyCode::A) {
-            camera_target.x -= speed;
-        }
-        if keyboard.pressed(KeyCode::D) {
-            camera_target.x += speed;
-        }
-
-        // Smooth camera.
-        let blend_ratio = 0.18;
-        let movement    = (*camera_target - camera_transform.translation) * blend_ratio;
-        camera_transform.translation.x += movement.x;
-        camera_transform.translation.y += movement.y;
+        camera_transform.translation.x = camera_current.x;
+        camera_transform.translation.y = camera_current.y;
     }
 }
+
