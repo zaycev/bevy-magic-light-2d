@@ -109,7 +109,7 @@ fn setup(
         &[0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-        &[0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
@@ -509,26 +509,26 @@ fn setup(
         lights.push(spawn_light(
             &mut commands,
             90.667,
-            -387.333,
+            -393.8,
             "outdoor_krypta_torch_1",
             OmniLightSource2D {
-                intensity: 6.0,
+                intensity: 4.5,
                 color: Color::rgb_u8(137, 79, 24),
-                jitter_intensity: 1.0,
-                jitter_translation: 2.0,
+                jitter_intensity: 2.5,
+                jitter_translation: 8.0,
                 ..base
             },
         ));
         lights.push(spawn_light(
             &mut commands,
             -36.000,
-            -387.333,
+            -393.8,
             "outdoor_krypta_torch_2",
             OmniLightSource2D {
-                intensity: 6.0,
+                intensity: 4.5,
                 color: Color::rgb_u8(137, 79, 24),
-                jitter_intensity: 1.0,
-                jitter_translation: 2.0,
+                jitter_intensity: 2.5,
+                jitter_translation: 8.0,
                 ..base
             },
         ));
@@ -564,10 +564,10 @@ fn setup(
             -131.2,
             "outdoor_krypta_torch_3",
             OmniLightSource2D {
-                intensity: 6.0,
+                intensity: 4.5,
                 color: Color::rgb_u8(137, 79, 24),
-                jitter_intensity: 1.0,
-                jitter_translation: 2.0,
+                jitter_intensity: 2.5,
+                jitter_translation: 3.0,
                 ..base
             },
         ));
@@ -577,10 +577,10 @@ fn setup(
             -141.8,
             "outdoor_krypta_torch_4",
             OmniLightSource2D {
-                intensity: 6.0,
+                intensity: 4.5,
                 color: Color::rgb_u8(137, 79, 24),
-                jitter_intensity: 1.0,
-                jitter_translation: 2.0,
+                jitter_intensity: 2.5,
+                jitter_translation: 3.0,
                 ..base
             },
         ));
@@ -610,6 +610,35 @@ fn setup(
                 ..base
             },
         ));
+
+        lights.push(spawn_light(
+            &mut commands,
+            10.385,
+            -1170.82,
+            "outdoor_light_9",
+            OmniLightSource2D {
+                intensity: 10.0,
+                color: Color::rgb_u8(0, 206, 94),
+                jitter_intensity: 0.0,
+                jitter_translation: 8.0,
+                ..base
+            },
+        ));
+
+        lights.push(spawn_light(
+            &mut commands,
+            182.375,
+            -1170.82,
+            "outdoor_light_10",
+            OmniLightSource2D {
+                intensity: 10.0,
+                color: Color::rgb_u8(0, 206, 94),
+                jitter_intensity: 0.0,
+                jitter_translation: 8.0,
+                ..base
+            },
+        ));
+
     }
     commands
         .spawn(SpatialBundle::default())

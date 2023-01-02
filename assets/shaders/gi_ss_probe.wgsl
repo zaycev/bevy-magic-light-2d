@@ -14,6 +14,70 @@
 @group(0) @binding(6) var          sdf_in_sampler:        sampler;
 @group(0) @binding(7) var          ss_probe_out:          texture_storage_2d<rgba16float, write>;
 
+
+fn raymarch_primary(
+    ray_origin:         vec2<f32>,
+    ray_target:         vec2<f32>,
+    max_steps:          i32,
+    sdf:                texture_2d<f32>,
+    sdf_sampler:        sampler,
+    camera_params:      CameraParams,
+    rm_jitter_contrib:  f32,
+) -> RayMarchResult {
+
+    var ray_origin  = ray_origin;
+    var ray_target  = ray_target;
+    let target_uv   = world_to_sdf_uv(ray_target, camera_params.view_proj, camera_params.inv_sdf_scale);
+    let target_dist = bilinear_sample_r(sdf, sdf_sampler, target_uv);
+
+    if (target_dist < 0.0) {
+        let temp = ray_target;
+        ray_target = ray_origin;
+        ray_origin = temp;
+    }
+
+    let ray_direction          = fast_normalize_2d(ray_target - ray_origin);
+    let stop_at                = distance_squared(ray_origin, ray_target);
+
+    var ray_progress:   f32    = 0.0;
+    var h                      = vec2<f32>(0.0);
+    var h_prev                 = h;
+    let min_sdf                = 0.5;
+    var inside                 = true;
+    let max_inside_dist        = 20.0;
+    let max_inside_dist_sq     = max_inside_dist * max_inside_dist;
+
+    for (var i: i32 = 0; i < max_steps; i++) {
+
+        h_prev = h;
+        h = ray_origin + ray_progress * ray_direction;
+
+        if ((ray_progress * ray_progress >= stop_at) || (inside && (ray_progress * ray_progress > max_inside_dist))) {
+            return RayMarchResult(1, i, h_prev);
+        }
+
+
+        let uv = world_to_sdf_uv(h, camera_params.view_proj, camera_params.inv_sdf_scale);
+        if any(uv < vec2<f32>(0.0)) || any(uv > vec2<f32>(1.0)) {
+            return RayMarchResult(0, i, h_prev);
+        }
+
+        let scene_dist = bilinear_sample_r(sdf, sdf_sampler, uv);
+        if ((scene_dist <= min_sdf && !inside)) {
+            return RayMarchResult(0, i, h);
+        }
+        if (scene_dist > 0.0) {
+            inside = false;
+        }
+        let ray_travel = max(abs(scene_dist), 0.5);
+
+        ray_progress += ray_travel * (1.0 - rm_jitter_contrib) + rm_jitter_contrib * ray_travel * hash(h);
+   }
+
+    return RayMarchResult(0, max_steps, h);
+}
+
+
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     let tile_xy      = vec2<i32>(invocation_id.xy);
@@ -65,7 +129,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
 
             let light = lights_source_buffer.data[i];
 
-            let ray_result = raymarch(
+            let ray_result = raymarch_primary(
                 probe_center_world,
                 light.center,
                 32,
