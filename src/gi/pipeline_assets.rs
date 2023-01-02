@@ -98,7 +98,7 @@ pub(crate) fn system_extract_pipeline_assets(
             if visibility.is_visible() {
                 light_occluders.count += 1;
                 light_occluders.data.push(GpuLightOccluder2D::new(
-                    transform.translation.truncate(),
+                    transform,
                     occluder.h_size,
                 ));
             }

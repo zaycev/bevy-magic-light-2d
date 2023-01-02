@@ -12,8 +12,13 @@ struct LightSourceBuffer {
     data:  array<LightSource>,
 }
 
+struct Quaternion {
+    data: vec4<f32>,
+}
+
 struct LightOccluder {
-    center:   vec2<f32>,
+    center: vec2<f32>,
+    rotation: Quaternion,
     h_extent: vec2<f32>,
 }
 
@@ -52,5 +57,5 @@ struct SkylightMask {
 
 struct SkylightMaskBuffer {
     count: u32,
-    data:  array<LightOccluder>,
+    data:  array<SkylightMask>,
 }

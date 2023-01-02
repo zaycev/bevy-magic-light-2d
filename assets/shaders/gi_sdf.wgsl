@@ -6,10 +6,11 @@
 @group(0) @binding(1) var<storage> light_occluder_buffer: LightOccluderBuffer;
 @group(0) @binding(2) var          sdf_out:               texture_storage_2d<r16float, read_write>;
 
-
 fn sdf_aabb_occluder(p: vec2<f32>, occluder_i: i32) -> f32 {
     let occluder = light_occluder_buffer.data[occluder_i];
-    let d        = abs(p - occluder.center) - occluder.h_extent;
+    let local_p = occluder.center - p;
+    let local_p = quat_mul(occluder.rotation, vec3<f32>(local_p, 0.0)).xy;
+    let d        = abs(local_p) - occluder.h_extent;
     let d_max    = max(d, vec2<f32>(0.0));
     let d_o      = fast_length_2d(d_max);
     let d_i      = min(max(d.x, d.y), 0.0);
@@ -30,19 +31,15 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
      let texel_pos  = vec2<i32>(invocation_id.xy);
      let dims = textureDimensions(sdf_out);
      let uv = (vec2<f32>(texel_pos) + 0.5) / vec2<f32>(dims);
-    //  let uv = vec2<f32>(uv.x, 1.0 - uv.y);
 
      let world_pose = sdf_uv_to_world(uv, 
         camera_params.inverse_view_proj,
         camera_params.sdf_scale);
 
-     let sdf_min      = 0.9;
      var sdf_merged   = sdf_aabb_occluder(world_pose.xy, 0);
      for (var i: i32 = 1; i < i32(light_occluder_buffer.count); i++) {
-         sdf_merged = round_merge(sdf_merged, sdf_aabb_occluder(world_pose.xy, i), sdf_min);
+        sdf_merged = min(sdf_merged, sdf_aabb_occluder(world_pose.xy, i));
      }
 
-     var sdf = clamp(sdf_merged, sdf_min, 1e+4);
-
-     textureStore(sdf_out, texel_pos, vec4<f32>(sdf, 0.0, 0.0, 0.0));
+     textureStore(sdf_out, texel_pos, vec4<f32>(sdf_merged, 0.0, 0.0, 0.0));
 }

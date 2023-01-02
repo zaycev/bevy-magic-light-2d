@@ -13,3 +13,5 @@ pub const SHADER_GI_HALTON: HandleUntyped =
     HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 1287391288877821366);
 pub const SHADER_GI_MATH: HandleUntyped =
     HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 2387462894328787238);
+pub const SHADER_GI_RAYMARCH: HandleUntyped =
+    HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 9876835068496322894);

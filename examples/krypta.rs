@@ -10,7 +10,7 @@ pub const TILE_SIZE: f32 = 16.0;
 pub const SPRITE_SCALE: f32 = 4.0;
 pub const Z_BASE_FLOOR: f32 = 100.0; // Base z-coordinate for 2D layers.
 pub const Z_BASE_OBJECTS: f32 = 200.0; // Ground object sprites.
-pub const SCREEN_SIZE: (f32, f32) = (768.0, 768.0);
+pub const SCREEN_SIZE: (f32, f32) = (1024.0, 1024.0);
 
 // Misc components.
 #[derive(Component)]
@@ -47,15 +47,15 @@ fn main() {
                     },
                 }),
         )
+        .add_plugin(BevyMagicLight2DPlugin)
         .insert_resource(BevyMagicLight2DSettings {
             light_pass_params: LightPassParams {
-                reservoir_size: 8,
-                smooth_kernel_size: (3, 3),
-                direct_light_contrib: 0.5,
-                indirect_light_contrib: 0.5,
+                reservoir_size: 16,
+                smooth_kernel_size: (2, 1),
+                direct_light_contrib: 0.2,
+                indirect_light_contrib: 0.8,
             },
         })
-        .add_plugin(BevyMagicLight2DPlugin)
         .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(InspectorPlugin::<BevyMagicLight2DSettings>::new())
         .register_inspectable::<LightOccluder2D>()
@@ -101,7 +101,6 @@ fn setup(
         &[0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         &[0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0],
-        &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -526,8 +525,8 @@ fn setup(
         ));
         lights.push(spawn_light(
             &mut commands,
-            247.333,
-            -302.667,
+            230.9,
+            -284.6,
             "indoor_krypta_light_1",
             OmniLightSource2D {
                 intensity: 10.0,
@@ -539,8 +538,8 @@ fn setup(
         ));
         lights.push(spawn_light(
             &mut commands,
-            -172.000,
-            -302.333,
+            -163.5,
+            -292.7,
             "indoor_krypta_light_2",
             OmniLightSource2D {
                 intensity: 10.0,
@@ -553,7 +552,7 @@ fn setup(
         lights.push(spawn_light(
             &mut commands,
             -352.000,
-            -122.000,
+            -131.2,
             "outdoor_krypta_torch_3",
             OmniLightSource2D {
                 intensity: 6.0,
@@ -566,7 +565,7 @@ fn setup(
         lights.push(spawn_light(
             &mut commands,
             410.667,
-            -118.667,
+            -141.8,
             "outdoor_krypta_torch_4",
             OmniLightSource2D {
                 intensity: 6.0,

@@ -4,6 +4,7 @@
 #import bevy_magic_light_2d::gi_halton
 #import bevy_magic_light_2d::gi_attenuation
 
+
 @group(0) @binding(0) var<uniform> camera_params:     CameraParams;
 @group(0) @binding(1) var<uniform> cfg:               LightPassParams;
 @group(0) @binding(2) var<storage> probes:            ProbeDataBuffer;
@@ -11,42 +12,6 @@
 @group(0) @binding(4) var          sdf_in_sampler:    sampler;
 @group(0) @binding(5) var          ss_bounce_in:      texture_storage_2d<rgba32float, read>;
 @group(0) @binding(6) var          ss_blend_out:      texture_storage_2d<rgba32float, write>;
-
-fn distance_squared(a: vec2<f32>, b: vec2<f32>) -> f32 {
-    let c = a - b;
-    return dot(c, c);
-}
-
-fn raymarch_occlusion(
-    ray_origin:    vec2<f32>,
-    light_pose:    vec2<f32>,
-) -> f32 {
-
-    let max_steps      = 8;
-    let ray_direction  = fast_normalize_2d(light_pose - ray_origin);
-    let stop_at        = distance_squared(ray_origin, light_pose);
-
-    var ray_progress   = 0.0;
-    for (var i: i32 = 0; i < max_steps; i++) {
-
-        if (ray_progress * ray_progress >= stop_at) {
-            return 1.0;
-        }
-
-        let h          = ray_origin + ray_progress * ray_direction;
-        
-        let uv = world_to_sdf_uv(h, camera_params.view_proj, camera_params.inv_sdf_scale);
-        let scene_dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
-
-        if (scene_dist <= 0.1) {
-            return 0.0;
-        }
-
-        ray_progress += scene_dist;
-    }
-
-    return 0.0;
-}
 
 struct ProbeVal {
     val:       vec3<f32>,
@@ -149,7 +114,7 @@ fn estimate_probes_at(
 
     // Discard if offscreen.
     let base_ndc = world_to_ndc(base_probe.pose, camera_params.view_proj);
-    if any(base_ndc < vec2<f32>(-1.0)) || any(base_ndc > vec2<f32>(1.0)) {
+    if any(base_ndc < vec2<f32>(-1.0, -1.0)) || any(base_ndc > vec2<f32>(1.0, 1.0)) {
         return SampleResult(vec3<f32>(0.0), 0.0);
     }
 

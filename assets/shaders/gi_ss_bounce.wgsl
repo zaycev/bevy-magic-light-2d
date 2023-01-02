@@ -3,6 +3,7 @@
 #import bevy_magic_light_2d::gi_camera
 #import bevy_magic_light_2d::gi_halton
 #import bevy_magic_light_2d::gi_attenuation
+#import bevy_magic_light_2d::gi_raymarch
 
 @group(0) @binding(0) var<uniform> camera_params:     CameraParams;
 @group(0) @binding(1) var<uniform> cfg:               LightPassParams;
@@ -10,66 +11,6 @@
 @group(0) @binding(3) var          sdf_in_sampler:    sampler;
 @group(0) @binding(4) var          ss_probe_in:       texture_storage_2d<rgba16float, read>;
 @group(0) @binding(5) var          ss_bounce_out:     texture_storage_2d<rgba32float, write>;
-
-
-fn hash(p: vec2<f32>) -> f32 {
-    return fract(sin(dot(p, vec2<f32>(11.9898, 78.233))) * 43758.5453);
-}
-
-fn distance_squared(a: vec2<f32>, b: vec2<f32>) -> f32 {
-    let c = a - b;
-    return dot(c, c);
-}
-
-struct RayMarchResult {
-    val:  f32,          //
-    step: i32,          //
-    pose: vec2<f32>,    //
-}
-
-fn raymarch(
-    ray_origin:    vec2<f32>,
-    light_pose:    vec2<f32>,
-    max_steps:     i32,
-) -> RayMarchResult {
-
-    let rm_jitter_contrib: f32 = 0.0;
-    let ray_direction          = fast_normalize_2d(light_pose - ray_origin);
-    let stop_at                = distance_squared(ray_origin, light_pose);
-
-    var ray_progress:   f32    = 0.0;
-    var h                      = vec2<f32>(0.0);
-    var h_prev                 = h;
-    let min_sdf                = 0.5;
-
-    for (var i: i32 = 0; i < max_steps; i++) {
-
-        h_prev = h;
-        h = ray_origin + ray_progress * ray_direction;
-
-        if (ray_progress * ray_progress >= stop_at) {
-            return RayMarchResult(1.0, i, h_prev);
-        }
-
-
-        let uv = world_to_sdf_uv(h, camera_params.view_proj, camera_params.inv_sdf_scale);
-        if any(uv < vec2<f32>(0.0)) || any(uv > vec2<f32>(1.0)) {
-            return RayMarchResult(0.0, i, h_prev);
-        }
-
-        let scene_dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
-        if (scene_dist <= min_sdf) {
-            return RayMarchResult(0.0, i, h);
-        }
-
-        // Jitter step.
-        let jitter = radical_inverse_vdc(i);
-        ray_progress += scene_dist * (1.0 - rm_jitter_contrib) + rm_jitter_contrib * scene_dist * jitter;
-    }
-
-    return RayMarchResult(0.0, max_steps, h);
-}
-
 
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
@@ -120,28 +61,30 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     var indirect_irradiance  = vec3<f32>(0.0);
     var total_rays           = 0;
     var total_w              = 0.0;
-    var h                    = hash(probe_center_world);
     var rays_per_sample      = rays_per_sample_base;
     let golden_angle         = (2.0 * pi) / f32(rays_per_sample);
 
-    let r_bias = 4.0;
-    let r_step = 14.0;
+
+    let r_bias = 8.0;
+    let r_step = 24.0;
     let k_max  = 5;
     let jitter = 0.5;
 
     for (var k = 1; k <= k_max; k++) {
 
         let angle_bias   = pi2 * f32(k) / f32(k_max);
+        let h_r          = hash(angle_bias * probe_center_world);
 
-        var r = r_bias + f32(pow(1.5, f32(k))) * r_step;
-            r = r + r * h * jitter;
+        var r = r_bias + f32(pow(2.0, f32(k))) * r_step;
+            r = r + r * h_r * jitter;
 
         for (var ray_i = 0; ray_i < rays_per_sample; ray_i++) {
 
             total_rays += 1;
 
             var base_angle  = angle_bias + golden_angle * f32(ray_i);
-                base_angle += radians(360.0) * (0.5 - h);
+            let h_angle     = hash(probe_center_world * base_angle);
+                base_angle += radians(360.0) * (0.5 - h_angle);
 
             var sample_world = probe_center_world + vec2<f32>(r) * fast_normalize_2d(vec2<f32>(
                 cos(base_angle),
@@ -152,9 +95,13 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
                 probe_center_world,
                 sample_world,
                 32,
+                sdf_in,
+                sdf_in_sampler,
+                camera_params,
+                0.3
             );
 
-            if raymarch_sample_to_probe.val <= 0.0 || raymarch_sample_to_probe.step < 1 {
+            if raymarch_sample_to_probe.success <= 0 && raymarch_sample_to_probe.step == 1 {
                 continue;
             }
 
@@ -177,12 +124,12 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
 
             // Discrad if sample offscreen.
             let sample_ndc = world_to_ndc(sample_world, camera_params.view_proj);
-            if any(sample_ndc < vec2<f32>(-1.0)) || any(sample_ndc > vec2<f32>(1.0)) {
+            if any(sample_ndc < vec2<f32>(-1.0, -1.0)) || any(sample_ndc > vec2<f32>(1.0, 1.0)) {
                 continue;
             }
 
             let sample_irradiance = sample_xyz;
-            indirect_irradiance  += sample_irradiance * 0.5;
+            indirect_irradiance  += sample_irradiance * 0.6; // 0.4 is absorbed by surface.
         }
 
         if fast_distance_3d(vec3<f32>(0.0), indirect_irradiance) > 1.0 {
@@ -191,7 +138,8 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     }
 
     indirect_irradiance = indirect_irradiance / f32(total_rays);
-    total_irradiance  = cfg.indirect_light_contrib * indirect_irradiance + cfg.direct_light_contrib * direct_irradiance;
+    total_irradiance  = cfg.indirect_light_contrib * indirect_irradiance
+                      + cfg.direct_light_contrib   * direct_irradiance;
 
     textureStore(ss_bounce_out, out_atlas_tile_pose, vec4(total_irradiance, probe.w));
 }
