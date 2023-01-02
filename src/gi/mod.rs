@@ -30,6 +30,7 @@ mod types_gpu;
 pub mod compositing;
 pub mod resource;
 pub mod types;
+pub mod render_layer;
 
 const WORKGROUP_SIZE: u32 = 8;
 

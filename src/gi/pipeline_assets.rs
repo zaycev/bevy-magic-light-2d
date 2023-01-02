@@ -13,7 +13,7 @@ use crate::gi::types_gpu::{
     GpuSkylightMaskData,
 };
 use crate::prelude::BevyMagicLight2DSettings;
-use crate::MainCamera;
+use crate::SpriteCamera;
 
 #[rustfmt::skip]
 #[derive(Default, Resource)]
@@ -53,7 +53,7 @@ pub(crate) fn system_extract_pipeline_assets(
 
     query_lights:               Extract<Query<(&Transform, &OmniLightSource2D, &ComputedVisibility)>>,
     query_occluders:            Extract<Query<(&LightOccluder2D, &Transform, &ComputedVisibility)>>,
-    query_camera:               Extract<Query<(&Camera, &GlobalTransform), With<MainCamera>>>,
+    query_camera:               Extract<Query<(&Camera, &GlobalTransform), With<SpriteCamera>>>,
     query_masks:                Extract<Query<(&Transform, &SkylightMask2D)>>,
     query_skylight_light:       Extract<Query<&SkylightLight2D>>,
 

@@ -125,7 +125,7 @@ fn setup(mut commands: Commands, post_processing_target: Res<PostProcessingTarge
             },
             Name::new("main_camera"),
         ))
-        .insert(MainCamera)
+        .insert(SpriteCamera)
         .insert(UiCameraConfig {
             show_ui: false,
             ..default()
@@ -134,7 +134,7 @@ fn setup(mut commands: Commands, post_processing_target: Res<PostProcessingTarge
 
 fn system_move_camera(
     mut camera_target: Local<Vec3>,
-    mut query_camera: Query<&mut Transform, With<MainCamera>>,
+    mut query_camera: Query<&mut Transform, With<SpriteCamera>>,
     keyboard: Res<Input<KeyCode>>,
 ) {
     if let Ok(mut camera_transform) = query_camera.get_single_mut() {

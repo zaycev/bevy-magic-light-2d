@@ -126,7 +126,7 @@ pub fn system_setup_gi_pipeline(
     );
     let ss_blend_tex = create_texture_2d(
         (
-            target_size.width / (GI_SCREEN_PROBE_SIZE as u32),
+            target_size.width  / (GI_SCREEN_PROBE_SIZE as u32),
             target_size.height / (GI_SCREEN_PROBE_SIZE as u32),
         ),
         SS_BLEND_TARGET_FORMAT,

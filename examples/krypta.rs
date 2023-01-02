@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::{FilterMode, SamplerDescriptor};
+use bevy::render::view::RenderLayers;
 use bevy::sprite::MaterialMesh2dBundle;
 use bevy_inspector_egui::prelude::*;
 use bevy_magic_light_2d::prelude::*;
@@ -10,7 +11,7 @@ pub const TILE_SIZE: f32 = 16.0;
 pub const SPRITE_SCALE: f32 = 4.0;
 pub const Z_BASE_FLOOR: f32 = 100.0; // Base z-coordinate for 2D layers.
 pub const Z_BASE_OBJECTS: f32 = 200.0; // Ground object sprites.
-pub const SCREEN_SIZE: (f32, f32) = (768.0, 960.0);
+pub const SCREEN_SIZE: (f32, f32) = (1080.0 * 1.2, 1920.0 * 1.2);
 
 // Misc components.
 #[derive(Component)]
@@ -19,6 +20,7 @@ pub struct MouseLight;
 pub struct Movable;
 
 fn main() {
+
     // Basic setup.
     App::new()
         .insert_resource(ClearColor(Color::rgb_u8(0, 0, 0)))
@@ -181,7 +183,8 @@ fn setup(
                     sprite: TextureAtlasSprite::new(id),
                     texture_atlas: floor_atlas.clone(),
                     ..default()
-                }).id());
+                })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR)).id());
         }
     }
 
@@ -300,6 +303,7 @@ fn setup(
                         texture_atlas: wall_atlas.clone(),
                         ..default()
                     })
+                    .insert(RenderLayers::from_layers(CAMERA_LAYER_WALL))
                     .insert(occluder_data.clone()).id());
             }
         }
@@ -362,9 +366,11 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECT))
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
-                }).insert(Name::new("candle_1")).id());
+                })
+                .insert(Name::new("candle_1")).id());
 
         }
 
@@ -386,9 +392,11 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECT))
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
-                }).insert(Name::new("candle_2")).id());
+                })
+                .insert(Name::new("candle_2")).id());
         }
 
         // Candle 3.
@@ -409,9 +417,11 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECT))
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
-                }).insert(Name::new("candle_3")).id());
+                })
+                .insert(Name::new("candle_3")).id());
         }
 
         // Candle 4.
@@ -432,9 +442,11 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECT))
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
-                }).insert(Name::new("candle_4")).id());
+                })
+                .insert(Name::new("candle_4")).id());
         }
 
         // Tomb 1.
@@ -454,9 +466,11 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECT))
                 .insert(LightOccluder2D {
                     h_size: Vec2::new(72.8, 31.0),
-                }).insert(Name::new("tomb_1")).id());
+                })
+                .insert(Name::new("tomb_1")).id());
         }
 
         // Sewerage 1.
@@ -466,16 +480,19 @@ fn setup(
             let mut sprite = TextureAtlasSprite::new(sewerage_rect_1);
             sprite.color = Color::rgb_u8(255, 255, 255);
 
-            decorations.push(commands.spawn(SpriteSheetBundle {
-                transform: Transform {
-                    translation: Vec3::new(x, y, get_object_z(y)),
-                    scale: Vec2::splat(4.0).extend(0.0),
+            decorations.push(commands
+                .spawn(SpriteSheetBundle {
+                    transform: Transform {
+                        translation: Vec3::new(x, y, get_object_z(y)),
+                        scale: Vec2::splat(4.0).extend(0.0),
+                        ..default()
+                    },
+                    sprite,
+                    texture_atlas: texture_atlas_handle.clone(),
                     ..default()
-                },
-                sprite,
-                texture_atlas: texture_atlas_handle.clone(),
-                ..default()
-            }).insert(Name::new("sewerage_1")).id());
+                })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECT))
+                .insert(Name::new("sewerage_1")).id());
         }
     }
     commands
@@ -701,43 +718,52 @@ fn setup(
         })
         .insert(MouseLight);
 
-    let render_target = post_processing_target
-        .handle
+    let (floor_target, walls_target, objects_target) = post_processing_target
+        .handles
         .clone()
         .expect("No post processing target");
+
+
+    // Setup separate camera for floor, walls and objects.
 
     commands
         .spawn((
             Camera2dBundle {
                 camera: Camera {
-                    hdr: true,
+                    hdr: false,
                     priority: 0,
-                    target: RenderTarget::Image(render_target),
+                    target: RenderTarget::Image(floor_target),
                     ..default()
                 },
                 ..default()
             },
             Name::new("main_camera"),
         ))
-        .insert(MainCamera)
+        .insert(SpriteCamera)
+        .insert(FloorCamera)
+        .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR))
         .insert(UiCameraConfig {
             show_ui: false,
             ..default()
         });
+
+
 }
 
 #[rustfmt::skip]
 fn system_control_mouse_light(
-    mut commands:     Commands,
-        windows:      ResMut<Windows>,
-    mut query_light:  Query<(&mut Transform, &mut OmniLightSource2D), (Without<MainCamera>, With<MouseLight>)>,
-        query_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-        mouse:        Res<Input<MouseButton>>,
-        keyboard:     Res<Input<KeyCode>>,
+    mut commands:      Commands,
+        windows:       ResMut<Windows>,
+    mut query_light:   Query<(&mut Transform, &mut OmniLightSource2D), With<MouseLight>>,
+        query_cameras: Query<(&Camera, &GlobalTransform), With<SpriteCamera>>,
+        mouse:         Res<Input<MouseButton>>,
+        keyboard:      Res<Input<KeyCode>>,
 ) {
     let mut rng = thread_rng();
 
-    if let Ok((camera, camera_transform)) = query_camera.get_single() {
+    // We only need to iter over first camera matched.
+    for (camera, camera_transform) in query_cameras.iter() {
+
         let window_opt = if let RenderTarget::Window(id) = camera.target {
             windows.get(id)
         } else {
@@ -775,16 +801,20 @@ fn system_control_mouse_light(
                 }
             }
         }
+
+        break;
     }
 }
 
 #[rustfmt::skip]
 fn system_move_camera(
     mut camera_target: Local<Vec3>,
-    mut query_camera:  Query<&mut Transform, With<MainCamera>>,
+    mut query_cameras:  Query<&mut Transform, With<SpriteCamera>>,
         keyboard:      Res<Input<KeyCode>>,
 ) {
-    if let Ok(mut camera_transform) = query_camera.get_single_mut() {
+
+    // Update all sprite cameras.
+    for mut camera_transform in query_cameras.iter_mut() {
         let speed = 10.0;
 
         if keyboard.pressed(KeyCode::W) {
