@@ -136,7 +136,7 @@ pub fn system_setup_gi_pipeline(
     let ss_bounce_target = images.add(ss_bounce_tex);
     let ss_blend_target  = images.add(ss_blend_tex);
     let ss_filter_target = images.add(ss_filter_tex);
-    let ss_pose_target   = images.add(ss_pose_tex);;
+    let ss_pose_target   = images.add(ss_pose_tex);
 
     targets_wrapper.targets = Some(GiPipelineTargets {
         sdf_target,
@@ -195,7 +195,7 @@ pub(crate) fn system_queue_bind_groups(
         let ss_bounce_image = &gpu_images[&targets.ss_bounce_target];
         let ss_blend_image = &gpu_images[&targets.ss_blend_target];
         let ss_filter_image = &gpu_images[&targets.ss_filter_target];
-        let ss_pose_image   = &gpu_images[&targets.ss_pose_target];
+        let ss_pose_image = &gpu_images[&targets.ss_pose_target];
 
         let sdf_bind_group = render_device.create_bind_group(&BindGroupDescriptor {
             label: "gi_sdf_bind_group".into(),

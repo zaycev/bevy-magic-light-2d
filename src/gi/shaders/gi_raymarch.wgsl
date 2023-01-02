@@ -33,7 +33,7 @@ fn raymarch(
     var ray_progress:   f32    = 0.0;
     var h                      = vec2<f32>(0.0);
     var h_prev                 = h;
-    let min_sdf                = 0.5;
+    let min_sdf                = 1e-4;
     var inside                 = true;
     let max_inside_dist        = 20.0;
     let max_inside_dist_sq     = max_inside_dist * max_inside_dist;
@@ -151,7 +151,7 @@ fn raymarch_bounce(
     var ray_progress:   f32    = 0.0;
     var h                      = vec2<f32>(0.0);
     var h_prev                 = h;
-    let min_sdf                = 0.5;
+    let min_sdf                = 1e-4;
 
     for (var i: i32 = 0; i < max_steps; i++) {
 

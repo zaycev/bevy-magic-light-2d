@@ -32,7 +32,6 @@ fn fragment(
 ) -> @location(0) vec4<f32> {
     let uv = coords_to_viewport_uv(position.xy, view.viewport);
 
-
     // Read diffuse textures.
     let in_floor_diffuse   = textureSample(in_floor_texture,   in_floor_sampler, uv);
     let in_walls_diffuse   = textureSample(in_walls_texture,   in_walls_sampler, uv);
@@ -42,19 +41,39 @@ fn fragment(
     let in_sdf_uv     = textureSample(in_pose_texture, in_pose_texture_sampler, uv).xy;
     let in_sdf        = bilinear_sample_r(in_sdf_texture, in_sdf_texture_sampler, in_sdf_uv);
 
+    // Calculate object irradiance.
+    var object_irradiance = in_irradiance;
+    let k_size = 5;
+    let k_width = 24;
+    var samples = 0.0;
+    for (var i = -k_size; i <= k_size; i++) {
+        for (var j = -k_size; j <= k_size; j++) {
+            let offset = vec2<f32>(f32(i * k_width), f32(j * k_width));
+            let irradiance_uv = coords_to_viewport_uv(position.xy - offset, view.viewport);
 
-    let final_floor  = in_floor_diffuse.xyz * lin_to_srgb(in_irradiance);
-    var final_walls  = in_walls_diffuse.xyz;
-    if in_sdf > -4.0 {
-        final_walls  = in_walls_diffuse.xyz * lin_to_srgb(in_irradiance);
-    } else {
-        final_walls  = in_walls_diffuse.xyz / 4.0;
+            let sample_irradiance = textureSample(
+                in_irradiance_texture,
+                in_irradiance_texture_sampler,
+                irradiance_uv
+            ).xyz;
+
+            object_irradiance = max(object_irradiance, sample_irradiance);
+
+            samples += 1.0;
+        }
     }
-    let final_objects = in_objects_diffuse;
 
+    // object_irradiance /= samples;
+    // object_irradiance =  mix(object_irradiance, vec3<f32>(1.0), 0.0000001);
+
+    let final_floor   = in_floor_diffuse.xyz   * lin_to_srgb(in_irradiance);
+    var final_walls   = in_walls_diffuse.xyz   * lin_to_srgb(in_irradiance);
+    let final_objects = in_objects_diffuse.xyz * lin_to_srgb(object_irradiance);
 
     var out = vec4<f32>(mix(final_floor.xyz, final_walls.xyz, 1.0 - step(length(final_walls.xyz), 0.001)), 1.0);
         out = vec4<f32>(mix(out.xyz, final_objects.xyz, 1.0 - step(length(final_objects.xyz), 0.001)), 1.0);
 
-    return vec4<f32>(out);
+    // out = vec4<f32>(in_irradiance, 1.0);
+
+    return out;
 }

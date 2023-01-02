@@ -20,7 +20,6 @@ pub struct MouseLight;
 pub struct Movable;
 
 fn main() {
-
     // Basic setup.
     App::new()
         .insert_resource(ClearColor(Color::rgb_u8(0, 0, 0)))
@@ -105,9 +104,9 @@ fn setup(
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         &[0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
+        &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
+        &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
         &[0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
@@ -353,7 +352,7 @@ fn setup(
             let x = 100.0;
             let y = -388.5;
             let mut sprite = TextureAtlasSprite::new(candle_rect_1);
-            sprite.color = Color::rgb_u8(120, 120, 120);
+            sprite.color = Color::rgb_u8(180, 180, 180);
 
             decorations.push(commands
                 .spawn(SpriteSheetBundle {
@@ -379,7 +378,7 @@ fn setup(
             let x = -32.1;
             let y = -384.2;
             let mut sprite = TextureAtlasSprite::new(candle_rect_2);
-            sprite.color = Color::rgb_u8(120, 120, 120);
+            sprite.color = Color::rgb_u8(180, 180, 180);
 
             decorations.push(commands
                 .spawn(SpriteSheetBundle {
@@ -404,7 +403,7 @@ fn setup(
             let x = -351.5;
             let y = -126.0;
             let mut sprite = TextureAtlasSprite::new(candle_rect_3);
-            sprite.color = Color::rgb_u8(120, 120, 120);
+            sprite.color = Color::rgb_u8(180, 180, 180);
 
             decorations.push(commands
                 .spawn(SpriteSheetBundle {
@@ -429,7 +428,7 @@ fn setup(
             let x = 413.0;
             let y = -124.6;
             let mut sprite = TextureAtlasSprite::new(candle_rect_4);
-            sprite.color = Color::rgb_u8(120, 120, 120);
+            sprite.color = Color::rgb_u8(180, 180, 180);
 
             decorations.push(commands
                 .spawn(SpriteSheetBundle {
@@ -453,6 +452,30 @@ fn setup(
         {
             let x = 31.5;
             let y = -220.0;
+            let mut sprite = TextureAtlasSprite::new(tomb_rect_1);
+            sprite.color = Color::rgb_u8(255, 255, 255);
+            decorations.push(commands
+                .spawn(SpriteSheetBundle {
+                    transform: Transform {
+                        translation: Vec3::new(x, y, get_object_z(y)),
+                        scale: Vec2::splat(4.0).extend(0.0),
+                        ..default()
+                    },
+                    sprite,
+                    texture_atlas: texture_atlas_handle.clone(),
+                    ..default()
+                })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
+                .insert(LightOccluder2D {
+                    h_size: Vec2::new(72.8, 31.0),
+                })
+                .insert(Name::new("tomb_1")).id());
+        }
+
+        // Tomb 1.
+        {
+            let x = 300.5;
+            let y = -500.0;
             let mut sprite = TextureAtlasSprite::new(tomb_rect_1);
             sprite.color = Color::rgb_u8(255, 255, 255);
             decorations.push(commands
@@ -631,28 +654,30 @@ fn setup(
 
         lights.push(spawn_light(
             &mut commands,
-            10.385,
-            -1170.82,
+            40.0,
+            -1163.2,
             "outdoor_light_9",
             OmniLightSource2D {
-                intensity: 10.0,
+                intensity: 1.2,
+                falloff: Vec3::new(50.0, 40.0, 0.03),
                 color: Color::rgb_u8(0, 206, 94),
-                jitter_intensity: 0.0,
-                jitter_translation: 8.0,
+                jitter_intensity: 0.7,
+                jitter_translation: 3.0,
                 ..base
             },
         ));
 
         lights.push(spawn_light(
             &mut commands,
-            182.375,
-            -1170.82,
+            182.3,
+            -1210.0,
             "outdoor_light_10",
             OmniLightSource2D {
-                intensity: 10.0,
+                intensity: 1.2,
+                falloff: Vec3::new(50.0, 40.0, 0.03),
                 color: Color::rgb_u8(0, 206, 94),
-                jitter_intensity: 0.0,
-                jitter_translation: 8.0,
+                jitter_intensity: 0.7,
+                jitter_translation: 3.0,
                 ..base
             },
         ));
@@ -881,4 +906,3 @@ fn system_move_camera(
         camera_transform.translation.y = camera_current.y;
     }
 }
-

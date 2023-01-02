@@ -18,9 +18,9 @@ fn sdf_aabb_occluder(p: vec2<f32>, occluder_i: i32) -> f32 {
 }
 
 fn round_merge(s1: f32, s2: f32, r: f32) -> f32 {
-    var intersection_space = vec2<f32>(s1 - r, s1 - r);
+    var intersection_space = vec2<f32>(s1 - r, s1 - r); // s1, s1 is intended
         intersection_space = min(intersection_space, vec2<f32>(0.0));
-    let inside_distance    = -fast_length_2d(intersection_space);
+    let inside_distance    = -length(intersection_space);
     let simple_union       = min(s1, s2);
     let outside_distance   = max(simple_union, r);
     return inside_distance + outside_distance;
@@ -32,16 +32,19 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
      let dims = textureDimensions(sdf_out);
      let uv = (vec2<f32>(texel_pos) + 0.5) / vec2<f32>(dims);
 
-     let world_pose = sdf_uv_to_world(uv, 
+     let world_pose = sdf_uv_to_world(uv,
         camera_params.inverse_view_proj,
         camera_params.sdf_scale);
+    let r = 1.2;
 
-     var sdf_merged   = sdf_aabb_occluder(world_pose.xy, 0);
+     var sdf_merged   = round_merge(
+        1e+10,
+        sdf_aabb_occluder(world_pose.xy, 0),
+        r,
+     );
      for (var i: i32 = 1; i < i32(light_occluder_buffer.count); i++) {
-        sdf_merged = round_merge(sdf_merged, sdf_aabb_occluder(world_pose.xy, i), 0.98);
+        sdf_merged = round_merge(sdf_merged, sdf_aabb_occluder(world_pose.xy, i), r);
      }
 
-     sdf_merged = clamp(sdf_merged, -100.0, 10000.0);
-
-     textureStore(sdf_out, texel_pos, vec4<f32>(sdf_merged, 0.0, 0.0, 0.0));
+    textureStore(sdf_out, texel_pos, vec4<f32>(sdf_merged, 0.0, 0.0, 0.0));
 }

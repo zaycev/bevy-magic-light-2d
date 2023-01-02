@@ -35,8 +35,8 @@ impl Default for LightPassParams {
             smooth_kernel_size: (2, 1),
             direct_light_contrib: 0.5,
             indirect_light_contrib: 0.5,
-            indirect_rays_per_sample: 40,
-            indirect_rays_radius_factor: 4.0,
+            indirect_rays_per_sample: 32,
+            indirect_rays_radius_factor: 3.5,
         }
     }
 }
