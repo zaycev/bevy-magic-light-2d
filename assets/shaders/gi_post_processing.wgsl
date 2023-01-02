@@ -1,18 +1,19 @@
 #import bevy_pbr::mesh_view_bindings
 #import bevy_pbr::utils
+#import bevy_magic_light_2d::gi_camera
 
-@group(1) @binding(0) var in_floor_texture:   texture_2d<f32>;
-@group(1) @binding(1) var in_floor_sampler:   sampler;
-
-@group(1) @binding(2) var in_walls_texture:   texture_2d<f32>;
-@group(1) @binding(3) var in_walls_sampler:   sampler;
-
-@group(1) @binding(4) var in_objects_texture: texture_2d<f32>;
-@group(1) @binding(5) var in_objects_sampler: sampler;
-
-
+@group(1) @binding(0) var in_floor_texture:              texture_2d<f32>;
+@group(1) @binding(1) var in_floor_sampler:              sampler;
+@group(1) @binding(2) var in_walls_texture:              texture_2d<f32>;
+@group(1) @binding(3) var in_walls_sampler:              sampler;
+@group(1) @binding(4) var in_objects_texture:            texture_2d<f32>;
+@group(1) @binding(5) var in_objects_sampler:            sampler;
 @group(1) @binding(6) var in_irradiance_texture:         texture_2d<f32>;
 @group(1) @binding(7) var in_irradiance_texture_sampler: sampler;
+@group(1) @binding(8) var in_sdf_texture:                texture_2d<f32>;
+@group(1) @binding(9) var in_sdf_texture_sampler:        sampler;
+@group(1) @binding(10) var in_pose_texture:              texture_2d<f32>;
+@group(1) @binding(11) var in_pose_texture_sampler:      sampler;
 
 fn lin_to_srgb(color: vec3<f32>) -> vec3<f32> {
    let x = color * 12.92;
@@ -33,18 +34,27 @@ fn fragment(
 
 
     // Read diffuse textures.
-    let in_floor_diffuse   = textureSample(in_floor_texture,   in_floor_sampler, uv).xyz;
-    let in_walls_diffuse   = textureSample(in_walls_texture,   in_walls_sampler, uv).xyz;
-    let in_objects_diffuse = textureSample(in_objects_texture, in_objects_sampler, uv).xyz;
+    let in_floor_diffuse   = textureSample(in_floor_texture,   in_floor_sampler, uv);
+    let in_walls_diffuse   = textureSample(in_walls_texture,   in_walls_sampler, uv);
+    let in_objects_diffuse = textureSample(in_objects_texture, in_objects_sampler, uv);
 
     let in_irradiance = textureSample(in_irradiance_texture, in_irradiance_texture_sampler, uv).xyz;
+    let in_sdf_uv     = textureSample(in_pose_texture, in_pose_texture_sampler, uv).xy;
+    let in_sdf        = bilinear_sample_r(in_sdf_texture, in_sdf_texture_sampler, in_sdf_uv);
 
 
+    let final_floor  = in_floor_diffuse.xyz * lin_to_srgb(in_irradiance);
+    var final_walls  = in_walls_diffuse.xyz;
+    if in_sdf > -4.0 {
+        final_walls  = in_walls_diffuse.xyz * lin_to_srgb(in_irradiance);
+    } else {
+        final_walls  = in_walls_diffuse.xyz / 4.0;
+    }
+    let final_objects = in_objects_diffuse;
 
-    let floor_final_rgb = in_floor_diffuse * lin_to_srgb(in_irradiance);
 
+    var out = vec4<f32>(mix(final_floor.xyz, final_walls.xyz, 1.0 - step(length(final_walls.xyz), 0.001)), 1.0);
+        out = vec4<f32>(mix(out.xyz, final_objects.xyz, 1.0 - step(length(final_objects.xyz), 0.001)), 1.0);
 
-    let out = floor_final_rgb;
-
-    return vec4<f32>(out, 1.0);
+    return vec4<f32>(out);
 }

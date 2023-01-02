@@ -31,6 +31,14 @@ pub struct PostProcessingMaterial {
     #[texture(6)]
     #[sampler(7)]
     irradiance_image:  Handle<Image>,
+
+    #[texture(8)]
+    #[sampler(9)]
+    sdf_image:         Handle<Image>,
+
+    #[texture(10)]
+    #[sampler(11)]
+    pose_image:         Handle<Image>,
 }
 
 #[derive(Resource, Default)]
@@ -146,6 +154,20 @@ pub fn setup_post_processing_camera(
             .as_ref()
             .expect("Targets must be initialized")
             .ss_filter_target
+            .clone(),
+
+        sdf_image: gpu_targets_wrapper
+            .targets
+            .as_ref()
+            .expect("Targets must be initialized")
+            .sdf_target
+            .clone(),
+
+        pose_image: gpu_targets_wrapper
+            .targets
+            .as_ref()
+            .expect("Targets must be initialized")
+            .ss_pose_target
             .clone(),
     });
 

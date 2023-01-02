@@ -11,7 +11,7 @@ pub const TILE_SIZE: f32 = 16.0;
 pub const SPRITE_SCALE: f32 = 4.0;
 pub const Z_BASE_FLOOR: f32 = 100.0; // Base z-coordinate for 2D layers.
 pub const Z_BASE_OBJECTS: f32 = 200.0; // Ground object sprites.
-pub const SCREEN_SIZE: (f32, f32) = (1080.0 * 1.2, 1920.0 * 1.2);
+pub const SCREEN_SIZE: (f32, f32) = (768.0, 768.0);
 
 // Misc components.
 #[derive(Component)]
@@ -491,7 +491,7 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
-                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR)) // Add to floor
                 .insert(Name::new("sewerage_1")).id());
         }
     }

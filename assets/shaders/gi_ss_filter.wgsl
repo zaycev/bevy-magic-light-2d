@@ -6,12 +6,13 @@
 #import bevy_magic_light_2d::gi_raymarch
 
 @group(0) @binding(0) var<uniform> camera_params:     CameraParams;
-@group(0) @binding(1) var<uniform> cfg:             LightPassParams;
+@group(0) @binding(1) var<uniform> cfg:               LightPassParams;
 @group(0) @binding(2) var<storage> probes:            ProbeDataBuffer;
 @group(0) @binding(3) var          sdf_in:            texture_2d<f32>;
 @group(0) @binding(4) var          sdf_in_sampler:    sampler;
 @group(0) @binding(5) var          ss_blend_in:       texture_storage_2d<rgba32float, read>;
 @group(0) @binding(6) var          ss_filter_out:     texture_storage_2d<rgba32float, write>;
+@group(0) @binding(7) var          ss_pose_out:      texture_storage_2d<rg32float, write>;
 
 fn gauss(x: f32) -> f32 {
     let a = 4.0;
@@ -22,6 +23,7 @@ fn gauss(x: f32) -> f32 {
 
     return a * exp(- (x - b) * (x - b) / d);
 }
+
 
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
@@ -74,8 +76,8 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
             let p_sample = textureLoad(ss_blend_in, p_grid_pose).xyz;
 
             // Discard occluded probes.
-            if raymarch(sample_world_pose, p_world_pose,
-                5,
+            if raymarch_primary(sample_world_pose, p_world_pose,
+                8,
                 sdf_in,
                 sdf_in_sampler,
                 camera_params,
@@ -95,8 +97,10 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     var irradiance = vec3<f32>(0.0);
     if (total_w > 0.0) {
         irradiance = total_q / total_w;
-        // irradiance = lin_to_srgb(total_q / total_w);
     }
 
+    let sdf_uv = world_to_sdf_uv(sample_world_pose, camera_params.view_proj, camera_params.inv_sdf_scale);
+
     textureStore(ss_filter_out, screen_pose, vec4<f32>(irradiance.xyz, 1.0));
+    textureStore(ss_pose_out, screen_pose, vec4<f32>(sdf_uv, 0.0,  0.0));
 }

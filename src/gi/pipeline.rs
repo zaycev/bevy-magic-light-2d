@@ -18,25 +18,13 @@ const SS_PROBE_TARGET_FORMAT: TextureFormat = TextureFormat::Rgba16Float;
 const SS_BOUNCE_TARGET_FORMAT: TextureFormat = TextureFormat::Rgba32Float;
 const SS_BLEND_TARGET_FORMAT: TextureFormat = TextureFormat::Rgba32Float;
 const SS_FILTER_TARGET_FORMAT: TextureFormat = TextureFormat::Rgba32Float;
+const SS_POSE_TARGET_FORMAT: TextureFormat = TextureFormat::Rg32Float;
 
 const SDF_PIPELINE_ENTRY: &str = "main";
 const SS_PROBE_PIPELINE_ENTRY: &str = "main";
 const SS_BOUNCE_PIPELINE_ENTRY: &str = "main";
 const SS_BLEND_PIPELINE_ENTRY: &str = "main";
 const SS_FILTER_PIPELINE_ENTRY: &str = "main";
-
-#[derive(Component)]
-pub struct GiTarget;
-#[derive(Component)]
-pub struct GiSdfTarget;
-#[derive(Component)]
-pub struct SSProbeTarget;
-#[derive(Component)]
-pub struct GiBounceTarget;
-#[derive(Component)]
-pub struct GiBlendTarget;
-#[derive(Component)]
-pub struct GiFilterTarget;
 
 #[allow(dead_code)]
 #[derive(Clone, Resource, ExtractResource, Default)]
@@ -51,6 +39,7 @@ pub struct GiPipelineTargets {
     pub(crate) ss_bounce_target: Handle<Image>,
     pub(crate) ss_blend_target: Handle<Image>,
     pub(crate) ss_filter_target: Handle<Image>,
+    pub(crate) ss_pose_target: Handle<Image>,
 }
 
 #[allow(dead_code)]
@@ -98,7 +87,6 @@ fn create_texture_2d(size: (u32, u32), format: TextureFormat, filter: FilterMode
 
 #[rustfmt::skip]
 pub fn system_setup_gi_pipeline(
-    mut commands:        Commands,
     mut images:          ResMut<Assets<Image>>,
     mut targets_wrapper: ResMut<PipelineTargetsWrapper>,
         targets_sizes:   ResMut<ComputedTargetSizes>,
@@ -137,132 +125,18 @@ pub fn system_setup_gi_pipeline(
         SS_FILTER_TARGET_FORMAT,
         FilterMode::Nearest,
     );
+    let ss_pose_tex = create_texture_2d(
+        (target_size.width, target_size.height),
+        SS_POSE_TARGET_FORMAT,
+        FilterMode::Nearest,
+    );
 
     let sdf_target       = images.add(sdf_tex);
     let ss_probe_target  = images.add(ss_probe_tex);
     let ss_bounce_target = images.add(ss_bounce_tex);
     let ss_blend_target  = images.add(ss_blend_tex);
     let ss_filter_target = images.add(ss_filter_tex);
-
-    let sdf_image_entity = commands
-        .spawn_empty()
-        .insert(Name::new("sdf_target"))
-        .insert(Sprite {
-            custom_size: Some(Vec2::new(
-                target_size.width as f32,
-                target_size.height as f32,
-            )),
-            ..default()
-        })
-        .insert(sdf_target.clone())
-        .insert(Transform {
-            translation: Vec3::new(0.0, 0.0, 0.0),
-            ..Default::default()
-        })
-        .insert(GlobalTransform::default())
-        .insert(Visibility { is_visible: false })
-        .insert(ComputedVisibility::default())
-        .insert(GiSdfTarget)
-        .insert(GiTarget)
-        .id();
-
-    let ss_probe_image_entity = commands
-        .spawn_empty()
-        .insert(Name::new("ss_probe_target"))
-        .insert(Sprite {
-            custom_size: Some(Vec2::new(
-                target_size.width as f32,
-                target_size.height as f32,
-            )),
-            ..default()
-        })
-        .insert(ss_probe_target.clone())
-        .insert(Transform {
-            translation: Vec3::new(0.0, 0.0, 0.0),
-            ..Default::default()
-        })
-        .insert(GlobalTransform::default())
-        .insert(Visibility { is_visible: false })
-        .insert(ComputedVisibility::default())
-        .insert(SSProbeTarget)
-        .insert(GiTarget)
-        .id();
-
-    let ss_bounce_image_entity = commands
-        .spawn_empty()
-        .insert(Name::new("ss_bounce_target"))
-        .insert(Sprite {
-            custom_size: Some(Vec2::new(
-                target_size.width as f32,
-                target_size.height as f32,
-            )),
-            ..default()
-        })
-        .insert(ss_bounce_target.clone())
-        .insert(Transform {
-            translation: Vec3::new(0.0, 0.0, 0.0),
-            ..Default::default()
-        })
-        .insert(GlobalTransform::default())
-        .insert(Visibility { is_visible: false })
-        .insert(ComputedVisibility::default())
-        .insert(GiBounceTarget)
-        .insert(GiTarget)
-        .id();
-
-    let ss_blend_image_entity = commands
-        .spawn_empty()
-        .insert(Name::new("ss_blend_target"))
-        .insert(Sprite {
-            custom_size: Some(Vec2::new(
-                target_size.width as f32,
-                target_size.height as f32,
-            )),
-            ..default()
-        })
-        .insert(ss_blend_target.clone())
-        .insert(Transform {
-            translation: Vec3::new(0.0, 0.0, 0.0),
-            ..Default::default()
-        })
-        .insert(GlobalTransform::default())
-        .insert(Visibility { is_visible: false })
-        .insert(ComputedVisibility::default())
-        .insert(GiBlendTarget)
-        .insert(GiTarget)
-        .id();
-
-    let ss_filter_image_entity = commands
-        .spawn_empty()
-        .insert(Name::new("ss_filter_target"))
-        .insert(Sprite {
-            custom_size: Some(Vec2::new(
-                target_size.width as f32,
-                target_size.height as f32,
-            )),
-            ..default()
-        })
-        .insert(ss_filter_target.clone())
-        .insert(Transform {
-            translation: Vec3::new(0.0, 0.0, 0.0),
-            ..Default::default()
-        })
-        .insert(GlobalTransform::default())
-        .insert(Visibility { is_visible: false })
-        .insert(ComputedVisibility::default())
-        .insert(GiFilterTarget)
-        .insert(GiTarget)
-        .id();
-
-    commands
-        .spawn_empty()
-        .insert(Name::new("gi_pipeline"))
-        .insert(SpatialBundle::default())
-        .add_child(sdf_image_entity)
-        .add_child(ss_probe_image_entity)
-        .add_child(ss_bounce_image_entity)
-        .add_child(ss_blend_image_entity)
-        .add_child(ss_filter_image_entity);
+    let ss_pose_target   = images.add(ss_pose_tex);;
 
     targets_wrapper.targets = Some(GiPipelineTargets {
         sdf_target,
@@ -270,6 +144,7 @@ pub fn system_setup_gi_pipeline(
         ss_bounce_target,
         ss_blend_target,
         ss_filter_target,
+        ss_pose_target,
     });
 }
 
@@ -320,6 +195,7 @@ pub(crate) fn system_queue_bind_groups(
         let ss_bounce_image = &gpu_images[&targets.ss_bounce_target];
         let ss_blend_image = &gpu_images[&targets.ss_blend_target];
         let ss_filter_image = &gpu_images[&targets.ss_filter_target];
+        let ss_pose_image   = &gpu_images[&targets.ss_pose_target];
 
         let sdf_bind_group = render_device.create_bind_group(&BindGroupDescriptor {
             label: "gi_sdf_bind_group".into(),
@@ -476,6 +352,10 @@ pub(crate) fn system_queue_bind_groups(
                 BindGroupEntry {
                     binding: 6,
                     resource: BindingResource::TextureView(&ss_filter_image.texture_view),
+                },
+                BindGroupEntry {
+                    binding: 7,
+                    resource: BindingResource::TextureView(&ss_pose_image.texture_view),
                 },
             ],
         });
@@ -847,6 +727,17 @@ impl FromWorld for LightPassPipeline {
                         ty: BindingType::StorageTexture {
                             access: StorageTextureAccess::WriteOnly,
                             format: SS_FILTER_TARGET_FORMAT,
+                            view_dimension: TextureViewDimension::D2,
+                        },
+                        count: None,
+                    },
+                    // SS pose.
+                    BindGroupLayoutEntry {
+                        binding: 7,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::StorageTexture {
+                            access: StorageTextureAccess::WriteOnly,
+                            format: SS_POSE_TARGET_FORMAT,
                             view_dimension: TextureViewDimension::D2,
                         },
                         count: None,
