@@ -18,27 +18,27 @@ use crate::gi::resource::ComputedTargetSizes;
 pub struct PostProcessingMaterial {
     #[texture(0)]
     #[sampler(1)]
-    floor_image:      Handle<Image>,
+    floor_image:       Handle<Image>,
 
     #[texture(2)]
     #[sampler(3)]
-    walls_image:      Handle<Image>,
+    walls_image:       Handle<Image>,
 
     #[texture(4)]
     #[sampler(5)]
-    object_image:     Handle<Image>,
+    objects_image:     Handle<Image>,
 
     #[texture(6)]
     #[sampler(7)]
-    irradiance_image: Handle<Image>,
+    irradiance_image:  Handle<Image>,
 }
 
 #[derive(Resource, Default)]
 pub struct PostProcessingTarget {
     pub handles: Option<(
-        Handle<Image>, // Floor layer.
-        Handle<Image>, // Wall layer.
-        Handle<Image>, // Object layer.
+        Handle<Image>, // Floor  layer.
+        Handle<Image>, // Walls  layer.
+        Handle<Image>, // Objects layer.
     )>,
 }
 
@@ -139,7 +139,7 @@ pub fn setup_post_processing_camera(
 
         floor_image:  floor_image_handle,
         walls_image:  walls_image_handle,
-        object_image: objects_image_handle,
+        objects_image: objects_image_handle,
 
         irradiance_image: gpu_targets_wrapper
             .targets

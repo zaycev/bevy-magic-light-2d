@@ -6,8 +6,8 @@ pub mod prelude;
 #[derive(Component)]
 pub struct SpriteCamera;
 #[derive(Component)]
-pub struct FloorCamera;
+pub struct ObjectsCamera;
 #[derive(Component)]
-pub struct WallCamera;
+pub struct WallsCamera;
 #[derive(Component)]
 pub struct ObjectCamera;

@@ -303,7 +303,7 @@ fn setup(
                         texture_atlas: wall_atlas.clone(),
                         ..default()
                     })
-                    .insert(RenderLayers::from_layers(CAMERA_LAYER_WALL))
+                    .insert(RenderLayers::from_layers(CAMERA_LAYER_WALLS))
                     .insert(occluder_data.clone()).id());
             }
         }
@@ -366,7 +366,7 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
-                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECT))
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
                 })
@@ -392,7 +392,7 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
-                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECT))
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
                 })
@@ -417,7 +417,7 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
-                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECT))
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
                 })
@@ -442,7 +442,7 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
-                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECT))
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
                 })
@@ -466,7 +466,7 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
-                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECT))
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
                 .insert(LightOccluder2D {
                     h_size: Vec2::new(72.8, 31.0),
                 })
@@ -491,7 +491,7 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
-                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECT))
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
                 .insert(Name::new("sewerage_1")).id());
         }
     }
@@ -725,7 +725,6 @@ fn setup(
 
 
     // Setup separate camera for floor, walls and objects.
-
     commands
         .spawn((
             Camera2dBundle {
@@ -737,11 +736,51 @@ fn setup(
                 },
                 ..default()
             },
-            Name::new("main_camera"),
+            Name::new("main_camera_floor"),
         ))
         .insert(SpriteCamera)
-        .insert(FloorCamera)
+        .insert(ObjectsCamera)
         .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR))
+        .insert(UiCameraConfig {
+            show_ui: false,
+            ..default()
+        });
+    commands
+        .spawn((
+            Camera2dBundle {
+                camera: Camera {
+                    hdr: false,
+                    priority: 0,
+                    target: RenderTarget::Image(walls_target),
+                    ..default()
+                },
+                ..default()
+            },
+            Name::new("main_camera_walls"),
+        ))
+        .insert(SpriteCamera)
+        .insert(WallsCamera)
+        .insert(RenderLayers::from_layers(CAMERA_LAYER_WALLS))
+        .insert(UiCameraConfig {
+            show_ui: false,
+            ..default()
+        });
+    commands
+        .spawn((
+            Camera2dBundle {
+                camera: Camera {
+                    hdr: false,
+                    priority: 0,
+                    target: RenderTarget::Image(objects_target),
+                    ..default()
+                },
+                ..default()
+            },
+            Name::new("main_camera_objects"),
+        ))
+        .insert(SpriteCamera)
+        .insert(ObjectsCamera)
+        .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
         .insert(UiCameraConfig {
             show_ui: false,
             ..default()
