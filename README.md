@@ -1,22 +1,34 @@
-# 🔮 Bevy Magic Light 2D – experimental dynamic 2D global illumination system.
-
 <div align="center">
+
+# 🔮 Bevy Magic Light 2D – experimental dynamic 2D global illumination system.
+4
+
 [![Build status](https://github.com/zaycev/bevy-magic-light-2d/workflows/PR/badge.svg?branch=main)](https://github.com/zaycev/bevy-magic-light-2d/actions)
+5
 [![dependency status](https://deps.rs/repo/github/zaycev/bevy-magic-light-2d/status.svg)](https://deps.rs/repo/github/zaycev/bevy-magic-light-2d)
+6
+
 </div>
-
+8
 > 🚧 Beware! This repo is heavily under construction and a lot of things may change.
-
+9
+​
+10
 Experimental dynamic 2D global illumination system for Bevy, based on SDF ray-marching and screen space irradiance cache probes.
-
+11
+​
+12
 ## Demo
-
+13
+​
+14
 ```shell
+15
 cargo run --example minimal
-```
-
-```shell
+16
 cargo run --example krypta
+cargo run --example movement
+20
 ```
 
 ![Bevy Magic Light 2D – Demo](https://github.com/zaycev/bevy-magic-light-2d/blob/main/static/demo.gif?raw=true)
