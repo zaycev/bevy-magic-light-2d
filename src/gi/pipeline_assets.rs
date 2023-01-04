@@ -13,7 +13,7 @@ use crate::gi::types_gpu::{
     GpuSkylightMaskData,
 };
 use crate::prelude::BevyMagicLight2DSettings;
-use crate::MainCamera;
+use crate::FloorCamera;
 
 #[rustfmt::skip]
 #[derive(Default, Resource)]
@@ -48,12 +48,12 @@ pub(crate) fn system_prepare_pipeline_assets(
 
 #[rustfmt::skip]
 pub(crate) fn system_extract_pipeline_assets(
-    res_light_settings:      Extract<Res<BevyMagicLight2DSettings>>,
+    res_light_settings:         Extract<Res<BevyMagicLight2DSettings>>,
     res_target_sizes:           Extract<Res<ComputedTargetSizes>>,
 
     query_lights:               Extract<Query<(&Transform, &OmniLightSource2D, &ComputedVisibility)>>,
     query_occluders:            Extract<Query<(&LightOccluder2D, &Transform, &ComputedVisibility)>>,
-    query_camera:               Extract<Query<(&Camera, &GlobalTransform), With<MainCamera>>>,
+    query_camera:               Extract<Query<(&Camera, &GlobalTransform), With<FloorCamera>>>,
     query_masks:                Extract<Query<(&Transform, &SkylightMask2D)>>,
     query_skylight_light:       Extract<Query<&SkylightLight2D>>,
 
@@ -138,13 +138,14 @@ pub(crate) fn system_extract_pipeline_assets(
             );
 
             let scale = 2.0;
-            camera_params.sdf_scale = Vec2::splat(scale);
+            camera_params.sdf_scale     = Vec2::splat(scale);
             camera_params.inv_sdf_scale = Vec2::splat(1. / scale);
 
             let probes = gpu_pipeline_assets.probes.get_mut();
             probes.data[*gpu_frame_counter as usize].camera_pose =
                 camera_global_transform.translation().truncate();
         } else {
+            log::warn!("Failed to get camera");
             let probes = gpu_pipeline_assets.probes.get_mut();
             probes.data[*gpu_frame_counter as usize].camera_pose = Vec2::ZERO;
         }
@@ -157,13 +158,15 @@ pub(crate) fn system_extract_pipeline_assets(
         let mut light_pass_params = gpu_pipeline_assets.light_pass_params.get_mut();
         light_pass_params.frame_counter = *gpu_frame_counter;
         light_pass_params.probe_size = GI_SCREEN_PROBE_SIZE;
-        light_pass_params.probe_atlas_cols = cols;
-        light_pass_params.probe_atlas_rows = rows;
-        light_pass_params.reservoir_size = light_pass_config.reservoir_size;
-        light_pass_params.smooth_kernel_size_h = light_pass_config.smooth_kernel_size.0;
-        light_pass_params.smooth_kernel_size_w = light_pass_config.smooth_kernel_size.1;
-        light_pass_params.direct_light_contrib = light_pass_config.direct_light_contrib;
-        light_pass_params.indirect_light_contrib = light_pass_config.indirect_light_contrib;
+        light_pass_params.probe_atlas_cols            = cols;
+        light_pass_params.probe_atlas_rows            = rows;
+        light_pass_params.reservoir_size              = light_pass_config.reservoir_size;
+        light_pass_params.smooth_kernel_size_h        = light_pass_config.smooth_kernel_size.0;
+        light_pass_params.smooth_kernel_size_w        = light_pass_config.smooth_kernel_size.1;
+        light_pass_params.direct_light_contrib        = light_pass_config.direct_light_contrib;
+        light_pass_params.indirect_light_contrib      = light_pass_config.indirect_light_contrib;
+        light_pass_params.indirect_rays_radius_factor = light_pass_config.indirect_rays_radius_factor;
+        light_pass_params.indirect_rays_per_sample    = light_pass_config.indirect_rays_per_sample;
     }
 
     {

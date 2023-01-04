@@ -28,6 +28,7 @@ mod pipeline_assets;
 mod types_gpu;
 
 pub mod compositing;
+pub mod render_layer;
 pub mod resource;
 pub mod types;
 
@@ -127,7 +128,7 @@ pub(crate) fn detect_target_sizes(
     target_sizes.primary_target_isize = target_sizes.primary_target_size.as_ivec2();
     target_sizes.primary_target_usize = target_sizes.primary_target_size.as_uvec2();
 
-    target_sizes.sdf_target_size      = primary_size * 0.66;
+    target_sizes.sdf_target_size      = primary_size * 0.5;
     target_sizes.sdf_target_isize     = target_sizes.sdf_target_size.as_ivec2();
     target_sizes.sdf_target_usize     = target_sizes.sdf_target_size.as_uvec2();
 }

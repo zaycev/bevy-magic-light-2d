@@ -12,25 +12,17 @@
 @group(0) @binding(4) var          ss_probe_in:       texture_storage_2d<rgba16float, read>;
 @group(0) @binding(5) var          ss_bounce_out:     texture_storage_2d<rgba32float, write>;
 
+
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     let tile_xy      = vec2<i32>(invocation_id.xy);
 
     // Screen-space position of the probe.
     let reservoir_size           = i32(cfg.reservoir_size);
-    let probe_size_f32           = f32(cfg.probe_size);
-    let probe_cols               = cfg.probe_atlas_cols;
-    let probe_rows               = cfg.probe_atlas_rows;
-    let frames_max               = cfg.probe_size * cfg.probe_size;
     let frame_index              = cfg.frame_counter % reservoir_size;
-    let halton                   = hammersley2d(frame_index, reservoir_size);
-    let probe_tile_origin_screen = tile_xy * cfg.probe_size;
 
     let atlas_row = frame_index / cfg.probe_size;
     let atlas_col = frame_index % cfg.probe_size;
-
-    let probe_cols               = cfg.probe_atlas_cols;
-    let probe_rows               = cfg.probe_atlas_rows;
 
     let out_atlas_tile_offset = vec2<i32>(
         cfg.probe_atlas_cols * atlas_col,
@@ -55,43 +47,46 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     ) + probe_offset_world;
 
     // Compute indirrect light.
+    let mm                   = 0.7639320225; // Magic number.
     let pi                   = radians(180.0);
     let pi2                  = pi * 2.0;
-    let rays_per_sample_base = 16;
     var indirect_irradiance  = vec3<f32>(0.0);
     var total_rays           = 0;
-    var total_w              = 0.0;
-    var rays_per_sample      = rays_per_sample_base;
-    let golden_angle         = (2.0 * pi) / f32(rays_per_sample);
+    var rays_per_sample      = cfg.indirect_rays_per_sample;
+    let golden_angle         = pi * mm;
 
+    var r_bias = 4.0;
+    var r_step = 16.0;
+    var hh = radical_inverse_vdc(frame_index) / f32(reservoir_size);
 
-    let r_bias = 8.0;
-    let r_step = 24.0;
-    let k_max  = 5;
+    {
+        r_step *= mm;
+        r_step  = r_step + r_step * (0.5 - r_step * hh);
+    }
+
+    let k_max  = 2;
     let jitter = 0.5;
 
     for (var k = 1; k <= k_max; k++) {
 
         let angle_bias   = pi2 * f32(k) / f32(k_max);
-        let h_r          = hash(angle_bias * probe_center_world);
 
-        var r = r_bias + f32(pow(2.0, f32(k))) * r_step;
-            r = r + r * h_r * jitter;
+        var r = r_bias + f32(pow(cfg.indirect_rays_radius_factor, f32(k))) * r_step;
+            r = r + r * hh * jitter;
 
         for (var ray_i = 0; ray_i < rays_per_sample; ray_i++) {
 
             total_rays += 1;
 
             var base_angle  = angle_bias + golden_angle * f32(ray_i);
-            let h_angle     = hash(probe_center_world * base_angle);
-                base_angle += radians(360.0) * (0.5 - h_angle);
+                base_angle += radians(360.0) * hh;
 
             var sample_world = probe_center_world + vec2<f32>(r) * fast_normalize_2d(vec2<f32>(
                 cos(base_angle),
                 sin(base_angle),
             ));
 
-            var raymarch_sample_to_probe = raymarch(
+            var raymarch_sample_to_probe = raymarch_bounce(
                 probe_center_world,
                 sample_world,
                 32,
@@ -101,7 +96,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
                 0.3
             );
 
-            if raymarch_sample_to_probe.success <= 0 && raymarch_sample_to_probe.step == 1 {
+            if raymarch_sample_to_probe.success <= 0 {
                 continue;
             }
 
@@ -131,13 +126,9 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
             let sample_irradiance = sample_xyz;
             indirect_irradiance  += sample_irradiance * 0.6; // 0.4 is absorbed by surface.
         }
-
-        if fast_distance_3d(vec3<f32>(0.0), indirect_irradiance) > 1.0 {
-            break;
-        }
     }
 
-    indirect_irradiance = indirect_irradiance / f32(total_rays);
+    indirect_irradiance = indirect_irradiance / f32(total_rays / k_max);
     total_irradiance  = cfg.indirect_light_contrib * indirect_irradiance
                       + cfg.direct_light_contrib   * direct_irradiance;
 

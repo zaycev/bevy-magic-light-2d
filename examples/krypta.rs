@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::{FilterMode, SamplerDescriptor};
+use bevy::render::view::RenderLayers;
 use bevy::sprite::MaterialMesh2dBundle;
 use bevy_inspector_egui::prelude::*;
 use bevy_magic_light_2d::prelude::*;
@@ -10,7 +11,7 @@ pub const TILE_SIZE: f32 = 16.0;
 pub const SPRITE_SCALE: f32 = 4.0;
 pub const Z_BASE_FLOOR: f32 = 100.0; // Base z-coordinate for 2D layers.
 pub const Z_BASE_OBJECTS: f32 = 200.0; // Ground object sprites.
-pub const SCREEN_SIZE: (f32, f32) = (1024.0, 1024.0);
+pub const SCREEN_SIZE: (f32, f32) = (768.0, 768.0);
 
 // Misc components.
 #[derive(Component)]
@@ -54,6 +55,7 @@ fn main() {
                 smooth_kernel_size: (2, 1),
                 direct_light_contrib: 0.2,
                 indirect_light_contrib: 0.8,
+                ..default()
             },
         })
         .add_plugin(WorldInspectorPlugin::new())
@@ -102,8 +104,16 @@ fn setup(
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         &[0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
+        &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
+        &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
+        &[0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+        &[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
@@ -172,7 +182,8 @@ fn setup(
                     sprite: TextureAtlasSprite::new(id),
                     texture_atlas: floor_atlas.clone(),
                     ..default()
-                }).id());
+                })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR)).id());
         }
     }
 
@@ -291,6 +302,7 @@ fn setup(
                         texture_atlas: wall_atlas.clone(),
                         ..default()
                     })
+                    .insert(RenderLayers::from_layers(CAMERA_LAYER_WALLS))
                     .insert(occluder_data.clone()).id());
             }
         }
@@ -340,7 +352,7 @@ fn setup(
             let x = 100.0;
             let y = -388.5;
             let mut sprite = TextureAtlasSprite::new(candle_rect_1);
-            sprite.color = Color::rgb_u8(120, 120, 120);
+            sprite.color = Color::rgb_u8(180, 180, 180);
 
             decorations.push(commands
                 .spawn(SpriteSheetBundle {
@@ -353,9 +365,11 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
-                }).insert(Name::new("candle_1")).id());
+                })
+                .insert(Name::new("candle_1")).id());
 
         }
 
@@ -364,7 +378,7 @@ fn setup(
             let x = -32.1;
             let y = -384.2;
             let mut sprite = TextureAtlasSprite::new(candle_rect_2);
-            sprite.color = Color::rgb_u8(120, 120, 120);
+            sprite.color = Color::rgb_u8(180, 180, 180);
 
             decorations.push(commands
                 .spawn(SpriteSheetBundle {
@@ -377,9 +391,11 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
-                }).insert(Name::new("candle_2")).id());
+                })
+                .insert(Name::new("candle_2")).id());
         }
 
         // Candle 3.
@@ -387,7 +403,7 @@ fn setup(
             let x = -351.5;
             let y = -126.0;
             let mut sprite = TextureAtlasSprite::new(candle_rect_3);
-            sprite.color = Color::rgb_u8(120, 120, 120);
+            sprite.color = Color::rgb_u8(180, 180, 180);
 
             decorations.push(commands
                 .spawn(SpriteSheetBundle {
@@ -400,9 +416,11 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
-                }).insert(Name::new("candle_3")).id());
+                })
+                .insert(Name::new("candle_3")).id());
         }
 
         // Candle 4.
@@ -410,7 +428,7 @@ fn setup(
             let x = 413.0;
             let y = -124.6;
             let mut sprite = TextureAtlasSprite::new(candle_rect_4);
-            sprite.color = Color::rgb_u8(120, 120, 120);
+            sprite.color = Color::rgb_u8(180, 180, 180);
 
             decorations.push(commands
                 .spawn(SpriteSheetBundle {
@@ -423,9 +441,11 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
                 .insert(LightOccluder2D {
                     h_size: Vec2::splat(2.0),
-                }).insert(Name::new("candle_4")).id());
+                })
+                .insert(Name::new("candle_4")).id());
         }
 
         // Tomb 1.
@@ -445,9 +465,35 @@ fn setup(
                     texture_atlas: texture_atlas_handle.clone(),
                     ..default()
                 })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
                 .insert(LightOccluder2D {
                     h_size: Vec2::new(72.8, 31.0),
-                }).insert(Name::new("tomb_1")).id());
+                })
+                .insert(Name::new("tomb_1")).id());
+        }
+
+        // Tomb 1.
+        {
+            let x = 300.5;
+            let y = -500.0;
+            let mut sprite = TextureAtlasSprite::new(tomb_rect_1);
+            sprite.color = Color::rgb_u8(255, 255, 255);
+            decorations.push(commands
+                .spawn(SpriteSheetBundle {
+                    transform: Transform {
+                        translation: Vec3::new(x, y, get_object_z(y)),
+                        scale: Vec2::splat(4.0).extend(0.0),
+                        ..default()
+                    },
+                    sprite,
+                    texture_atlas: texture_atlas_handle.clone(),
+                    ..default()
+                })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
+                .insert(LightOccluder2D {
+                    h_size: Vec2::new(72.8, 31.0),
+                })
+                .insert(Name::new("tomb_1")).id());
         }
 
         // Sewerage 1.
@@ -457,16 +503,19 @@ fn setup(
             let mut sprite = TextureAtlasSprite::new(sewerage_rect_1);
             sprite.color = Color::rgb_u8(255, 255, 255);
 
-            decorations.push(commands.spawn(SpriteSheetBundle {
-                transform: Transform {
-                    translation: Vec3::new(x, y, get_object_z(y)),
-                    scale: Vec2::splat(4.0).extend(0.0),
+            decorations.push(commands
+                .spawn(SpriteSheetBundle {
+                    transform: Transform {
+                        translation: Vec3::new(x, y, get_object_z(y)),
+                        scale: Vec2::splat(4.0).extend(0.0),
+                        ..default()
+                    },
+                    sprite,
+                    texture_atlas: texture_atlas_handle.clone(),
                     ..default()
-                },
-                sprite,
-                texture_atlas: texture_atlas_handle.clone(),
-                ..default()
-            }).insert(Name::new("sewerage_1")).id());
+                })
+                .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR)) // Add to floor
+                .insert(Name::new("sewerage_1")).id());
         }
     }
     commands
@@ -489,6 +538,7 @@ fn setup(
                         },
                         ..default()
                     })
+                    .insert(RenderLayers::all())
                     .id();
             };
 
@@ -500,26 +550,26 @@ fn setup(
         lights.push(spawn_light(
             &mut commands,
             90.667,
-            -387.333,
+            -393.8,
             "outdoor_krypta_torch_1",
             OmniLightSource2D {
-                intensity: 6.0,
+                intensity: 4.5,
                 color: Color::rgb_u8(137, 79, 24),
-                jitter_intensity: 1.0,
-                jitter_translation: 2.0,
+                jitter_intensity: 2.5,
+                jitter_translation: 8.0,
                 ..base
             },
         ));
         lights.push(spawn_light(
             &mut commands,
             -36.000,
-            -387.333,
+            -393.8,
             "outdoor_krypta_torch_2",
             OmniLightSource2D {
-                intensity: 6.0,
+                intensity: 4.5,
                 color: Color::rgb_u8(137, 79, 24),
-                jitter_intensity: 1.0,
-                jitter_translation: 2.0,
+                jitter_intensity: 2.5,
+                jitter_translation: 8.0,
                 ..base
             },
         ));
@@ -555,10 +605,10 @@ fn setup(
             -131.2,
             "outdoor_krypta_torch_3",
             OmniLightSource2D {
-                intensity: 6.0,
+                intensity: 4.5,
                 color: Color::rgb_u8(137, 79, 24),
-                jitter_intensity: 1.0,
-                jitter_translation: 2.0,
+                jitter_intensity: 2.5,
+                jitter_translation: 3.0,
                 ..base
             },
         ));
@@ -568,10 +618,10 @@ fn setup(
             -141.8,
             "outdoor_krypta_torch_4",
             OmniLightSource2D {
-                intensity: 6.0,
+                intensity: 4.5,
                 color: Color::rgb_u8(137, 79, 24),
-                jitter_intensity: 1.0,
-                jitter_translation: 2.0,
+                jitter_intensity: 2.5,
+                jitter_translation: 3.0,
                 ..base
             },
         ));
@@ -601,13 +651,44 @@ fn setup(
                 ..base
             },
         ));
+
+        lights.push(spawn_light(
+            &mut commands,
+            40.0,
+            -1163.2,
+            "outdoor_light_9",
+            OmniLightSource2D {
+                intensity: 1.2,
+                falloff: Vec3::new(50.0, 40.0, 0.03),
+                color: Color::rgb_u8(0, 206, 94),
+                jitter_intensity: 0.7,
+                jitter_translation: 3.0,
+                ..base
+            },
+        ));
+
+        lights.push(spawn_light(
+            &mut commands,
+            182.3,
+            -1210.0,
+            "outdoor_light_10",
+            OmniLightSource2D {
+                intensity: 1.2,
+                falloff: Vec3::new(50.0, 40.0, 0.03),
+                color: Color::rgb_u8(0, 206, 94),
+                jitter_intensity: 0.7,
+                jitter_translation: 3.0,
+                ..base
+            },
+        ));
+
     }
     commands
         .spawn(SpatialBundle::default())
         .insert(Name::new("lights"))
         .push_children(&lights);
 
-    // Add roof.
+    // Add roofs.
     commands
         .spawn(SpatialBundle {
             transform: Transform {
@@ -616,18 +697,30 @@ fn setup(
             },
             ..default()
         })
-        .insert(Name::new("skylight_mask"))
+        .insert(Name::new("skylight_mask_1"))
         .insert(SkylightMask2D {
             h_size: Vec2::new(430.0, 330.0),
+        });
+    commands
+        .spawn(SpatialBundle {
+            transform: Transform {
+                translation: Vec3::new(101.6, -989.4, 0.0),
+                ..default()
+            },
+            ..default()
+        })
+        .insert(Name::new("skylight_mask_2"))
+        .insert(SkylightMask2D {
+            h_size: Vec2::new(163.3, 156.1),
         });
 
     // Add skylight light.
     commands.spawn((
         SkylightLight2D {
             color: Color::rgb_u8(93, 158, 179),
-            intensity: 0.04,
+            intensity: 0.025,
         },
-        Name::new("skylight_light"),
+        Name::new("global_skylight"),
     ));
 
     // Add light source.
@@ -645,49 +738,98 @@ fn setup(
         .insert(Name::new("cursor_light"))
         .insert(OmniLightSource2D {
             intensity: 10.0,
-            color:     Color::rgb_u8(219, 104, 72),
+            color:     Color::rgb_u8(254, 100, 34),
             falloff:   Vec3::new(50.0, 20.0, 0.05),
             ..default()
         })
+        .insert(RenderLayers::all())
         .insert(MouseLight);
 
-    let render_target = post_processing_target
-        .handle
+    let (floor_target, walls_target, objects_target) = post_processing_target
+        .handles
         .clone()
         .expect("No post processing target");
 
+
+    // Setup separate camera for floor, walls and objects.
     commands
         .spawn((
             Camera2dBundle {
                 camera: Camera {
-                    hdr: true,
+                    hdr: false,
                     priority: 0,
-                    target: RenderTarget::Image(render_target),
+                    target: RenderTarget::Image(floor_target),
                     ..default()
                 },
                 ..default()
             },
-            Name::new("main_camera"),
+            Name::new("main_camera_floor"),
         ))
-        .insert(MainCamera)
+        .insert(SpriteCamera)
+        .insert(FloorCamera)
+        .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR))
         .insert(UiCameraConfig {
             show_ui: false,
             ..default()
         });
+    commands
+        .spawn((
+            Camera2dBundle {
+                camera: Camera {
+                    hdr: false,
+                    priority: 0,
+                    target: RenderTarget::Image(walls_target),
+                    ..default()
+                },
+                ..default()
+            },
+            Name::new("main_camera_walls"),
+        ))
+        .insert(SpriteCamera)
+        .insert(WallsCamera)
+        .insert(RenderLayers::from_layers(CAMERA_LAYER_WALLS))
+        .insert(UiCameraConfig {
+            show_ui: false,
+            ..default()
+        });
+    commands
+        .spawn((
+            Camera2dBundle {
+                camera: Camera {
+                    hdr: false,
+                    priority: 0,
+                    target: RenderTarget::Image(objects_target),
+                    ..default()
+                },
+                ..default()
+            },
+            Name::new("main_camera_objects"),
+        ))
+        .insert(SpriteCamera)
+        .insert(ObjectsCamera)
+        .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
+        .insert(UiCameraConfig {
+            show_ui: false,
+            ..default()
+        });
+
+
 }
 
 #[rustfmt::skip]
 fn system_control_mouse_light(
-    mut commands:     Commands,
-        windows:      ResMut<Windows>,
-    mut query_light:  Query<(&mut Transform, &mut OmniLightSource2D), (Without<MainCamera>, With<MouseLight>)>,
-        query_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-        mouse:        Res<Input<MouseButton>>,
-        keyboard:     Res<Input<KeyCode>>,
+    mut commands:      Commands,
+        windows:       ResMut<Windows>,
+    mut query_light:   Query<(&mut Transform, &mut OmniLightSource2D), With<MouseLight>>,
+        query_cameras: Query<(&Camera, &GlobalTransform), With<SpriteCamera>>,
+        mouse:         Res<Input<MouseButton>>,
+        keyboard:      Res<Input<KeyCode>>,
 ) {
     let mut rng = thread_rng();
 
-    if let Ok((camera, camera_transform)) = query_camera.get_single() {
+    // We only need to iter over first camera matched.
+    for (camera, camera_transform) in query_cameras.iter() {
+
         let window_opt = if let RenderTarget::Window(id) = camera.target {
             windows.get(id)
         } else {
@@ -725,35 +867,42 @@ fn system_control_mouse_light(
                 }
             }
         }
+
+        break;
     }
 }
 
 #[rustfmt::skip]
 fn system_move_camera(
-    mut camera_target: Local<Vec3>,
-    mut query_camera:  Query<&mut Transform, With<MainCamera>>,
-        keyboard:      Res<Input<KeyCode>>,
+    mut camera_current: Local<Vec2>,
+    mut camera_target:  Local<Vec2>,
+    mut query_cameras:  Query<&mut Transform, With<SpriteCamera>>,
+        keyboard:       Res<Input<KeyCode>>,
 ) {
-    if let Ok(mut camera_transform) = query_camera.get_single_mut() {
-        let speed = 10.0;
 
-        if keyboard.pressed(KeyCode::W) {
-            camera_target.y += speed;
-        }
-        if keyboard.pressed(KeyCode::S) {
-            camera_target.y -= speed;
-        }
-        if keyboard.pressed(KeyCode::A) {
-            camera_target.x -= speed;
-        }
-        if keyboard.pressed(KeyCode::D) {
-            camera_target.x += speed;
-        }
+    let speed = 10.0;
 
-        // Smooth camera.
-        let blend_ratio = 0.18;
-        let movement    = (*camera_target - camera_transform.translation) * blend_ratio;
-        camera_transform.translation.x += movement.x;
-        camera_transform.translation.y += movement.y;
+    if keyboard.pressed(KeyCode::W) {
+        camera_target.y += speed;
+    }
+    if keyboard.pressed(KeyCode::S) {
+        camera_target.y -= speed;
+    }
+    if keyboard.pressed(KeyCode::A) {
+        camera_target.x -= speed;
+    }
+    if keyboard.pressed(KeyCode::D) {
+        camera_target.x += speed;
+    }
+
+    // Smooth camera.
+    let blend_ratio = 0.18;
+    let movement = *camera_target - *camera_current;
+    *camera_current += movement * blend_ratio;
+
+    // Update all sprite cameras.
+    for mut camera_transform in query_cameras.iter_mut() {
+        camera_transform.translation.x = camera_current.x;
+        camera_transform.translation.y = camera_current.y;
     }
 }

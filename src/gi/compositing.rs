@@ -12,21 +12,34 @@ use bevy::sprite::{Material2d, MaterialMesh2dBundle};
 use crate::gi::pipeline::PipelineTargetsWrapper;
 use crate::gi::resource::ComputedTargetSizes;
 
+#[rustfmt::skip]
 #[derive(AsBindGroup, TypeUuid, Clone)]
 #[uuid = "bc2f08eb-a0fb-43f1-a908-54871ea597d5"]
 pub struct PostProcessingMaterial {
     #[texture(0)]
     #[sampler(1)]
-    source_image: Handle<Image>,
+    floor_image:       Handle<Image>,
 
     #[texture(2)]
     #[sampler(3)]
-    irradiance_image: Handle<Image>,
+    walls_image:       Handle<Image>,
+
+    #[texture(4)]
+    #[sampler(5)]
+    objects_image:     Handle<Image>,
+
+    #[texture(6)]
+    #[sampler(7)]
+    irradiance_image:  Handle<Image>,
 }
 
 #[derive(Resource, Default)]
 pub struct PostProcessingTarget {
-    pub handle: Option<Handle<Image>>,
+    pub handles: Option<(
+        Handle<Image>, // Floor  layer.
+        Handle<Image>, // Walls  layer.
+        Handle<Image>, // Objects layer.
+    )>,
 }
 
 impl Material2d for PostProcessingMaterial {
@@ -35,44 +48,80 @@ impl Material2d for PostProcessingMaterial {
     }
 }
 
+#[rustfmt::skip]
 pub fn setup_post_processing_camera(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
+    mut commands:                  Commands,
+    mut meshes:                    ResMut<Assets<Mesh>>,
     mut post_processing_materials: ResMut<Assets<PostProcessingMaterial>>,
-    mut images: ResMut<Assets<Image>>,
-    mut post_processing_target: ResMut<PostProcessingTarget>,
+    mut images:                    ResMut<Assets<Image>>,
+    mut post_processing_target:    ResMut<PostProcessingTarget>,
 
-    gpu_targets_sizes: Res<ComputedTargetSizes>,
-    gpu_targets_wrapper: Res<PipelineTargetsWrapper>,
+    gpu_targets_sizes:             Res<ComputedTargetSizes>,
+    gpu_targets_wrapper:           Res<PipelineTargetsWrapper>,
 ) {
     let window_size = Extent3d {
-        width: gpu_targets_sizes.primary_target_usize.x,
+        width:  gpu_targets_sizes.primary_target_usize.x,
         height: gpu_targets_sizes.primary_target_usize.y,
         ..default()
     };
 
-    let mut image = Image {
+    let mut floor_image = Image {
         texture_descriptor: TextureDescriptor {
-            label: Some("Post Processing Image"),
+            label: Some("target_floor"),
             size: window_size,
             dimension: TextureDimension::D2,
             format: TextureFormat::bevy_default(),
             mip_level_count: 1,
             sample_count: 1,
             usage: TextureUsages::TEXTURE_BINDING
-                | TextureUsages::COPY_DST
-                | TextureUsages::RENDER_ATTACHMENT,
+                 | TextureUsages::COPY_DST
+                 | TextureUsages::RENDER_ATTACHMENT,
+        },
+        ..default()
+    };
+    let mut walls_image = Image {
+        texture_descriptor: TextureDescriptor {
+            label: Some("target_walls"),
+            size: window_size,
+            dimension: TextureDimension::D2,
+            format: TextureFormat::bevy_default(),
+            mip_level_count: 1,
+            sample_count: 1,
+            usage: TextureUsages::TEXTURE_BINDING
+                 | TextureUsages::COPY_DST
+                 | TextureUsages::RENDER_ATTACHMENT,
         },
         ..default()
     };
 
-    // Fill image data with zeroes.
-    image.resize(window_size);
+    let mut objects_image = Image {
+        texture_descriptor: TextureDescriptor {
+            label: Some("target_objects"),
+            size: window_size,
+            dimension: TextureDimension::D2,
+            format: TextureFormat::bevy_default(),
+            mip_level_count: 1,
+            sample_count: 1,
+            usage: TextureUsages::TEXTURE_BINDING
+                 | TextureUsages::COPY_DST
+                 | TextureUsages::RENDER_ATTACHMENT,
+        },
+        ..default()
+    };
 
-    // This specifies the layer used for the post processing camera, which
-    // will be attached to the post processing camera and 2d quad.
-    let post_processing_pass_layer = RenderLayers::layer((RenderLayers::TOTAL_LAYERS - 1) as u8);
-    let image_handle = images.add(image);
+
+
+
+
+    // Fill images data with zeroes.
+    floor_image.resize(window_size);
+    walls_image.resize(window_size);
+    objects_image.resize(window_size);
+
+    // Create handles.
+    let floor_image_handle   = images.add(floor_image);
+    let walls_image_handle   = images.add(walls_image);
+    let objects_image_handle = images.add(objects_image);
 
     let quad_handle = meshes.add(Mesh::from(shape::Quad::new(Vec2::new(
         gpu_targets_sizes.primary_target_size.x,
@@ -80,16 +129,30 @@ pub fn setup_post_processing_camera(
     ))));
 
     // This material has the texture that has been rendered.
-    post_processing_target.handle = Some(image_handle.clone());
+    post_processing_target.handles = Some((
+        floor_image_handle.clone(),
+        walls_image_handle.clone(),
+        objects_image_handle.clone(),
+    ));
+
     let material_handle = post_processing_materials.add(PostProcessingMaterial {
-        source_image: image_handle,
+
+        floor_image:  floor_image_handle,
+        walls_image:  walls_image_handle,
+        objects_image: objects_image_handle,
+
         irradiance_image: gpu_targets_wrapper
             .targets
             .as_ref()
             .expect("Targets must be initialized")
             .ss_filter_target
             .clone(),
+
     });
+
+    // This specifies the layer used for the post processing camera, which
+    // will be attached to the post processing camera and 2d quad.
+    let layer = RenderLayers::layer((RenderLayers::TOTAL_LAYERS - 1) as u8);
 
     commands.spawn((
         MaterialMesh2dBundle {
@@ -101,8 +164,9 @@ pub fn setup_post_processing_camera(
             },
             ..default()
         },
-        post_processing_pass_layer,
+        layer,
     ));
+
 
     commands.spawn((
         Name::new("post_processing_camera"),
@@ -119,6 +183,6 @@ pub fn setup_post_processing_camera(
             intensity: 0.1,
             ..default()
         },
-        post_processing_pass_layer,
+        layer
     ));
 }

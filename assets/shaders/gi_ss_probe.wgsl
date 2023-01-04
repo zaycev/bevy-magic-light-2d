@@ -14,6 +14,7 @@
 @group(0) @binding(6) var          sdf_in_sampler:        sampler;
 @group(0) @binding(7) var          ss_probe_out:          texture_storage_2d<rgba16float, write>;
 
+
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     let tile_xy      = vec2<i32>(invocation_id.xy);
@@ -28,12 +29,13 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
 
     // Get current frame.
     let probe_offset_world  = halton_jitter * probe_size_f32;
-    let probe_center_world  = screen_to_world(
-        probe_tile_origin_screen,
-        camera_params.screen_size,
-        camera_params.inverse_view_proj,
-        camera_params.screen_size_inv,
-    ) + probe_offset_world;
+    let probe_center_world_unbiased = screen_to_world(
+                                              probe_tile_origin_screen,
+                                              camera_params.screen_size,
+                                              camera_params.inverse_view_proj,
+                                              camera_params.screen_size_inv,
+                                          );
+    let probe_center_world  =  probe_center_world_unbiased + probe_offset_world;
 
     let probe_ndc    = world_to_ndc(probe_center_world, camera_params.view_proj);
     let probe_screen = ndc_to_screen(probe_ndc, camera_params.screen_size);
@@ -53,7 +55,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
 
     var probe_irradiance = vec3<f32>(0.0);
 
-    let uv = world_to_sdf_uv(probe_center_world, camera_params.view_proj, camera_params.inv_sdf_scale);
+    let uv = world_to_sdf_uv(probe_center_world_unbiased, camera_params.view_proj, camera_params.inv_sdf_scale);
     let dist = bilinear_sample_r( sdf_in, sdf_in_sampler, uv);
     if dist > 0.0 {
 
@@ -65,7 +67,7 @@ fn main(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
 
             let light = lights_source_buffer.data[i];
 
-            let ray_result = raymarch(
+            let ray_result = raymarch_primary(
                 probe_center_world,
                 light.center,
                 32,

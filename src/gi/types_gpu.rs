@@ -83,11 +83,13 @@ pub(crate) struct GpuLightPassParams {
     pub probe_atlas_rows:       i32,
     pub skylight_color:         Vec3,
 
-    pub reservoir_size:         u32,
-    pub smooth_kernel_size_h:   u32,
-    pub smooth_kernel_size_w:   u32,
-    pub direct_light_contrib:   f32,
-    pub indirect_light_contrib: f32,
+    pub reservoir_size:              u32,
+    pub smooth_kernel_size_h:        u32,
+    pub smooth_kernel_size_w:        u32,
+    pub direct_light_contrib:        f32,
+    pub indirect_light_contrib:      f32,
+    pub indirect_rays_per_sample:    i32,
+    pub indirect_rays_radius_factor: f32,
 }
 
 impl Default for GpuLightPassParams {
@@ -99,11 +101,14 @@ impl Default for GpuLightPassParams {
             probe_atlas_rows: 0,
             skylight_color: Vec3::new(0.003, 0.0078, 0.058) / 100.0,
 
-            reservoir_size: 8,
+            reservoir_size: 16,
             smooth_kernel_size_h: 2,
             smooth_kernel_size_w: 1,
             direct_light_contrib: 0.2,
             indirect_light_contrib: 0.8,
+
+            indirect_rays_per_sample: 64,
+            indirect_rays_radius_factor: 3.0,
         }
     }
 }
