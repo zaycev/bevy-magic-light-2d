@@ -36,12 +36,14 @@ fn fragment(
     let in_irradiance = textureSample(in_irradiance_texture, in_irradiance_texture_sampler, uv).xyz;
 
     // Calculate object irradiance.
+    // TODO: parametrize this filter.
+    // TODO: we don't really need to do this per pixel.
     var object_irradiance = in_irradiance;
-    let k_size = 5;
-    let k_width = 24;
+    let k_size = 3;
+    let k_width = 28;
 
     for (var i = -k_size; i <= k_size; i++) {
-        for (var j = -k_size; j <= k_size; j++) {
+        for (var j = -k_size; j < 0; j++) {
 
             let offset = vec2<f32>(f32(i * k_width), f32(j * k_width));
             let irradiance_uv = coords_to_viewport_uv(position.xy - offset, view.viewport);
@@ -52,14 +54,21 @@ fn fragment(
                 irradiance_uv
             ).xyz;
 
-            object_irradiance = max(object_irradiance, sample_irradiance);
+            // TODO: Might also need a visibility check here.
+            if any(irradiance_uv < vec2<f32>(0.0)) || any(irradiance_uv > vec2<f32>(1.0)) {
+                continue;
+            }
 
+            object_irradiance = max(object_irradiance, sample_irradiance);
         }
     }
 
-    let final_floor   = in_floor_diffuse.xyz   * lin_to_srgb(in_irradiance);
-    var final_walls   = in_walls_diffuse.xyz   * lin_to_srgb(in_irradiance);
-    let final_objects = in_objects_diffuse.xyz * lin_to_srgb(object_irradiance);
+    let floor_irradiance_srgb   = lin_to_srgb(in_irradiance);
+    let objects_irradiance_srgb = lin_to_srgb(object_irradiance);
+
+    let final_floor   = in_floor_diffuse.xyz   * floor_irradiance_srgb;
+    let final_walls   = in_walls_diffuse.xyz   * floor_irradiance_srgb;
+    let final_objects = in_objects_diffuse.xyz * objects_irradiance_srgb;
 
     var out = vec4<f32>(mix(final_floor.xyz, final_walls.xyz, 1.0 - step(length(final_walls.xyz), 0.001)), 1.0);
         out = vec4<f32>(mix(out.xyz, final_objects.xyz, 1.0 - step(length(final_objects.xyz), 0.001)), 1.0);

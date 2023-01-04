@@ -859,6 +859,7 @@ fn system_control_mouse_light(
                             ..default()
                         })
                         .insert(Name::new("point_light"))
+                        .insert(RenderLayers::all())
                         .insert(OmniLightSource2D {
                             jitter_intensity: 0.0,
                             jitter_translation: 0.0,
