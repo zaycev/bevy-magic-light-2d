@@ -60,6 +60,8 @@ cargo run --example krypta
 - [ ] Support color transfer from occluders.
 - [x] Add inspector for GI settings.
 - [ ] Add support for emissive materials and other types of light sources.
+- [ ] Max distance for light sources.
+- [ ] Ambient light config.
 
 **Address limitations**
 
