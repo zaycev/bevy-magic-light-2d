@@ -1,5 +1,4 @@
 #import bevy_magic_light_2d::gi_math
-#import bevy_magic_light_2d::gi_types
 #import bevy_magic_light_2d::gi_camera
 #import bevy_magic_light_2d::gi_halton
 #import bevy_magic_light_2d::gi_attenuation

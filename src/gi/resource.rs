@@ -1,30 +1,30 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::prelude::*;
+// use bevy_inspector_egui::prelude::*;
 
 #[rustfmt::skip]
-#[derive(Resource, Default, Inspectable, Copy, Clone)]
+#[derive(Resource, Default, /*Inspectable, */ Copy, Clone)]
 pub struct BevyMagicLight2DSettings {
     pub light_pass_params: LightPassParams,
 }
 
 #[rustfmt::skip]
-#[derive(Reflect, Inspectable, Copy, Clone, Debug)]
+#[derive(Reflect, /*Inspectable, */ Copy, Clone, Debug)]
 pub struct LightPassParams {
-    #[inspectable(min = 1, max = 64)]
+    // #[inspectable(min = 1, max = 64)]
     pub reservoir_size: u32,
 
     pub smooth_kernel_size: (u32, u32),
 
-    #[inspectable(min = 0.0, max = 1.0)]
+    // #[inspectable(min = 0.0, max = 1.0)]
     pub direct_light_contrib: f32,
 
-    #[inspectable(min = 0.0, max = 1.0)]
+    // #[inspectable(min = 0.0, max = 1.0)]
     pub indirect_light_contrib: f32,
 
-    #[inspectable(min = 0, max = 512)]
+    // #[inspectable(min = 0, max = 512)]
     pub indirect_rays_per_sample: i32,
 
-    #[inspectable(min = 1.0, max = 100.0)]
+    // #[inspectable(min = 1.0, max = 100.0)]
     pub indirect_rays_radius_factor: f32,
 }
 

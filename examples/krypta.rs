@@ -3,7 +3,8 @@ use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::{FilterMode, SamplerDescriptor};
 use bevy::render::view::RenderLayers;
 use bevy::sprite::MaterialMesh2dBundle;
-use bevy_inspector_egui::prelude::*;
+use bevy::window::{PrimaryWindow, WindowRef};
+// use bevy_inspector_egui::prelude::*;
 use bevy_magic_light_2d::prelude::*;
 use rand::prelude::*;
 
@@ -30,14 +31,12 @@ fn main() {
                     ..default()
                 })
                 .set(WindowPlugin {
-                    window: WindowDescriptor {
-                        width: SCREEN_SIZE.0,
-                        height: SCREEN_SIZE.1,
+                    primary_window: Some(Window {
+                        resolution: SCREEN_SIZE.into(),
                         title: "Bevy Magic Light 2D: Krypta Example".into(),
                         resizable: false,
-                        mode: WindowMode::Windowed,
                         ..default()
-                    },
+                    }),
                     ..default()
                 })
                 .set(ImagePlugin {
@@ -58,13 +57,13 @@ fn main() {
                 ..default()
             },
         })
-        .add_plugin(WorldInspectorPlugin::new())
-        .add_plugin(InspectorPlugin::<BevyMagicLight2DSettings>::new())
-        .register_inspectable::<LightOccluder2D>()
-        .register_inspectable::<OmniLightSource2D>()
-        .register_inspectable::<SkylightMask2D>()
-        .register_inspectable::<SkylightLight2D>()
-        .register_inspectable::<BevyMagicLight2DSettings>()
+        // .add_plugin(WorldInspectorPlugin::new())
+        // .add_plugin(InspectorPlugin::<BevyMagicLight2DSettings>::new())
+        // .register_inspectable::<LightOccluder2D>()
+        // .register_inspectable::<OmniLightSource2D>()
+        // .register_inspectable::<SkylightMask2D>()
+        // .register_inspectable::<SkylightLight2D>()
+        // .register_inspectable::<BevyMagicLight2DSettings>()
         .add_startup_system(setup.after(setup_post_processing_camera))
         .add_system(system_move_camera)
         .add_system(system_control_mouse_light.after(system_move_camera))
@@ -82,8 +81,8 @@ fn setup(
 ) {
 
     // Utility functions to compute Z coordinate for floor and ground objects.
-    let get_floor_z  = | y | -> f32 { Z_BASE_FLOOR   - y / (SCREEN_SIZE.1 as f32) };
-    let get_object_z = | y | -> f32 { Z_BASE_OBJECTS - y / (SCREEN_SIZE.1 as f32) };
+    let get_floor_z  = | y | -> f32 { Z_BASE_FLOOR   - y / SCREEN_SIZE.1 };
+    let get_object_z = | y | -> f32 { Z_BASE_OBJECTS - y / SCREEN_SIZE.1 };
 
     // Maze map. 1 represents wall.
     let walls_info: &[&[u8]] = &[
@@ -303,7 +302,7 @@ fn setup(
                         ..default()
                     })
                     .insert(RenderLayers::from_layers(CAMERA_LAYER_WALLS))
-                    .insert(occluder_data.clone()).id());
+                    .insert(occluder_data).id());
             }
         }
     }
@@ -511,7 +510,7 @@ fn setup(
                         ..default()
                     },
                     sprite,
-                    texture_atlas: texture_atlas_handle.clone(),
+                    texture_atlas: texture_atlas_handle,
                     ..default()
                 })
                 .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR)) // Add to floor
@@ -663,7 +662,6 @@ fn setup(
                 color: Color::rgb_u8(0, 206, 94),
                 jitter_intensity: 0.7,
                 jitter_translation: 3.0,
-                ..base
             },
         ));
 
@@ -678,7 +676,6 @@ fn setup(
                 color: Color::rgb_u8(0, 206, 94),
                 jitter_intensity: 0.7,
                 jitter_translation: 3.0,
-                ..base
             },
         ));
 
@@ -726,8 +723,8 @@ fn setup(
     // Add light source.
     commands
         .spawn(MaterialMesh2dBundle {
-            mesh: block_mesh.clone().into(),
-            material: materials.add(ColorMaterial::from(Color::YELLOW)).into(),
+            mesh: block_mesh.into(),
+            material: materials.add(ColorMaterial::from(Color::YELLOW)),
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 1000.0),
                 scale:       Vec3::splat(8.0),
@@ -757,7 +754,6 @@ fn setup(
             Camera2dBundle {
                 camera: Camera {
                     hdr: false,
-                    priority: 0,
                     target: RenderTarget::Image(floor_target),
                     ..default()
                 },
@@ -770,14 +766,12 @@ fn setup(
         .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR))
         .insert(UiCameraConfig {
             show_ui: false,
-            ..default()
         });
     commands
         .spawn((
             Camera2dBundle {
                 camera: Camera {
                     hdr: false,
-                    priority: 0,
                     target: RenderTarget::Image(walls_target),
                     ..default()
                 },
@@ -790,14 +784,12 @@ fn setup(
         .insert(RenderLayers::from_layers(CAMERA_LAYER_WALLS))
         .insert(UiCameraConfig {
             show_ui: false,
-            ..default()
         });
     commands
         .spawn((
             Camera2dBundle {
                 camera: Camera {
                     hdr: false,
-                    priority: 0,
                     target: RenderTarget::Image(objects_target),
                     ..default()
                 },
@@ -810,62 +802,63 @@ fn setup(
         .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
         .insert(UiCameraConfig {
             show_ui: false,
-            ..default()
         });
-
-
 }
 
 #[rustfmt::skip]
 fn system_control_mouse_light(
-    mut commands:      Commands,
-        windows:       ResMut<Windows>,
-    mut query_light:   Query<(&mut Transform, &mut OmniLightSource2D), With<MouseLight>>,
-        query_cameras: Query<(&Camera, &GlobalTransform), With<SpriteCamera>>,
-        mouse:         Res<Input<MouseButton>>,
-        keyboard:      Res<Input<KeyCode>>,
+    mut commands: Commands,
+    windows: Query<&Window>,
+    primary_window: Query<Entity, With<PrimaryWindow>>,
+    mut query_light: Query<(&mut Transform, &mut OmniLightSource2D), With<MouseLight>>,
+    query_cameras: Query<(&Camera, &GlobalTransform), With<SpriteCamera>>,
+    mouse: Res<Input<MouseButton>>,
+    keyboard: Res<Input<KeyCode>>,
 ) {
     let mut rng = thread_rng();
 
     // We only need to iter over first camera matched.
     for (camera, camera_transform) in query_cameras.iter() {
-
-        let window_opt = if let RenderTarget::Window(id) = camera.target {
-            windows.get(id)
+        let RenderTarget::Window(window) = camera.target else {continue};
+        let window = if let WindowRef::Entity(id) = window {
+            id
+        } else if let Ok(id) = primary_window.get_single() {
+            id
         } else {
-            windows.get_primary()
+            continue;
         };
 
-        if let Some(window) = window_opt {
-            if let Some(screen_pos) = window.cursor_position() {
-                let window_size  = Vec2::new(window.width() as f32, window.height() as f32);
-                let mouse_ndc    = (screen_pos / window_size) * 2.0 - Vec2::ONE;
-                let ndc_to_world = camera_transform.compute_matrix() * camera.projection_matrix().inverse();
-                let mouse_world  = ndc_to_world.project_point3(mouse_ndc.extend(-1.0));
+        let Ok(window) = windows.get(window) else {break};
 
-                let (mut mouse_transform, mut mouse_color) = query_light.single_mut();
-                mouse_transform.translation = mouse_world.truncate().extend(1000.0);
+        if let Some(screen_pos) = window.cursor_position() {
+            let window_size = Vec2::new(window.width(), window.height());
+            let mouse_ndc = (screen_pos / window_size) * 2.0 - Vec2::ONE;
+            let ndc_to_world =
+                camera_transform.compute_matrix() * camera.projection_matrix().inverse();
+            let mouse_world = ndc_to_world.project_point3(mouse_ndc.extend(-1.0));
 
-                if mouse.just_pressed(MouseButton::Right) {
-                    mouse_color.color = Color::rgba(rng.gen(), rng.gen(), rng.gen(), 1.0);
-                }
-                if mouse.just_pressed(MouseButton::Left) && keyboard.pressed(KeyCode::LShift) {
-                    commands
-                        .spawn(SpatialBundle {
-                            transform: Transform {
-                                translation: mouse_world.truncate().extend(0.0),
-                                ..default()
-                            },
+            let (mut mouse_transform, mut mouse_color) = query_light.single_mut();
+            mouse_transform.translation = mouse_world.truncate().extend(1000.0);
+
+            if mouse.just_pressed(MouseButton::Right) {
+                mouse_color.color = Color::rgba(rng.gen(), rng.gen(), rng.gen(), 1.0);
+            }
+            if mouse.just_pressed(MouseButton::Left) && keyboard.pressed(KeyCode::LShift) {
+                commands
+                    .spawn(SpatialBundle {
+                        transform: Transform {
+                            translation: mouse_world.truncate().extend(0.0),
                             ..default()
-                        })
-                        .insert(Name::new("point_light"))
-                        .insert(RenderLayers::all())
-                        .insert(OmniLightSource2D {
-                            jitter_intensity: 0.0,
-                            jitter_translation: 0.0,
-                            ..*mouse_color
-                        });
-                }
+                        },
+                        ..default()
+                    })
+                    .insert(Name::new("point_light"))
+                    .insert(RenderLayers::all())
+                    .insert(OmniLightSource2D {
+                        jitter_intensity: 0.0,
+                        jitter_translation: 0.0,
+                        ..*mouse_color
+                    });
             }
         }
 
