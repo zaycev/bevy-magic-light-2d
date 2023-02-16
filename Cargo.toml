@@ -8,6 +8,10 @@ name = "bevy_magic_light_2d"
 crate-type = ["cdylib", "lib", "staticlib"]
 path = "src/lib.rs"
 
+[features]
+default = ["wayland"]
+wayland = ["bevy/wayland"]
+
 [dependencies]
 anyhow = "1.0.68"
 bevy = { version = "0.9.1", default-features = false, features = [
