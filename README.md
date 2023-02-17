@@ -7,6 +7,12 @@
 
 </div>
 
+<div alight="center">
+
+[![Discord](https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0b5061df29d55a92d945_full_logo_blurple_RGB.svg)](https://discord.gg/VwfzY2jJ)
+
+</div>
+
 > 🚧 Beware! This repo is heavily under construction and a lot of things may change.
 
 Experimental dynamic 2D global illumination system for Bevy, based on SDF ray-marching and screen space irradiance cache probes.
