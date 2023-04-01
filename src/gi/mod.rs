@@ -95,7 +95,7 @@ impl Plugin for BevyMagicLight2DPlugin {
             .init_resource::<LightPassPipeline>()
             .init_resource::<LightPassPipelineAssets>()
             .init_resource::<ComputedTargetSizes>()
-            .add_system_to_schedule(ExtractSchedule, system_extract_pipeline_assets)
+            .add_system(system_extract_pipeline_assets.in_schedule(ExtractSchedule))
             .add_system(system_prepare_pipeline_assets.in_set(RenderSet::Prepare))
             .add_system(system_queue_bind_groups.in_set(RenderSet::Queue));
 
