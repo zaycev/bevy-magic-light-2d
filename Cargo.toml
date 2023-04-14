@@ -17,11 +17,11 @@ bevy = { version = "0.10", default-features = false, features = [
   "bevy_asset",
   "bevy_sprite",
 ] }
-bevy_egui = { version = "0.18.0", default-features = false }
+bevy_egui = { version = "0.20", default-features = false }
 # bevy-inspector-egui = "0.15.0"
 # bevy-inspector-egui-derive = "0.15.0"
-egui = { version = "0.20.1", features = ["bytemuck"] }
-encase = "0.4.1"
+egui = { version = "0.21", features = ["bytemuck"] }
+encase = "0.5"
 log = "0.4.17"
 rand = "0.8.5"
 

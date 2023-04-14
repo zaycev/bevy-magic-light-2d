@@ -106,9 +106,11 @@ fn setup(mut commands: Commands, post_processing_target: Res<PostProcessingTarge
         .push_children(&lights);
 
     let render_target = post_processing_target
-        .handle
-        .clone()
-        .expect("No post processing target");
+        .handles
+        .as_ref()
+        .expect("No post processing target")
+        .0
+        .clone();
 
     commands
         .spawn((
@@ -121,6 +123,7 @@ fn setup(mut commands: Commands, post_processing_target: Res<PostProcessingTarge
                 ..Default::default()
             },
             Name::new("main_camera"),
+            FloorCamera,
         ))
         .insert(SpriteCamera)
         .insert(UiCameraConfig {
