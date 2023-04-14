@@ -1,8 +1,7 @@
 use bevy::prelude::{Color, Component, Vec2, *};
-// use bevy_inspector_egui::prelude::*;
 
 #[rustfmt::skip]
-#[derive(Reflect, Component, Clone, Copy, Default, /*Inspectable*/)]
+#[derive(Reflect, Component, Clone, Copy, Default)]
 #[reflect(Component)]
 pub struct OmniLightSource2D {
     pub intensity:          f32,
@@ -13,7 +12,7 @@ pub struct OmniLightSource2D {
 }
 
 #[rustfmt::skip]
-#[derive(Reflect, Component, Default, /*Inspectable, */ Clone, Copy)]
+#[derive(Reflect, Component, Default, Clone, Copy)]
 #[reflect(Component)]
 pub struct LightOccluder2D {
     pub h_size: Vec2,
@@ -22,7 +21,7 @@ pub struct LightOccluder2D {
 ///
 ///
 #[rustfmt::skip]
-#[derive(Reflect, Component, Default, /*Inspectable*/)]
+#[derive(Reflect, Component, Default)]
 #[reflect(Component)]
 pub struct SkylightMask2D {
     pub h_size: Vec2,
@@ -31,7 +30,7 @@ pub struct SkylightMask2D {
 ///
 ///
 #[rustfmt::skip]
-#[derive(Reflect, Component, Clone, Copy, Default, /*Inspectable*/)]
+#[derive(Reflect, Component, Clone, Copy, Default)]
 #[reflect(Component)]
 pub struct SkylightLight2D {
     pub color:     Color,

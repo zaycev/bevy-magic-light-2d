@@ -4,7 +4,7 @@ use bevy::render::render_resource::{FilterMode, SamplerDescriptor};
 use bevy::render::view::RenderLayers;
 use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::{PrimaryWindow, WindowRef};
-// use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::*;
 use bevy_magic_light_2d::prelude::*;
 use rand::prelude::*;
 
@@ -57,13 +57,14 @@ fn main() {
                 ..default()
             },
         })
-        // .add_plugin(WorldInspectorPlugin::new())
-        // .add_plugin(InspectorPlugin::<BevyMagicLight2DSettings>::new())
-        // .register_inspectable::<LightOccluder2D>()
-        // .register_inspectable::<OmniLightSource2D>()
-        // .register_inspectable::<SkylightMask2D>()
-        // .register_inspectable::<SkylightLight2D>()
-        // .register_inspectable::<BevyMagicLight2DSettings>()
+        .add_plugin(WorldInspectorPlugin::new())
+        .register_type::<LightOccluder2D>()
+        .register_type::<OmniLightSource2D>()
+        .register_type::<SkylightMask2D>()
+        .register_type::<SkylightLight2D>()
+        .register_type::<BevyMagicLight2DSettings>()
+        .register_type::<LightPassParams>()
+        .add_plugin(ResourceInspectorPlugin::<BevyMagicLight2DSettings>::new())
         .add_startup_system(setup.after(setup_post_processing_camera))
         .add_system(system_move_camera)
         .add_system(system_control_mouse_light.after(system_move_camera))

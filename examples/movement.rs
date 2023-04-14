@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
-// use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::*;
 use bevy_magic_light_2d::prelude::*;
 
 #[derive(Debug, Component)]
@@ -22,7 +22,9 @@ fn main() {
             ..Default::default()
         }))
         .add_plugin(BevyMagicLight2DPlugin)
-        // .add_plugin(InspectorPlugin::<BevyMagicLight2DSettings>::new())
+        .register_type::<BevyMagicLight2DSettings>()
+        .register_type::<LightPassParams>()
+        .add_plugin(ResourceInspectorPlugin::<BevyMagicLight2DSettings>::new())
         .add_startup_system(setup.after(setup_post_processing_camera))
         .add_system(system_move_camera)
         .add_system(move_collider)
