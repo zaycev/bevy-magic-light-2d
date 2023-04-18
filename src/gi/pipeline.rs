@@ -507,7 +507,7 @@ impl FromWorld for LightPassPipeline {
 
         let ss_bounce_bind_group_layout =
             render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-                label: Some("ss_bounce_bind_group_layout".into()),
+                label: Some("ss_bounce_bind_group_layout"),
                 entries: &[
                     // Camera.
                     BindGroupLayoutEntry {
@@ -576,7 +576,7 @@ impl FromWorld for LightPassPipeline {
 
         let ss_blend_bind_group_layout =
             render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-                label: Some("ss_blend_bind_group_layout".into()),
+                label: Some("ss_blend_bind_group_layout"),
                 entries: &[
                     // Camera.
                     BindGroupLayoutEntry {
@@ -656,7 +656,7 @@ impl FromWorld for LightPassPipeline {
 
         let ss_filter_bind_group_layout =
             render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-                label: Some("ss_filter_bind_group_layout".into()),
+                label: Some("ss_filter_bind_group_layout"),
                 entries: &[
                     // Camera.
                     BindGroupLayoutEntry {
@@ -756,46 +756,51 @@ impl FromWorld for LightPassPipeline {
             )
         };
 
-        let mut pipeline_cache = world.resource_mut::<PipelineCache>();
+        let pipeline_cache = world.resource_mut::<PipelineCache>();
 
         let sdf_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
             label: Some("gi_sdf_pipeline".into()),
-            layout: Some(vec![sdf_bind_group_layout.clone()]),
+            layout: vec![sdf_bind_group_layout.clone()],
             shader: shader_sdf,
             shader_defs: vec![],
             entry_point: SDF_PIPELINE_ENTRY.into(),
+            push_constant_ranges: vec![],
         });
 
         let ss_probe_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
             label: Some("gi_ss_probe_pipeline".into()),
-            layout: Some(vec![ss_probe_bind_group_layout.clone()]),
+            layout: vec![ss_probe_bind_group_layout.clone()],
             shader: gi_ss_probe,
             shader_defs: vec![],
             entry_point: SS_PROBE_PIPELINE_ENTRY.into(),
+            push_constant_ranges: vec![],
         });
 
         let ss_bounce_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
             label: Some("gi_ss_bounce_pipeline".into()),
-            layout: Some(vec![ss_bounce_bind_group_layout.clone()]),
+            layout: vec![ss_bounce_bind_group_layout.clone()],
             shader: gi_ss_bounce,
             shader_defs: vec![],
             entry_point: SS_BOUNCE_PIPELINE_ENTRY.into(),
+            push_constant_ranges: vec![],
         });
 
         let ss_blend_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
             label: Some("gi_blend_pipeline".into()),
-            layout: Some(vec![ss_blend_bind_group_layout.clone()]),
+            layout: vec![ss_blend_bind_group_layout.clone()],
             shader: gi_ss_blend,
             shader_defs: vec![],
             entry_point: SS_BLEND_PIPELINE_ENTRY.into(),
+            push_constant_ranges: vec![],
         });
 
         let ss_filter_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
             label: Some("gi_filer_pipeline".into()),
-            layout: Some(vec![ss_filter_bind_group_layout.clone()]),
+            layout: vec![ss_filter_bind_group_layout.clone()],
             shader: gi_ss_filter,
             shader_defs: vec![],
             entry_point: SS_FILTER_PIPELINE_ENTRY.into(),
+            push_constant_ranges: vec![],
         });
 
         LightPassPipeline {

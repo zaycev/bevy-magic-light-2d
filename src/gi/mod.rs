@@ -4,8 +4,9 @@ use bevy::render::extract_resource::ExtractResourcePlugin;
 use bevy::render::render_graph::{self, RenderGraph};
 use bevy::render::render_resource::*;
 use bevy::render::renderer::RenderContext;
-use bevy::render::{RenderApp, RenderStage};
+use bevy::render::{RenderApp, RenderSet};
 use bevy::sprite::Material2dPlugin;
+use bevy::window::PrimaryWindow;
 
 use crate::gi::compositing::{
     setup_post_processing_camera, PostProcessingMaterial, PostProcessingTarget,
@@ -94,18 +95,16 @@ impl Plugin for BevyMagicLight2DPlugin {
             .init_resource::<LightPassPipeline>()
             .init_resource::<LightPassPipelineAssets>()
             .init_resource::<ComputedTargetSizes>()
-            .add_system_to_stage(RenderStage::Extract, system_extract_pipeline_assets)
-            .add_system_to_stage(RenderStage::Prepare, system_prepare_pipeline_assets)
-            .add_system_to_stage(RenderStage::Queue, system_queue_bind_groups);
+            .add_system(system_extract_pipeline_assets.in_schedule(ExtractSchedule))
+            .add_system(system_prepare_pipeline_assets.in_set(RenderSet::Prepare))
+            .add_system(system_queue_bind_groups.in_set(RenderSet::Queue));
 
         let mut render_graph = render_app.world.resource_mut::<RenderGraph>();
         render_graph.add_node("light_pass_2d", LightPass2DNode::default());
-        render_graph
-            .add_node_edge(
-                "light_pass_2d",
-                bevy::render::main_graph::node::CAMERA_DRIVER,
-            )
-            .unwrap();
+        render_graph.add_node_edge(
+            "light_pass_2d",
+            bevy::render::main_graph::node::CAMERA_DRIVER,
+        )
     }
 }
 
@@ -114,14 +113,13 @@ struct LightPass2DNode {}
 
 #[rustfmt::skip]
 pub(crate) fn detect_target_sizes(
-        windows:       Res<Windows>,
-    mut target_sizes:  ResMut<ComputedTargetSizes>)
+    windows: Query<&Window, With<PrimaryWindow>>,
+    mut target_sizes: ResMut<ComputedTargetSizes>)
 {
-
-    let window       = windows.get_primary().expect("No primary window");
+    let window = windows.get_single().expect("No primary window");
     let primary_size = Vec2::new(
-        (window.physical_width()  as f64 / window.backend_scale_factor()) as f32,
-        (window.physical_height() as f64 / window.backend_scale_factor()) as f32,
+        (window.physical_width()  as f64 / window.scale_factor()) as f32,
+        (window.physical_height() as f64 / window.scale_factor()) as f32,
     );
 
     target_sizes.primary_target_size  = primary_size;
@@ -171,9 +169,9 @@ impl render_graph::Node for LightPass2DNode {
 
                 let mut pass =
                     render_context
-                        .command_encoder
+                        .command_encoder()
                         .begin_compute_pass(&ComputePassDescriptor {
-                            label: Some("light_pass_2d".into()),
+                            label: Some("light_pass_2d"),
                         });
 
                 {

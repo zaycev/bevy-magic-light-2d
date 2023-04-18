@@ -1,5 +1,4 @@
 #import bevy_magic_light_2d::gi_math
-#import bevy_magic_light_2d::gi_types
 #import bevy_magic_light_2d::gi_camera
 
 @group(0) @binding(0) var<uniform> camera_params:         CameraParams;
@@ -8,8 +7,7 @@
 
 fn sdf_aabb_occluder(p: vec2<f32>, occluder_i: i32) -> f32 {
     let occluder = light_occluder_buffer.data[occluder_i];
-    let local_p = occluder.center - p;
-    let local_p = quat_mul(occluder.rotation, vec3<f32>(local_p, 0.0)).xy;
+    let local_p = quat_mul(occluder.rotation, vec3<f32>(occluder.center - p, 0.0)).xy;
     let d        = abs(local_p) - occluder.h_extent;
     let d_max    = max(d, vec2<f32>(0.0));
     let d_o      = length(d_max);

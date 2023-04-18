@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
-use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::*;
 use bevy_magic_light_2d::prelude::*;
 
 #[derive(Debug, Component)]
@@ -13,18 +13,18 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb_u8(255, 255, 255)))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
-            window: WindowDescriptor {
-                width: 1024.,
-                height: 1024.,
+            primary_window: Some(Window {
+                resolution: (1024., 1024.).into(),
                 title: "Bevy Magic Light 2D: Square Example".into(),
                 resizable: false,
-                mode: WindowMode::Windowed,
                 ..Default::default()
-            },
+            }),
             ..Default::default()
         }))
         .add_plugin(BevyMagicLight2DPlugin)
-        .add_plugin(InspectorPlugin::<BevyMagicLight2DSettings>::new())
+        .register_type::<BevyMagicLight2DSettings>()
+        .register_type::<LightPassParams>()
+        .add_plugin(ResourceInspectorPlugin::<BevyMagicLight2DSettings>::new())
         .add_startup_system(setup.after(setup_post_processing_camera))
         .add_system(system_move_camera)
         .add_system(move_collider)
@@ -46,7 +46,7 @@ fn setup(mut commands: Commands, post_processing_target: Res<PostProcessingTarge
         .spawn((
             Transform::from_translation(Vec3::new(0., 0., 0.)),
             GlobalTransform::default(),
-            Visibility::VISIBLE,
+            Visibility::Visible,
             ComputedVisibility::default(),
             LightOccluder2D {
                 h_size: Vec2::new(80.0, 40.0),
@@ -114,24 +114,25 @@ fn setup(mut commands: Commands, post_processing_target: Res<PostProcessingTarge
         .push_children(&lights);
 
     let render_target = post_processing_target
-        .handle
-        .clone()
-        .expect("No post processing target");
+        .handles
+        .as_ref()
+        .expect("No post processing target")
+        .0
+        .clone();
 
     commands
         .spawn((
             Camera2dBundle {
                 camera: Camera {
                     hdr: true,
-                    priority: 0,
                     target: RenderTarget::Image(render_target),
                     ..Default::default()
                 },
                 ..Default::default()
             },
             Name::new("main_camera"),
+            FloorCamera,
         ))
-        .insert(MainCamera)
         .insert(UiCameraConfig {
             show_ui: false,
             ..default()
@@ -140,7 +141,7 @@ fn setup(mut commands: Commands, post_processing_target: Res<PostProcessingTarge
 
 fn system_move_camera(
     mut camera_target: Local<Vec3>,
-    mut query_camera: Query<&mut Transform, With<MainCamera>>,
+    mut query_camera: Query<&mut Transform>,
     keyboard: Res<Input<KeyCode>>,
 ) {
     if let Ok(mut camera_transform) = query_camera.get_single_mut() {

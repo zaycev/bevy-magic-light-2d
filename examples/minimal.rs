@@ -7,15 +7,13 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb_u8(255, 255, 255)))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
-            window: WindowDescriptor {
-                width: 512.0,
-                height: 512.0,
+            primary_window: Some(Window {
+                resolution: (512., 512.).into(),
                 title: "Bevy Magic Light 2D: Minimal Example".into(),
                 resizable: false,
-                mode: WindowMode::Windowed,
-                ..Default::default()
-            },
-            ..Default::default()
+                ..default()
+            }),
+            ..default()
         }))
         .add_plugin(BevyMagicLight2DPlugin)
         .add_startup_system(setup.after(setup_post_processing_camera))
@@ -29,7 +27,7 @@ fn setup(mut commands: Commands, post_processing_target: Res<PostProcessingTarge
         .spawn((
             Transform::from_translation(Vec3::new(0., 0., 0.)),
             GlobalTransform::default(),
-            Visibility::VISIBLE,
+            Visibility::Visible,
             ComputedVisibility::default(),
             LightOccluder2D {
                 h_size: Vec2::new(40.0, 20.0),
@@ -108,22 +106,24 @@ fn setup(mut commands: Commands, post_processing_target: Res<PostProcessingTarge
         .push_children(&lights);
 
     let render_target = post_processing_target
-        .handle
-        .clone()
-        .expect("No post processing target");
+        .handles
+        .as_ref()
+        .expect("No post processing target")
+        .0
+        .clone();
 
     commands
         .spawn((
             Camera2dBundle {
                 camera: Camera {
                     hdr: true,
-                    priority: 0,
                     target: RenderTarget::Image(render_target),
                     ..Default::default()
                 },
                 ..Default::default()
             },
             Name::new("main_camera"),
+            FloorCamera,
         ))
         .insert(SpriteCamera)
         .insert(UiCameraConfig {

@@ -1,13 +1,16 @@
 use bevy::core_pipeline::bloom::BloomSettings;
+use bevy::pbr::{MAX_CASCADES_PER_LIGHT, MAX_DIRECTIONAL_LIGHTS};
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
+use bevy::render::mesh::MeshVertexBufferLayout;
 use bevy::render::render_resource::{
-    AsBindGroup, Extent3d, ShaderRef, TextureDescriptor, TextureDimension, TextureFormat,
+    AsBindGroup, Extent3d, RenderPipelineDescriptor, ShaderDefVal, ShaderRef,
+    SpecializedMeshPipelineError, TextureDescriptor, TextureDimension, TextureFormat,
     TextureUsages,
 };
 use bevy::render::texture::BevyDefault;
 use bevy::render::view::RenderLayers;
-use bevy::sprite::{Material2d, MaterialMesh2dBundle};
+use bevy::sprite::{Material2d, Material2dKey, MaterialMesh2dBundle};
 
 use crate::gi::pipeline::PipelineTargetsWrapper;
 use crate::gi::resource::ComputedTargetSizes;
@@ -46,6 +49,27 @@ impl Material2d for PostProcessingMaterial {
     fn fragment_shader() -> ShaderRef {
         "shaders/gi_post_processing.wgsl".into()
     }
+
+    fn specialize(
+        descriptor: &mut RenderPipelineDescriptor,
+        _layout: &MeshVertexBufferLayout,
+        _key: Material2dKey<Self>,
+    ) -> Result<(), SpecializedMeshPipelineError> {
+        let shader_defs = &mut descriptor
+            .fragment
+            .as_mut()
+            .expect("Fragment shader empty")
+            .shader_defs;
+        shader_defs.push(ShaderDefVal::UInt(
+            "MAX_DIRECTIONAL_LIGHTS".to_string(),
+            MAX_DIRECTIONAL_LIGHTS as u32,
+        ));
+        shader_defs.push(ShaderDefVal::UInt(
+            "MAX_CASCADES_PER_LIGHT".to_string(),
+            MAX_CASCADES_PER_LIGHT as u32,
+        ));
+        Ok(())
+    }
 }
 
 #[rustfmt::skip]
@@ -76,6 +100,7 @@ pub fn setup_post_processing_camera(
             usage: TextureUsages::TEXTURE_BINDING
                  | TextureUsages::COPY_DST
                  | TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
         },
         ..default()
     };
@@ -90,6 +115,7 @@ pub fn setup_post_processing_camera(
             usage: TextureUsages::TEXTURE_BINDING
                  | TextureUsages::COPY_DST
                  | TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
         },
         ..default()
     };
@@ -105,6 +131,7 @@ pub fn setup_post_processing_camera(
             usage: TextureUsages::TEXTURE_BINDING
                  | TextureUsages::COPY_DST
                  | TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
         },
         ..default()
     };
@@ -173,7 +200,7 @@ pub fn setup_post_processing_camera(
         Camera2dBundle {
             camera: Camera {
                 // renders after the first main camera which has default value: 0.
-                priority: 1,
+                order: 1,
                 hdr: true,
                 ..default()
             },
