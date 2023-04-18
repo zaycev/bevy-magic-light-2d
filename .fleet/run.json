@@ -1,14 +1,12 @@
 {
-    "configurations": [
-        {
-            "name": "Run",
-            "type": "cargo",
-            "environment": {
-                "CARGO_MANIFEST_DIR": "$PROJECT_DIR$"
-            },
-            "cargoArgs": [
-                "run"
-            ]
-        }
-    ]
+  "configurations": [
+    {
+      "name": "Run",
+      "type": "cargo",
+      "environment": {
+        "CARGO_MANIFEST_DIR": "$PROJECT_DIR$"
+      },
+      "cargoArgs": ["run"]
+    }
+  ]
 }
