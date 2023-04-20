@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔮 Bevy Magic Light 2D – experimental dynamic 2D global illumination system.
+# 🔮 Magic Light 2D – experimental dynamic 2D global illumination system for Bevy Engine.
 
 [![Build status](https://github.com/zaycev/bevy-magic-light-2d/workflows/PR/badge.svg?branch=main)](https://github.com/zaycev/bevy-magic-light-2d/actions)
 [![dependency status](https://deps.rs/repo/github/zaycev/bevy-magic-light-2d/status.svg)](https://deps.rs/repo/github/zaycev/bevy-magic-light-2d)
