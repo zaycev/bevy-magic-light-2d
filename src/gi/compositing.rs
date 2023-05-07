@@ -11,6 +11,7 @@ use bevy::render::render_resource::{
 use bevy::render::texture::BevyDefault;
 use bevy::render::view::RenderLayers;
 use bevy::sprite::{Material2d, Material2dKey, MaterialMesh2dBundle};
+use bevy::window::{WindowResized, PrimaryWindow};
 
 use crate::gi::pipeline::PipelineTargetsWrapper;
 use crate::gi::resource::ComputedTargetSizes;
@@ -45,6 +46,9 @@ pub struct PostProcessingTarget {
     )>,
 }
 
+#[derive(Resource, Default)]
+pub struct PostProcessingMesh(Option<Handle<Mesh>>);
+
 impl Material2d for PostProcessingMaterial {
     fn fragment_shader() -> ShaderRef {
         "shaders/gi_post_processing.wgsl".into()
@@ -72,6 +76,29 @@ impl Material2d for PostProcessingMaterial {
     }
 }
 
+
+pub fn resize(events:EventReader<WindowResized>,post_processing_mesh: ResMut<PostProcessingMesh>, post_processing_target: ResMut<PostProcessingTarget>,windows:Query<&Window,With<PrimaryWindow>>,mut meshes:ResMut<Assets<Mesh>>,mut images:ResMut<Assets<Image>>){
+    if events.len() == 0 {return}
+    let window = windows.get_single().expect("No primary window");
+    let window_size = Vec2::new(
+        (window.physical_width()  as f64 / window.scale_factor()) as f32,
+        (window.physical_height() as f64 / window.scale_factor()) as f32,
+    );
+    // let mesh = meshes.get_mut(&post_processing_mesh.0.unwrap()).unwrap()
+    let mesh = post_processing_mesh.0.as_ref().and_then(|e|meshes.get_mut(&e)).expect("no mesh");
+    let mut quad = Mesh::from(shape::Quad::new(Vec2::new(
+        window_size.x,
+        window_size.y,
+    )));
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, quad.remove_attribute(Mesh::ATTRIBUTE_POSITION).unwrap());
+    let target_size = window_size.as_uvec2();
+    let size = Extent3d { width: target_size.x, height: target_size.y, ..Default::default() };
+    let (a,b,c) = post_processing_target.handles.as_ref().unwrap();
+    images.get_mut(a).unwrap().resize(size);
+    images.get_mut(b).unwrap().resize(size);
+    images.get_mut(c).unwrap().resize(size);
+}
+
 #[rustfmt::skip]
 pub fn setup_post_processing_camera(
     mut commands:                  Commands,
@@ -79,6 +106,7 @@ pub fn setup_post_processing_camera(
     mut post_processing_materials: ResMut<Assets<PostProcessingMaterial>>,
     mut images:                    ResMut<Assets<Image>>,
     mut post_processing_target:    ResMut<PostProcessingTarget>,
+    mut post_processing_mesh:    ResMut<PostProcessingMesh>,
 
     gpu_targets_sizes:             Res<ComputedTargetSizes>,
     gpu_targets_wrapper:           Res<PipelineTargetsWrapper>,
@@ -154,6 +182,8 @@ pub fn setup_post_processing_camera(
         gpu_targets_sizes.primary_target_size.x,
         gpu_targets_sizes.primary_target_size.y,
     ))));
+
+    post_processing_mesh.0 = Some(quad_handle.clone());
 
     // This material has the texture that has been rendered.
     post_processing_target.handles = Some((

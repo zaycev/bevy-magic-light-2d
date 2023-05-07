@@ -9,7 +9,7 @@ use bevy::sprite::Material2dPlugin;
 use bevy::window::PrimaryWindow;
 
 use crate::gi::compositing::{
-    setup_post_processing_camera, PostProcessingMaterial, PostProcessingTarget,
+    setup_post_processing_camera, PostProcessingMaterial, PostProcessingTarget, resize, PostProcessingMesh,
 };
 use crate::gi::constants::*;
 use crate::gi::pipeline::{
@@ -42,9 +42,11 @@ impl Plugin for BevyMagicLight2DPlugin {
         app.add_plugin(ExtractResourcePlugin::<PipelineTargetsWrapper>::default())
             .add_plugin(Material2dPlugin::<PostProcessingMaterial>::default())
             .init_resource::<PostProcessingTarget>()
+            .init_resource::<PostProcessingMesh>()
             .init_resource::<PipelineTargetsWrapper>()
             .init_resource::<BevyMagicLight2DSettings>()
             .init_resource::<ComputedTargetSizes>()
+            .add_system(resize)
             .add_startup_system(detect_target_sizes)
             .add_startup_system(system_setup_gi_pipeline.after(detect_target_sizes))
             .add_startup_system(setup_post_processing_camera.after(system_setup_gi_pipeline));
