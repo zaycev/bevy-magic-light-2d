@@ -12,22 +12,24 @@ fn main() {
     // Basic setup.
     App::new()
         .insert_resource(ClearColor(Color::rgb_u8(255, 255, 255)))
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                resolution: (1024., 1024.).into(),
-                title: "Bevy Magic Light 2D: Square Example".into(),
-                resizable: false,
+        .add_plugins((
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    resolution: (1024., 1024.).into(),
+                    title: "Bevy Magic Light 2D: Square Example".into(),
+                    resizable: false,
+                    ..Default::default()
+                }),
                 ..Default::default()
             }),
-            ..Default::default()
-        }))
-        .add_plugin(BevyMagicLight2DPlugin)
+            BevyMagicLight2DPlugin,
+            ResourceInspectorPlugin::<BevyMagicLight2DSettings>::new(),
+        ))
         .register_type::<BevyMagicLight2DSettings>()
         .register_type::<LightPassParams>()
-        .add_plugin(ResourceInspectorPlugin::<BevyMagicLight2DSettings>::new())
-        .add_startup_system(setup.after(setup_post_processing_camera))
-        .add_system(system_move_camera)
-        .add_system(move_collider)
+        .add_systems(Startup, setup.after(setup_post_processing_camera))
+        .add_systems(Update, system_move_camera)
+        .add_systems(Update, move_collider)
         .insert_resource(BevyMagicLight2DSettings {
             light_pass_params: LightPassParams {
                 reservoir_size: 8,

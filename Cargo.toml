@@ -10,23 +10,23 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = "1.0.68"
-bevy = { version = "0.10", default-features = false, features = [
+bevy = { version = "0.11", default-features = false, features = [
   "bevy_render",
   "bevy_core_pipeline",
   "bevy_winit",
   "bevy_asset",
   "bevy_sprite",
 ] }
-bevy_egui = { version = "0.20", default-features = false }
-bevy-inspector-egui = "0.18"
-bevy-inspector-egui-derive = "0.18"
-egui = { version = "0.21", features = ["bytemuck"] }
-encase = "0.5"
+bevy_egui = { version = "0.21", default-features = false }
+bevy-inspector-egui = "0.19.0"
+bevy-inspector-egui-derive = "0.19"
+egui = { version = "0.22", features = ["bytemuck"] }
+encase = "0.6.1"
 log = "0.4.17"
 rand = "0.8.5"
 
 [dev-dependencies]
-bevy = "0.10"
+bevy = "0.11"
 
 [profile.release]
 codegen-units = 1

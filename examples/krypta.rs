@@ -1,3 +1,6 @@
+use std::time::Duration;
+
+use bevy::asset::ChangeWatcher;
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::{FilterMode, SamplerDescriptor};
@@ -24,10 +27,10 @@ fn main() {
     // Basic setup.
     App::new()
         .insert_resource(ClearColor(Color::rgb_u8(0, 0, 0)))
-        .add_plugins(
+        .add_plugins((
             DefaultPlugins
                 .set(AssetPlugin {
-                    watch_for_changes: true,
+                    watch_for_changes: ChangeWatcher::with_delay(Duration::from_millis(200)),
                     ..default()
                 })
                 .set(WindowPlugin {
@@ -46,8 +49,10 @@ fn main() {
                         ..default()
                     },
                 }),
-        )
-        .add_plugin(BevyMagicLight2DPlugin)
+            BevyMagicLight2DPlugin,
+            WorldInspectorPlugin::new(),
+            ResourceInspectorPlugin::<BevyMagicLight2DSettings>::new(),
+        ))
         .insert_resource(BevyMagicLight2DSettings {
             light_pass_params: LightPassParams {
                 reservoir_size: 16,
@@ -57,17 +62,15 @@ fn main() {
                 ..default()
             },
         })
-        .add_plugin(WorldInspectorPlugin::new())
         .register_type::<LightOccluder2D>()
         .register_type::<OmniLightSource2D>()
         .register_type::<SkylightMask2D>()
         .register_type::<SkylightLight2D>()
         .register_type::<BevyMagicLight2DSettings>()
         .register_type::<LightPassParams>()
-        .add_plugin(ResourceInspectorPlugin::<BevyMagicLight2DSettings>::new())
-        .add_startup_system(setup.after(setup_post_processing_camera))
-        .add_system(system_move_camera)
-        .add_system(system_control_mouse_light.after(system_move_camera))
+        .add_systems(Startup, setup.after(setup_post_processing_camera))
+        .add_systems(Update, system_move_camera)
+        .add_systems(Update, system_control_mouse_light.after(system_move_camera))
         .run();
 }
 
@@ -844,7 +847,8 @@ fn system_control_mouse_light(
             if mouse.just_pressed(MouseButton::Right) {
                 mouse_color.color = Color::rgba(rng.gen(), rng.gen(), rng.gen(), 1.0);
             }
-            if mouse.just_pressed(MouseButton::Left) && keyboard.pressed(KeyCode::LShift) {
+            if mouse.just_pressed(MouseButton::Left) && keyboard.pressed(KeyCode::ShiftLeft)
+             {
                 commands
                     .spawn(SpatialBundle {
                         transform: Transform {

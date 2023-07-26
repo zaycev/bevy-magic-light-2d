@@ -66,7 +66,7 @@ pub(crate) fn system_extract_pipeline_assets(
     *gpu_target_sizes = **res_target_sizes;
 
     {
-        let mut light_sources = gpu_pipeline_assets.light_sources.get_mut();
+        let light_sources = gpu_pipeline_assets.light_sources.get_mut();
         let mut rng = thread_rng();
         light_sources.count = 0;
         light_sources.data.clear();
@@ -91,7 +91,7 @@ pub(crate) fn system_extract_pipeline_assets(
     }
 
     {
-        let mut light_occluders = gpu_pipeline_assets.light_occluders.get_mut();
+        let light_occluders = gpu_pipeline_assets.light_occluders.get_mut();
         light_occluders.count = 0;
         light_occluders.data.clear();
         for (occluder, transform, visibility) in query_occluders.iter() {
@@ -106,7 +106,7 @@ pub(crate) fn system_extract_pipeline_assets(
     }
 
     {
-        let mut skylight_masks = gpu_pipeline_assets.skylight_masks.get_mut();
+        let skylight_masks = gpu_pipeline_assets.skylight_masks.get_mut();
         skylight_masks.count = 0;
         skylight_masks.data.clear();
         for (transform, mask) in query_masks.iter() {
@@ -120,7 +120,7 @@ pub(crate) fn system_extract_pipeline_assets(
 
     {
         if let Ok((camera, camera_global_transform)) = query_camera.get_single() {
-            let mut camera_params = gpu_pipeline_assets.camera_params.get_mut();
+            let camera_params = gpu_pipeline_assets.camera_params.get_mut();
             let projection = camera.projection_matrix();
             let inverse_projection = projection.inverse();
             let view = camera_global_transform.compute_matrix();
@@ -155,7 +155,7 @@ pub(crate) fn system_extract_pipeline_assets(
         let cols = gpu_target_sizes.primary_target_isize.x as i32 / GI_SCREEN_PROBE_SIZE;
         let rows = gpu_target_sizes.primary_target_isize.y as i32 / GI_SCREEN_PROBE_SIZE;
 
-        let mut light_pass_params = gpu_pipeline_assets.light_pass_params.get_mut();
+        let light_pass_params = gpu_pipeline_assets.light_pass_params.get_mut();
         light_pass_params.frame_counter = *gpu_frame_counter;
         light_pass_params.probe_size = GI_SCREEN_PROBE_SIZE;
         light_pass_params.probe_atlas_cols            = cols;
@@ -170,7 +170,7 @@ pub(crate) fn system_extract_pipeline_assets(
     }
 
     {
-        let mut light_pass_params = gpu_pipeline_assets.light_pass_params.get_mut();
+        let light_pass_params = gpu_pipeline_assets.light_pass_params.get_mut();
         light_pass_params.skylight_color = Vec3::splat(0.0);
         for new_gi_state in query_skylight_light.iter() {
             light_pass_params.skylight_color.x += new_gi_state.color.r() * new_gi_state.intensity;
