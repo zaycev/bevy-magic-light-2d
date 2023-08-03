@@ -1,5 +1,8 @@
 #define_import_path bevy_magic_light_2d::gi_raymarch
 
+#import bevy_magic_light_2d::gi_math fast_normalize_2d, distance_squared, hash
+#import bevy_magic_light_2d::gi_camera CameraParams, sdf_uv_to_world, world_to_sdf_uv, bilinear_sample_r
+
 struct RayMarchResult {
     success:  i32,      //
     step: i32,          // steps

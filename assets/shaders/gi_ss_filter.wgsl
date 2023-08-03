@@ -1,8 +1,9 @@
+#import bevy_magic_light_2d::gi_types LightPassParams, ProbeDataBuffer
 #import bevy_magic_light_2d::gi_math
-#import bevy_magic_light_2d::gi_camera
+#import bevy_magic_light_2d::gi_camera CameraParams, screen_to_world, screen_to_ndc, world_to_sdf_uv, bilinear_sample_r
 #import bevy_magic_light_2d::gi_halton
 #import bevy_magic_light_2d::gi_attenuation
-#import bevy_magic_light_2d::gi_raymarch
+#import bevy_magic_light_2d::gi_raymarch raymarch_primary
 
 @group(0) @binding(0) var<uniform> camera_params:     CameraParams;
 @group(0) @binding(1) var<uniform> cfg:               LightPassParams;

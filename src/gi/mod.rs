@@ -4,7 +4,7 @@ use bevy::render::extract_resource::ExtractResourcePlugin;
 use bevy::render::render_graph::{self, RenderGraph};
 use bevy::render::render_resource::*;
 use bevy::render::renderer::RenderContext;
-use bevy::render::{RenderApp, RenderSet};
+use bevy::render::{Render, RenderApp, RenderSet};
 use bevy::sprite::Material2dPlugin;
 use bevy::window::PrimaryWindow;
 
@@ -47,9 +47,15 @@ impl Plugin for BevyMagicLight2DPlugin {
         .init_resource::<PipelineTargetsWrapper>()
         .init_resource::<BevyMagicLight2DSettings>()
         .init_resource::<ComputedTargetSizes>()
-        .add_systems(Startup, detect_target_sizes)
-        .add_systems(Startup, system_setup_gi_pipeline.after(detect_target_sizes))
-        .add_systems(Startup, setup_post_processing_camera.after(system_setup_gi_pipeline));
+        .add_systems(
+            PreStartup,
+            (
+                detect_target_sizes,
+                system_setup_gi_pipeline.after(detect_target_sizes),
+                setup_post_processing_camera.after(system_setup_gi_pipeline),
+            )
+                .chain(),
+        );
 
         load_internal_asset!(
             app,
@@ -94,15 +100,14 @@ impl Plugin for BevyMagicLight2DPlugin {
         );
         let render_app = app.sub_app_mut(RenderApp);
         render_app
-            .init_resource::<LightPassPipeline>()
-            .init_resource::<LightPassPipelineAssets>()
-            .init_resource::<ComputedTargetSizes>()
             .add_systems(ExtractSchedule, system_extract_pipeline_assets)
             .add_systems(
-                Update,
-                system_prepare_pipeline_assets.in_set(RenderSet::Prepare),
-            )
-            .add_systems(Update, system_queue_bind_groups.in_set(RenderSet::Queue));
+                Render,
+                (
+                    system_prepare_pipeline_assets.in_set(RenderSet::Prepare),
+                    system_queue_bind_groups.in_set(RenderSet::Queue),
+                ),
+            );
 
         let mut render_graph = render_app.world.resource_mut::<RenderGraph>();
         render_graph.add_node("light_pass_2d", LightPass2DNode::default());
@@ -110,6 +115,14 @@ impl Plugin for BevyMagicLight2DPlugin {
             "light_pass_2d",
             bevy::render::main_graph::node::CAMERA_DRIVER,
         )
+    }
+
+    fn finish(&self, app: &mut App) {
+        let render_app = app.sub_app_mut(RenderApp);
+        render_app
+            .init_resource::<LightPassPipeline>()
+            .init_resource::<LightPassPipelineAssets>()
+            .init_resource::<ComputedTargetSizes>();
     }
 }
 
@@ -123,17 +136,17 @@ pub(crate) fn detect_target_sizes(
 {
     let window = windows.get_single().expect("No primary window");
     let primary_size = Vec2::new(
-        (window.physical_width()  as f64 / window.scale_factor()) as f32,
+        (window.physical_width() as f64 / window.scale_factor()) as f32,
         (window.physical_height() as f64 / window.scale_factor()) as f32,
     );
 
-    target_sizes.primary_target_size  = primary_size;
+    target_sizes.primary_target_size = primary_size;
     target_sizes.primary_target_isize = target_sizes.primary_target_size.as_ivec2();
     target_sizes.primary_target_usize = target_sizes.primary_target_size.as_uvec2();
 
-    target_sizes.sdf_target_size      = primary_size * 0.5;
-    target_sizes.sdf_target_isize     = target_sizes.sdf_target_size.as_ivec2();
-    target_sizes.sdf_target_usize     = target_sizes.sdf_target_size.as_uvec2();
+    target_sizes.sdf_target_size = primary_size * 0.5;
+    target_sizes.sdf_target_isize = target_sizes.sdf_target_size.as_ivec2();
+    target_sizes.sdf_target_usize = target_sizes.sdf_target_size.as_uvec2();
 }
 
 impl render_graph::Node for LightPass2DNode {
@@ -142,16 +155,14 @@ impl render_graph::Node for LightPass2DNode {
     #[rustfmt::skip]
     fn run(
         &self,
-        _:              &mut render_graph::RenderGraphContext,
+        _: &mut render_graph::RenderGraphContext,
         render_context: &mut RenderContext,
-        world:          &World,
+        world: &World,
     ) -> Result<(), render_graph::NodeRunError> {
-
         if let Some(pipeline_bind_groups) = world.get_resource::<LightPassPipelineBindGroups>() {
-
-            let pipeline_cache  = world.resource::<PipelineCache>();
-            let pipeline        = world.resource::<LightPassPipeline>();
-            let target_sizes    = world.resource::<ComputedTargetSizes>();
+            let pipeline_cache = world.resource::<PipelineCache>();
+            let pipeline = world.resource::<LightPassPipeline>();
+            let target_sizes = world.resource::<ComputedTargetSizes>();
 
             if let (
                 Some(sdf_pipeline),
@@ -166,7 +177,6 @@ impl render_graph::Node for LightPass2DNode {
                 pipeline_cache.get_compute_pipeline(pipeline.ss_blend_pipeline),
                 pipeline_cache.get_compute_pipeline(pipeline.ss_filter_pipeline),
             ) {
-
                 let primary_w = target_sizes.primary_target_usize.x;
                 let primary_h = target_sizes.primary_target_usize.y;
                 let sdf_w = target_sizes.sdf_target_usize.x;
