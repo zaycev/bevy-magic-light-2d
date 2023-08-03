@@ -1,7 +1,7 @@
 use bevy::core_pipeline::bloom::BloomSettings;
 use bevy::pbr::{MAX_CASCADES_PER_LIGHT, MAX_DIRECTIONAL_LIGHTS};
 use bevy::prelude::*;
-use bevy::reflect::TypeUuid;
+use bevy::reflect::{TypeUuid, TypePath};
 use bevy::render::mesh::MeshVertexBufferLayout;
 use bevy::render::render_resource::{
     AsBindGroup, Extent3d, RenderPipelineDescriptor, ShaderDefVal, ShaderRef,
@@ -16,7 +16,7 @@ use crate::gi::pipeline::PipelineTargetsWrapper;
 use crate::gi::resource::ComputedTargetSizes;
 
 #[rustfmt::skip]
-#[derive(AsBindGroup, TypeUuid, Clone)]
+#[derive(AsBindGroup, TypeUuid, Clone, TypePath)]
 #[uuid = "bc2f08eb-a0fb-43f1-a908-54871ea597d5"]
 pub struct PostProcessingMaterial {
     #[texture(0)]

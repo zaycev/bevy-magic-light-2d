@@ -39,15 +39,17 @@ pub struct BevyMagicLight2DPlugin;
 
 impl Plugin for BevyMagicLight2DPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(ExtractResourcePlugin::<PipelineTargetsWrapper>::default())
-            .add_plugin(Material2dPlugin::<PostProcessingMaterial>::default())
-            .init_resource::<PostProcessingTarget>()
-            .init_resource::<PipelineTargetsWrapper>()
-            .init_resource::<BevyMagicLight2DSettings>()
-            .init_resource::<ComputedTargetSizes>()
-            .add_startup_system(detect_target_sizes)
-            .add_startup_system(system_setup_gi_pipeline.after(detect_target_sizes))
-            .add_startup_system(setup_post_processing_camera.after(system_setup_gi_pipeline));
+        app.add_plugins((
+            ExtractResourcePlugin::<PipelineTargetsWrapper>::default(),
+            Material2dPlugin::<PostProcessingMaterial>::default(),
+        ))
+        .init_resource::<PostProcessingTarget>()
+        .init_resource::<PipelineTargetsWrapper>()
+        .init_resource::<BevyMagicLight2DSettings>()
+        .init_resource::<ComputedTargetSizes>()
+        .add_systems(Startup, detect_target_sizes)
+        .add_systems(Startup, system_setup_gi_pipeline.after(detect_target_sizes))
+        .add_systems(Startup, setup_post_processing_camera.after(system_setup_gi_pipeline));
 
         load_internal_asset!(
             app,
@@ -95,9 +97,12 @@ impl Plugin for BevyMagicLight2DPlugin {
             .init_resource::<LightPassPipeline>()
             .init_resource::<LightPassPipelineAssets>()
             .init_resource::<ComputedTargetSizes>()
-            .add_system(system_extract_pipeline_assets.in_schedule(ExtractSchedule))
-            .add_system(system_prepare_pipeline_assets.in_set(RenderSet::Prepare))
-            .add_system(system_queue_bind_groups.in_set(RenderSet::Queue));
+            .add_systems(ExtractSchedule, system_extract_pipeline_assets)
+            .add_systems(
+                Update,
+                system_prepare_pipeline_assets.in_set(RenderSet::Prepare),
+            )
+            .add_systems(Update, system_queue_bind_groups.in_set(RenderSet::Queue));
 
         let mut render_graph = render_app.world.resource_mut::<RenderGraph>();
         render_graph.add_node("light_pass_2d", LightPass2DNode::default());
