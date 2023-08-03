@@ -1,8 +1,9 @@
-#import bevy_magic_light_2d::gi_math
-#import bevy_magic_light_2d::gi_camera
-#import bevy_magic_light_2d::gi_halton
+#import bevy_magic_light_2d::gi_types LightPassParams
+#import bevy_magic_light_2d::gi_math fast_normalize_2d
+#import bevy_magic_light_2d::gi_camera CameraParams, world_to_sdf_uv, bilinear_sample_rgba, screen_to_world, world_to_screen, world_to_ndc
+#import bevy_magic_light_2d::gi_halton radical_inverse_vdc
 #import bevy_magic_light_2d::gi_attenuation
-#import bevy_magic_light_2d::gi_raymarch
+#import bevy_magic_light_2d::gi_raymarch raymarch_bounce
 
 @group(0) @binding(0) var<uniform> camera_params:     CameraParams;
 @group(0) @binding(1) var<uniform> cfg:               LightPassParams;

@@ -1,7 +1,7 @@
 use bevy::core_pipeline::bloom::BloomSettings;
 use bevy::pbr::{MAX_CASCADES_PER_LIGHT, MAX_DIRECTIONAL_LIGHTS};
 use bevy::prelude::*;
-use bevy::reflect::{TypeUuid, TypePath};
+use bevy::reflect::{TypePath, TypeUuid};
 use bevy::render::mesh::MeshVertexBufferLayout;
 use bevy::render::render_resource::{
     AsBindGroup, Extent3d, RenderPipelineDescriptor, ShaderDefVal, ShaderRef,

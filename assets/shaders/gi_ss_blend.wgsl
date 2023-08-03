@@ -1,8 +1,8 @@
+#import bevy_magic_light_2d::gi_types LightOccluderBuffer, LightPassParams, ProbeDataBuffer
 #import bevy_magic_light_2d::gi_math
-#import bevy_magic_light_2d::gi_camera
+#import bevy_magic_light_2d::gi_camera CameraParams, screen_to_world, world_to_ndc, ndc_to_screen
 #import bevy_magic_light_2d::gi_halton
 #import bevy_magic_light_2d::gi_attenuation
-
 
 @group(0) @binding(0) var<uniform> camera_params:     CameraParams;
 @group(0) @binding(1) var<uniform> cfg:               LightPassParams;

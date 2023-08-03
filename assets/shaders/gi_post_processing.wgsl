@@ -1,6 +1,9 @@
-#import bevy_pbr::mesh_view_bindings
-#import bevy_pbr::utils
-#import bevy_magic_light_2d::gi_camera
+#import bevy_sprite::mesh2d_view_bindings view
+#import bevy_pbr::utils coords_to_viewport_uv
+#import bevy_magic_light_2d::gi_camera screen_to_world, world_to_sdf_uv, bilinear_sample_rgba
+#import bevy_pbr::mesh_view_bindings  view
+#import bevy_pbr::mesh_vertex_output  MeshVertexOutput
+
 
 @group(1) @binding(0) var in_floor_texture:              texture_2d<f32>;
 @group(1) @binding(1) var in_floor_sampler:              sampler;
@@ -22,10 +25,8 @@ fn lin_to_srgb(color: vec3<f32>) -> vec3<f32> {
 }
 
 @fragment
-fn fragment(
-    @builtin(position) position: vec4<f32>,
-    #import bevy_sprite::mesh2d_vertex_output
-) -> @location(0) vec4<f32> {
+fn fragment(in: MeshVertexOutput) -> @location(0) vec4<f32> {
+    let position = in.position;
     let uv = coords_to_viewport_uv(position.xy, view.viewport);
 
     // Read diffuse textures.
