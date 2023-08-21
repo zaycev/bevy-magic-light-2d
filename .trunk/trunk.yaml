@@ -39,4 +39,4 @@ actions:
 
 merge:
   required_statuses:
-    - Build & Check
+    - Trunk Check

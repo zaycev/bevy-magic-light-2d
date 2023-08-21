@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    name: Build & Check
+    name: Trunk Check
     runs-on: ubuntu-latest
 
     steps:
