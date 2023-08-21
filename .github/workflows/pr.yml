@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  trunk_check:
     name: Trunk Check
     runs-on: ubuntu-latest
 
@@ -24,8 +24,14 @@ jobs:
       - name: Install alsa and udev
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
 
-      - name: Cargo Build
+      - name: Cargo Build Minimal Example
+        run: cargo build --example minimal
+
+      - name: Cargo Build Krypta Example
         run: cargo build --example krypta
+
+      - name: Cargo Build Movement Example
+        run: cargo build --example movement
 
       - name: Trunk Check
         uses: trunk-io/trunk-action@v1
