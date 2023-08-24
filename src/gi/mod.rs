@@ -23,7 +23,6 @@ use crate::gi::resource::ComputedTargetSizes;
 use crate::prelude::BevyMagicLight2DSettings;
 
 mod constants;
-mod dispatch;
 mod pipeline;
 mod pipeline_assets;
 mod types_gpu;
