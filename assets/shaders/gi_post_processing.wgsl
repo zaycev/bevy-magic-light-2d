@@ -71,10 +71,9 @@ fn fragment(in: MeshVertexOutput) -> @location(0) vec4<f32> {
     let final_walls   = in_walls_diffuse.xyz   * floor_irradiance_srgb;
     let final_objects = in_objects_diffuse.xyz * objects_irradiance_srgb;
 
-    var out = vec4<f32>(mix(final_floor.xyz, final_walls.xyz, 1.0 - step(length(final_walls.xyz), 0.001)), 1.0);
-        out = vec4<f32>(mix(out.xyz, final_objects.xyz, 1.0 - step(length(final_objects.xyz), 0.001)), 1.0);
-
-    // out = vec4<f32>(in_irradiance, 1.0);
+    var out = vec4<f32>(final_floor, 1.0);
+        out = vec4<f32>(mix(out.xyz, final_walls.xyz, in_walls_diffuse.w), 1.0);
+        out = vec4<f32>(mix(out.xyz, final_objects.xyz, in_objects_diffuse.w), 1.0);
 
     return out;
 }
