@@ -1,3 +1,5 @@
+TEST
+
 <div align="center">
 
 # 🔮 Magic Light 2D – experimental dynamic 2D global illumination system for Bevy Engine.
