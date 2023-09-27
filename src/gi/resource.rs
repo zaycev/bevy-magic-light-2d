@@ -1,5 +1,7 @@
 use bevy::prelude::*;
+#[cfg(feature = "egui")]
 use bevy_inspector_egui::prelude::ReflectInspectorOptions;
+#[cfg(feature = "egui")]
 use bevy_inspector_egui::InspectorOptions;
 
 #[rustfmt::skip]
@@ -9,24 +11,25 @@ pub struct BevyMagicLight2DSettings {
 }
 
 #[rustfmt::skip]
-#[derive(Reflect, Copy, Clone, Debug, InspectorOptions)]
-#[reflect(InspectorOptions)]
+#[derive(Reflect, Copy, Clone, Debug)]
+#[cfg_attr(feature = "egui", derive(InspectorOptions))]
+#[cfg_attr(feature = "egui", reflect(InspectorOptions))]
 pub struct LightPassParams {
-    #[inspector(min = 1, max = 64)]
+    #[cfg_attr(feature = "egui", inspector(min = 1, max = 64))]
     pub reservoir_size: u32,
 
     pub smooth_kernel_size: (u32, u32),
 
-    #[inspector(min = 0.0, max = 1.0)]
+    #[cfg_attr(feature = "egui", inspector(min = 0.0, max = 1.0))]
     pub direct_light_contrib: f32,
 
-    #[inspector(min = 0.0, max = 1.0)]
+    #[cfg_attr(feature = "egui", inspector(min = 0.0, max = 1.0))]
     pub indirect_light_contrib: f32,
 
-    #[inspector(min = 0, max = 512)]
+    #[cfg_attr(feature = "egui", inspector(min = 0, max = 512))]
     pub indirect_rays_per_sample: i32,
 
-    #[inspector(min = 1.0, max = 100.0)]
+    #[cfg_attr(feature = "egui", inspector(min = 1.0, max = 100.0))]
     pub indirect_rays_radius_factor: f32,
 }
 
