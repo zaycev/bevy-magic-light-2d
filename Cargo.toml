@@ -1,7 +1,11 @@
 [package]
 edition = "2021"
 name = "bevy_magic_light_2d"
-version = "0.4.1"
+version = "0.4.2"
+
+[features]
+default = ["egui"]
+egui = ["dep:bevy_egui", "dep:bevy-inspector-egui", "dep:bevy-inspector-egui-derive", "dep:egui"]
 
 [dependencies]
 anyhow = "1.0.75"
@@ -13,10 +17,10 @@ bevy = { version = "0.11.2", default-features = false, features = [
   "bevy_sprite",
   "bevy_pbr",
 ] }
-bevy_egui = { version = "0.21", default-features = false }
-bevy-inspector-egui = "0.19.0"
-bevy-inspector-egui-derive = "0.19"
-egui = { version = "0.22", features = ["bytemuck"] }
+bevy_egui = { version = "0.21", default-features = false, optional = true }
+bevy-inspector-egui = { version = "0.19.0", optional = true }
+bevy-inspector-egui-derive = { version = "0.19", optional = true }
+egui = { version = "0.22", features = ["bytemuck"], optional = true }
 encase = "0.6.1"
 log = "0.4.20"
 rand = "0.8.5"
