@@ -6,7 +6,7 @@ use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::{FilterMode, SamplerDescriptor};
 use bevy::render::view::RenderLayers;
 use bevy::sprite::MaterialMesh2dBundle;
-use bevy::window::{PrimaryWindow, WindowRef};
+use bevy::window::PrimaryWindow;
 use bevy_inspector_egui::quick::*;
 use bevy_magic_light_2d::prelude::*;
 use rand::prelude::*;
@@ -16,6 +16,7 @@ pub const SPRITE_SCALE: f32 = 4.0;
 pub const Z_BASE_FLOOR: f32 = 100.0; // Base z-coordinate for 2D layers.
 pub const Z_BASE_OBJECTS: f32 = 200.0; // Ground object sprites.
 pub const SCREEN_SIZE: (f32, f32) = (768.0, 768.0);
+pub const CAMERA_SCALE: f32 = 1.2;
 
 // Misc components.
 #[derive(Component)]
@@ -751,6 +752,12 @@ fn setup(
         .clone()
         .expect("No post processing target");
 
+    let projection = OrthographicProjection {
+        scale: CAMERA_SCALE,
+        near: -2000.0,
+        far: 2000.0,
+        ..default()
+    };
 
     // Setup separate camera for floor, walls and objects.
     commands
@@ -761,6 +768,7 @@ fn setup(
                     target: RenderTarget::Image(floor_target),
                     ..default()
                 },
+                projection: projection.clone(),
                 ..default()
             },
             Name::new("main_camera_floor"),
@@ -779,6 +787,7 @@ fn setup(
                     target: RenderTarget::Image(walls_target),
                     ..default()
                 },
+                projection: projection.clone(),
                 ..default()
             },
             Name::new("main_camera_walls"),
@@ -797,6 +806,7 @@ fn setup(
                     target: RenderTarget::Image(objects_target),
                     ..default()
                 },
+                projection: projection.clone(),
                 ..default()
             },
             Name::new("main_camera_objects"),
@@ -812,8 +822,7 @@ fn setup(
 #[rustfmt::skip]
 fn system_control_mouse_light(
     mut commands: Commands,
-    windows: Query<&Window>,
-    primary_window: Query<Entity, With<PrimaryWindow>>,
+    window: Query<&Window, With<PrimaryWindow>>,
     mut query_light: Query<(&mut Transform, &mut OmniLightSource2D), With<MouseLight>>,
     query_cameras: Query<(&Camera, &GlobalTransform), With<SpriteCamera>>,
     mouse: Res<Input<MouseButton>>,
@@ -823,22 +832,14 @@ fn system_control_mouse_light(
 
     // We only need to iter over first camera matched.
     for (camera, camera_transform) in query_cameras.iter() {
-        let RenderTarget::Window(window) = camera.target else {continue};
-        let window = if let WindowRef::Entity(id) = window {
-            id
-        } else if let Ok(id) = primary_window.get_single() {
-            id
-        } else {
-            continue;
-        };
-
-        let Ok(window) = windows.get(window) else {break};
+        let Ok(window) = window.get_single() else { break };
 
         if let Some(screen_pos) = window.cursor_position() {
+
             let window_size = Vec2::new(window.width(), window.height());
-            let mouse_ndc = (screen_pos / window_size) * 2.0 - Vec2::ONE;
-            let ndc_to_world =
-                camera_transform.compute_matrix() * camera.projection_matrix().inverse();
+            let mut mouse_ndc = (screen_pos / window_size) * 2.0 - Vec2::ONE;
+            mouse_ndc = Vec2::new(mouse_ndc.x, -mouse_ndc.y);
+            let ndc_to_world = camera_transform.compute_matrix() * camera.projection_matrix().inverse();
             let mouse_world = ndc_to_world.project_point3(mouse_ndc.extend(-1.0));
 
             let (mut mouse_transform, mut mouse_color) = query_light.single_mut();
@@ -895,7 +896,7 @@ fn system_move_camera(
     }
 
     // Smooth camera.
-    let blend_ratio = 0.18;
+    let blend_ratio = 0.12;
     let movement = *camera_target - *camera_current;
     *camera_current += movement * blend_ratio;
 

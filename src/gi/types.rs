@@ -21,16 +21,14 @@ pub struct LightOccluder2D {
 impl From<(f32, f32)> for LightOccluder2D {
     fn from(value: (f32, f32)) -> Self {
         LightOccluder2D {
-            h_size: value.into()
+            h_size: value.into(),
         }
     }
 }
 
 impl From<Vec2> for LightOccluder2D {
     fn from(value: Vec2) -> Self {
-        LightOccluder2D {
-            h_size: value
-        }
+        LightOccluder2D { h_size: value }
     }
 }
 
