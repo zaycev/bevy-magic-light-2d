@@ -16,9 +16,9 @@ lint:
     - oxipng@9.0.0
     - taplo@0.8.1
     - markdownlint@0.37.0
-    - clippy@1.70.0
+    - clippy@1.73.0
     - git-diff-check
-    - rustfmt@1.70.0
+    - rustfmt@1.73.0
     - prettier@3.0.3
     - gitleaks@8.18.0
 
