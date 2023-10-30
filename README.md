@@ -60,7 +60,7 @@ cargo run --example krypta
 - [ ] Arbitrary number of bounces via configuration.
 - [x] Handle camera scale and rotation.
 - [ ] Support multiple layers.
-- [x] Expose settings instead of harcoding them.
+- [x] Expose settings instead of hardcoding them.
 - [x] Support resize of targets.
 - [ ] Support transparent occluders.
 - [ ] Support color transfer from occluders.
