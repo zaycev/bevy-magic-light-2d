@@ -113,7 +113,7 @@ fn estimate_probes_at(
 
     // Discard if offscreen.
     let base_ndc = world_to_ndc(base_probe.pose, camera_params.view_proj);
-    if any(base_ndc < vec2<f32>(-1.0, -1.0)) || any(base_ndc > vec2<f32>(1.0, 1.0)) {
+    if any(base_ndc <= vec2<f32>(-1.0)) || any(base_ndc >= vec2<f32>(1.0)) {
         return SampleResult(vec3<f32>(0.0), 0.0);
     }
 

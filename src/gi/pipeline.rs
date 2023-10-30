@@ -1,4 +1,3 @@
-use bevy::asset::AssetPath;
 use bevy::prelude::*;
 use bevy::render::extract_resource::ExtractResource;
 use bevy::render::render_asset::RenderAssets;
@@ -6,13 +5,12 @@ use bevy::render::render_resource::*;
 use bevy::render::renderer::RenderDevice;
 use bevy::render::texture::ImageSampler;
 
-use super::constants::GI_SCREEN_PROBE_SIZE;
-use super::pipeline_assets::LightPassPipelineAssets;
-use super::types_gpu::{
+use crate::gi::pipeline_assets::LightPassPipelineAssets;
+use crate::gi::resource::ComputedTargetSizes;
+use crate::gi::types_gpu::{
     GpuCameraParams, GpuLightOccluderBuffer, GpuLightPassParams, GpuLightSourceBuffer,
     GpuProbeDataBuffer, GpuSkylightMaskBuffer,
 };
-use crate::gi::resource::ComputedTargetSizes;
 use crate::gi::util::AssetUtil;
 
 const SDF_TARGET_FORMAT: TextureFormat = TextureFormat::R16Float;

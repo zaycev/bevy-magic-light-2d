@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bevy::asset::ChangeWatcher;
 use bevy::prelude::*;
-use bevy::render::camera::{RenderTarget, ScalingMode};
+use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::{FilterMode, SamplerDescriptor};
 use bevy::render::view::RenderLayers;
 use bevy::sprite::MaterialMesh2dBundle;
@@ -52,7 +52,7 @@ fn main() {
                 }),
             BevyMagicLight2DPlugin,
             WorldInspectorPlugin::new(),
-            // ResourceInspectorPlugin::<BevyMagicLight2DSettings>::new(),
+            ResourceInspectorPlugin::<BevyMagicLight2DSettings>::new(),
         ))
         .insert_resource(BevyMagicLight2DSettings {
             light_pass_params: LightPassParams {
@@ -875,21 +875,11 @@ fn system_move_camera(
     mut query_cameras:  Query<&mut Transform, With<SpriteCamera>>,
         keyboard:       Res<Input<KeyCode>>,
 ) {
-
     let speed = 18.0;
-
-    if keyboard.pressed(KeyCode::W) {
-        camera_target.y += speed;
-    }
-    if keyboard.pressed(KeyCode::S) {
-        camera_target.y -= speed;
-    }
-    if keyboard.pressed(KeyCode::A) {
-        camera_target.x -= speed;
-    }
-    if keyboard.pressed(KeyCode::D) {
-        camera_target.x += speed;
-    }
+    if keyboard.pressed(KeyCode::W) { camera_target.y += speed; }
+    if keyboard.pressed(KeyCode::S) { camera_target.y -= speed; }
+    if keyboard.pressed(KeyCode::A) { camera_target.x -= speed; }
+    if keyboard.pressed(KeyCode::D) { camera_target.x += speed; }
 
     // Smooth camera.
     let blend_ratio = 0.2;

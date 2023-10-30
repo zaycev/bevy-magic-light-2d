@@ -1,4 +1,5 @@
 use crate::gi::constants::GI_SCREEN_PROBE_SIZE;
+use crate::gi::util;
 use bevy::prelude::*;
 #[cfg(feature = "egui")]
 use bevy_inspector_egui::prelude::ReflectInspectorOptions;
@@ -97,10 +98,15 @@ impl ComputedTargetSizes {
         sizes.primary_target_usize = sizes.primary_target_size.as_uvec2();
 
         sizes.sdf_target_size = primary_size * params.sdf_scale;
-        sizes.sdf_target_isize = sizes.sdf_target_size.as_ivec2();
-        sizes.sdf_target_usize = sizes.sdf_target_size.as_uvec2();
+        sizes.sdf_target_isize =
+            util::align_to_work_group_grid(sizes.sdf_target_size.ceil().as_ivec2());
+        sizes.sdf_target_usize = sizes.sdf_target_isize.as_uvec2();
 
-        sizes.probe_grid_isize = sizes.primary_target_isize / GI_SCREEN_PROBE_SIZE;
+        sizes.probe_grid_isize = util::align_to_work_group_grid(
+            (sizes.primary_target_size / (GI_SCREEN_PROBE_SIZE as f32))
+                .ceil()
+                .as_ivec2(),
+        );
         sizes.probe_grid_size = sizes.probe_grid_isize.as_vec2();
         sizes.probe_grid_usize = sizes.probe_grid_isize.as_uvec2();
 

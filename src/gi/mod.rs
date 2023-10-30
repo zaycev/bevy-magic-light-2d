@@ -212,8 +212,6 @@ impl render_graph::Node for LightPass2DNode {
                 pipeline_cache.get_compute_pipeline(pipeline.ss_blend_pipeline),
                 pipeline_cache.get_compute_pipeline(pipeline.ss_filter_pipeline),
             ) {
-                let primary_w = target_sizes.primary_target_usize.x;
-                let primary_h = target_sizes.primary_target_usize.y;
                 let sdf_w = target_sizes.sdf_target_usize.x;
                 let sdf_h = target_sizes.sdf_target_usize.y;
 
@@ -233,32 +231,33 @@ impl render_graph::Node for LightPass2DNode {
                 }
 
                 {
-                    let grid_w = (primary_w / GI_SCREEN_PROBE_SIZE as u32) / WORKGROUP_SIZE;
-                    let grid_h = (primary_h / GI_SCREEN_PROBE_SIZE as u32) / WORKGROUP_SIZE;
+                    let grid_w = target_sizes.probe_grid_usize.x / WORKGROUP_SIZE;
+                    let grid_h = target_sizes.probe_grid_usize.y / WORKGROUP_SIZE;
                     pass.set_bind_group(0, &pipeline_bind_groups.ss_probe_bind_group, &[]);
                     pass.set_pipeline(ss_probe_pipeline);
                     pass.dispatch_workgroups(grid_w, grid_h, 1);
                 }
 
                 {
-                    let grid_w = (primary_w / GI_SCREEN_PROBE_SIZE as u32) / WORKGROUP_SIZE;
-                    let grid_h = (primary_h / GI_SCREEN_PROBE_SIZE as u32) / WORKGROUP_SIZE;
+                    let grid_w = target_sizes.probe_grid_usize.x / WORKGROUP_SIZE;
+                    let grid_h = target_sizes.probe_grid_usize.y / WORKGROUP_SIZE;
                     pass.set_bind_group(0, &pipeline_bind_groups.ss_bounce_bind_group, &[]);
                     pass.set_pipeline(ss_bounce_pipeline);
                     pass.dispatch_workgroups(grid_w, grid_h, 1);
                 }
 
                 {
-                    let grid_w = (primary_w / GI_SCREEN_PROBE_SIZE as u32) / WORKGROUP_SIZE;
-                    let grid_h = (primary_h / GI_SCREEN_PROBE_SIZE as u32) / WORKGROUP_SIZE;
+                    let grid_w = target_sizes.probe_grid_usize.x / WORKGROUP_SIZE;
+                    let grid_h = target_sizes.probe_grid_usize.y / WORKGROUP_SIZE;
                     pass.set_bind_group(0, &pipeline_bind_groups.ss_blend_bind_group, &[]);
                     pass.set_pipeline(ss_blend_pipeline);
                     pass.dispatch_workgroups(grid_w, grid_h, 1);
                 }
 
                 {
-                    let grid_w = primary_w / WORKGROUP_SIZE;
-                    let grid_h = primary_h / WORKGROUP_SIZE;
+                    let aligned = util::align_to_work_group_grid(target_sizes.primary_target_isize).as_uvec2();
+                    let grid_w = aligned.x / WORKGROUP_SIZE;
+                    let grid_h = aligned.y / WORKGROUP_SIZE;
                     pass.set_bind_group(0, &pipeline_bind_groups.ss_filter_bind_group, &[]);
                     pass.set_pipeline(ss_filter_pipeline);
                     pass.dispatch_workgroups(grid_w, grid_h, 1);
