@@ -1,6 +1,7 @@
-use crate::gi::WORKGROUP_SIZE;
 use bevy::asset::AssetPath;
 use bevy::math::IVec2;
+
+use crate::gi::WORKGROUP_SIZE;
 
 pub struct AssetUtil;
 

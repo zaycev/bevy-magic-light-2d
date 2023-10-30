@@ -1,10 +1,11 @@
-use crate::gi::constants::GI_SCREEN_PROBE_SIZE;
-use crate::gi::util;
 use bevy::prelude::*;
 #[cfg(feature = "egui")]
 use bevy_inspector_egui::prelude::ReflectInspectorOptions;
 #[cfg(feature = "egui")]
 use bevy_inspector_egui::InspectorOptions;
+
+use crate::gi::constants::GI_SCREEN_PROBE_SIZE;
+use crate::gi::util;
 
 #[derive(Copy, Clone, Reflect)]
 pub struct TargetScalingParams {
