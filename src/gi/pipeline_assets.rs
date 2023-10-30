@@ -17,7 +17,7 @@ use crate::FloorCamera;
 
 #[rustfmt::skip]
 #[derive(Default, Resource)]
-pub(crate) struct LightPassPipelineAssets {
+pub struct LightPassPipelineAssets {
     pub camera_params:     UniformBuffer<GpuCameraParams>,
     pub light_pass_params: UniformBuffer<GpuLightPassParams>,
     pub light_sources:     StorageBuffer<GpuLightSourceBuffer>,
@@ -38,7 +38,7 @@ impl LightPassPipelineAssets {
 }
 
 #[rustfmt::skip]
-pub(crate) fn system_prepare_pipeline_assets(
+pub fn system_prepare_pipeline_assets(
     render_device:         Res<RenderDevice>,
     render_queue:          Res<RenderQueue>,
     mut gi_compute_assets: ResMut<LightPassPipelineAssets>,
@@ -47,7 +47,7 @@ pub(crate) fn system_prepare_pipeline_assets(
 }
 
 #[rustfmt::skip]
-pub(crate) fn system_extract_pipeline_assets(
+pub fn system_extract_pipeline_assets(
     res_light_settings:         Extract<Res<BevyMagicLight2DSettings>>,
     res_target_sizes:           Extract<Res<ComputedTargetSizes>>,
 

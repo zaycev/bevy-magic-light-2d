@@ -13,6 +13,7 @@ use super::types_gpu::{
     GpuProbeDataBuffer, GpuSkylightMaskBuffer,
 };
 use crate::gi::resource::ComputedTargetSizes;
+use crate::gi::util::AssetUtil;
 
 const SDF_TARGET_FORMAT: TextureFormat = TextureFormat::R16Float;
 const SS_PROBE_TARGET_FORMAT: TextureFormat = TextureFormat::Rgba16Float;
@@ -30,17 +31,17 @@ const SS_FILTER_PIPELINE_ENTRY: &str = "main";
 #[allow(dead_code)]
 #[derive(Clone, Resource, ExtractResource, Default)]
 pub struct GiTargetsWrapper {
-    pub(crate) targets: Option<GiTargets>,
+    pub targets: Option<GiTargets>,
 }
 
 #[derive(Clone)]
 pub struct GiTargets {
-    pub(crate) sdf_target: Handle<Image>,
-    pub(crate) ss_probe_target: Handle<Image>,
-    pub(crate) ss_bounce_target: Handle<Image>,
-    pub(crate) ss_blend_target: Handle<Image>,
-    pub(crate) ss_filter_target: Handle<Image>,
-    pub(crate) ss_pose_target: Handle<Image>,
+    pub sdf_target: Handle<Image>,
+    pub ss_probe_target: Handle<Image>,
+    pub ss_bounce_target: Handle<Image>,
+    pub ss_blend_target: Handle<Image>,
+    pub ss_filter_target: Handle<Image>,
+    pub ss_pose_target: Handle<Image>,
 }
 
 impl GiTargets {
@@ -60,19 +61,11 @@ impl GiTargets {
             SS_BOUNCE_TARGET_FORMAT,
             FilterMode::Nearest,
         );
-
-        // TODO: DO-NOT-LAND
-        let ss_blend_size = (
-            sizes.primary_target_isize.x / GI_SCREEN_PROBE_SIZE,
-            sizes.primary_target_isize.y / GI_SCREEN_PROBE_SIZE,
-        );
-
         let ss_blend_tex = create_texture_2d(
-            (ss_blend_size.0 as u32, ss_blend_size.1 as u32),
+            sizes.probe_grid_usize.into(),
             SS_BLEND_TARGET_FORMAT,
             FilterMode::Nearest,
         );
-
         let ss_filter_tex = create_texture_2d(
             sizes.primary_target_usize.into(),
             SS_FILTER_TARGET_FORMAT,
@@ -84,27 +77,27 @@ impl GiTargets {
             FilterMode::Nearest,
         );
 
-        let make_path = |name: &str| AssetPath::new("gi/target".into(), Some(name.into()));
-
-        let sdf_target = images.set(images.get_handle(make_path("sdf_target")), sdf_tex);
+        let sdf_target = images.set(images.get_handle(AssetUtil::gi("sdf_target")), sdf_tex);
         let ss_probe_target = images.set(
-            images.get_handle(make_path("ss_probe_target")),
+            images.get_handle(AssetUtil::gi("ss_probe_target")),
             ss_probe_tex,
         );
         let ss_bounce_target = images.set(
-            images.get_handle(make_path("ss_bounce_target")),
+            images.get_handle(AssetUtil::gi("ss_bounce_target")),
             ss_bounce_tex,
         );
         let ss_blend_target = images.set(
-            images.get_handle(make_path("ss_blend_target")),
+            images.get_handle(AssetUtil::gi("ss_blend_target")),
             ss_blend_tex,
         );
         let ss_filter_target = images.set(
-            images.get_handle(make_path("ss_filter_target")),
+            images.get_handle(AssetUtil::gi("ss_filter_target")),
             ss_filter_tex,
         );
-        let ss_pose_target =
-            images.set(images.get_handle(make_path("ss_pose_target")), ss_pose_tex);
+        let ss_pose_target = images.set(
+            images.get_handle(AssetUtil::gi("ss_pose_target")),
+            ss_pose_tex,
+        );
 
         Self {
             sdf_target,
@@ -120,11 +113,11 @@ impl GiTargets {
 #[allow(dead_code)]
 #[derive(Resource)]
 pub struct LightPassPipelineBindGroups {
-    pub(crate) sdf_bind_group: BindGroup,
-    pub(crate) ss_blend_bind_group: BindGroup,
-    pub(crate) ss_probe_bind_group: BindGroup,
-    pub(crate) ss_bounce_bind_group: BindGroup,
-    pub(crate) ss_filter_bind_group: BindGroup,
+    pub sdf_bind_group: BindGroup,
+    pub ss_blend_bind_group: BindGroup,
+    pub ss_probe_bind_group: BindGroup,
+    pub ss_bounce_bind_group: BindGroup,
+    pub ss_filter_bind_group: BindGroup,
 }
 
 #[rustfmt::skip]
@@ -183,7 +176,7 @@ pub struct LightPassPipeline {
     pub ss_filter_pipeline: CachedComputePipelineId,
 }
 
-pub(crate) fn system_queue_bind_groups(
+pub fn system_queue_bind_groups(
     mut commands: Commands,
     pipeline: Res<LightPassPipeline>,
     gpu_images: Res<RenderAssets<Image>>,

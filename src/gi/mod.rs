@@ -1,19 +1,15 @@
-use crate::{FloorCamera, ObjectsCamera, SpriteCamera, WallsCamera};
 use bevy::asset::load_internal_asset;
 use bevy::prelude::*;
-use bevy::render::camera::RenderTarget;
 use bevy::render::extract_resource::ExtractResourcePlugin;
 use bevy::render::render_graph::{self, RenderGraph};
 use bevy::render::render_resource::*;
 use bevy::render::renderer::RenderContext;
 use bevy::render::{Render, RenderApp, RenderSet};
-use bevy::sprite::{Material2dPlugin, MaterialMesh2dBundle};
+use bevy::sprite::Material2dPlugin;
 use bevy::window::{PrimaryWindow, WindowResized};
 
 use self::pipeline::GiTargets;
-use crate::gi::compositing::{
-    setup_post_processing_camera, CameraTargets, PostProcessingMaterial, PostProcessingQuad,
-};
+use crate::gi::compositing::{setup_post_processing_camera, CameraTargets, PostProcessingMaterial};
 use crate::gi::constants::*;
 use crate::gi::pipeline::{
     system_queue_bind_groups, system_setup_gi_pipeline, GiTargetsWrapper, LightPassPipeline,
@@ -60,7 +56,7 @@ impl Plugin for BevyMagicLight2DPlugin {
             )
                 .chain(),
         )
-        .add_systems(PreUpdate, recreate_targets_on_window_resize);
+        .add_systems(PreUpdate, handle_window_resize);
 
         load_internal_asset!(
             app,
@@ -134,27 +130,21 @@ impl Plugin for BevyMagicLight2DPlugin {
 #[derive(Default)]
 struct LightPass2DNode {}
 
-pub fn recreate_targets_on_window_resize(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<PostProcessingMaterial>>,
+#[rustfmt::skip]
+pub fn handle_window_resize(
+
+    mut assets_mesh:     ResMut<Assets<Mesh>>,
+    mut assets_material: ResMut<Assets<PostProcessingMaterial>>,
+    mut assets_image:    ResMut<Assets<Image>>,
 
     query_window: Query<&Window, With<PrimaryWindow>>,
-    mut query_cameras: Query<(Entity, &mut Camera), With<SpriteCamera>>,
 
-    query_floor_camera: Query<Entity, With<FloorCamera>>,
-    query_walls_camera: Query<Entity, With<WallsCamera>>,
-    query_objects_camera: Query<Entity, With<ObjectsCamera>>,
-    query_post_processing_quad: Query<Entity, With<PostProcessingQuad>>,
+        res_plugin_config:      Res<BevyMagicLight2DSettings>,
+    mut res_target_sizes:       ResMut<ComputedTargetSizes>,
+    mut res_gi_targets_wrapper: ResMut<GiTargetsWrapper>,
+    mut res_camera_targets:     ResMut<CameraTargets>,
 
     mut window_resized_evr: EventReader<WindowResized>,
-    mut res_target_sizes: ResMut<ComputedTargetSizes>,
-    res_plugin_config: Res<BevyMagicLight2DSettings>,
-
-    mut images: ResMut<Assets<Image>>,
-
-    mut gi_targets_wrapper: ResMut<GiTargetsWrapper>,
-    mut camera_targets: ResMut<CameraTargets>,
 ) {
     for _ in window_resized_evr.iter() {
         let window = query_window
@@ -164,7 +154,7 @@ pub fn recreate_targets_on_window_resize(
         *res_target_sizes =
             ComputedTargetSizes::from_window(window, &res_plugin_config.target_scaling_params);
 
-        let quad_handle = meshes.set(
+        let _ = assets_mesh.set(
             AssetUtil::mesh("pp"),
             Mesh::from(shape::Quad::new(Vec2::new(
                 res_target_sizes.primary_target_size.x,
@@ -172,46 +162,18 @@ pub fn recreate_targets_on_window_resize(
             ))),
         );
 
-        let material_handle = materials.set(
+        let _ = assets_material.set(
             AssetUtil::material("pp"),
-            PostProcessingMaterial::create(&camera_targets, &gi_targets_wrapper),
+            PostProcessingMaterial::create(&res_camera_targets, &res_gi_targets_wrapper),
         );
 
-        let new_gi_targets = GiTargets::create(&mut images, &res_target_sizes);
-        let new_camera_targets = CameraTargets::create(&mut images, &res_target_sizes);
-
-        // Recreate post-processing material.
-        let post_processing_quad = query_post_processing_quad
-            .get_single()
-            .expect("Expected exactly one post-processing quad");
-        commands
-            .entity(post_processing_quad)
-            .insert(MaterialMesh2dBundle {
-                mesh: quad_handle.into(),
-                material: material_handle,
-                transform: Transform {
-                    translation: Vec3::new(0.0, 0.0, 1.5),
-                    ..default()
-                },
-                ..default()
-            });
-
-        // Update cameras.
-
-        for (camera_entity, mut camera) in &mut query_cameras {
-
-            // if let Ok(_) = query_floor_camera.get(camera_entity)   { camera.target = RenderTarget::Image(new_gi_targets.) }
-            // if let Ok(_) = query_walls_camera.get(camera_entity)   { camera.target = }
-            // if let Ok(_) = query_objects_camera.get(camera_entity) { }
-        }
-
-        gi_targets_wrapper.targets = Some(new_gi_targets);
-        *camera_targets = new_camera_targets;
+        *res_gi_targets_wrapper = GiTargetsWrapper{targets: Some(GiTargets::create(&mut assets_image, &res_target_sizes))};
+        *res_camera_targets = CameraTargets::create(&mut assets_image, &res_target_sizes);
     }
 }
 
 #[rustfmt::skip]
-pub(crate) fn detect_target_sizes(
+pub fn detect_target_sizes(
         query_window:      Query<&Window, With<PrimaryWindow>>,
 
         res_plugin_config: Res<BevyMagicLight2DSettings>,

@@ -318,7 +318,6 @@ fn setup(
         .push_children(&walls);
 
     // Add decorations.
-    // TODO: consider adding some utility function to avoid code duplication.
     let mut decorations = vec![];
     {
         let mut decorations_atlas = TextureAtlas::new_empty(

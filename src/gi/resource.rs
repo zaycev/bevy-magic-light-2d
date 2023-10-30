@@ -1,3 +1,4 @@
+use crate::gi::constants::GI_SCREEN_PROBE_SIZE;
 use bevy::prelude::*;
 #[cfg(feature = "egui")]
 use bevy_inspector_egui::prelude::ReflectInspectorOptions;
@@ -50,7 +51,6 @@ pub struct LightPassParams {
     #[cfg_attr(feature = "egui", inspector(min = 0, max = 512))]
     pub indirect_rays_per_sample: i32,
 
-    /// TODO(zaycev): document
     #[cfg_attr(feature = "egui", inspector(min = 1.0, max = 100.0))]
     pub indirect_rays_radius_factor: f32,
 }
@@ -70,12 +70,17 @@ impl Default for LightPassParams {
 
 #[derive(Default, Debug, Resource, Copy, Clone)]
 pub struct ComputedTargetSizes {
-    pub(crate) primary_target_size: Vec2,
-    pub(crate) primary_target_isize: IVec2,
-    pub(crate) primary_target_usize: UVec2,
-    pub(crate) sdf_target_size: Vec2,
-    pub(crate) sdf_target_isize: IVec2,
-    pub(crate) sdf_target_usize: UVec2,
+    pub primary_target_size: Vec2,
+    pub primary_target_isize: IVec2,
+    pub primary_target_usize: UVec2,
+
+    pub sdf_target_size: Vec2,
+    pub sdf_target_isize: IVec2,
+    pub sdf_target_usize: UVec2,
+
+    pub probe_grid_size: Vec2,
+    pub probe_grid_isize: IVec2,
+    pub probe_grid_usize: UVec2,
 }
 
 impl ComputedTargetSizes {
@@ -94,6 +99,10 @@ impl ComputedTargetSizes {
         sizes.sdf_target_size = primary_size * params.sdf_scale;
         sizes.sdf_target_isize = sizes.sdf_target_size.as_ivec2();
         sizes.sdf_target_usize = sizes.sdf_target_size.as_uvec2();
+
+        sizes.probe_grid_isize = sizes.primary_target_isize / GI_SCREEN_PROBE_SIZE;
+        sizes.probe_grid_size = sizes.probe_grid_isize.as_vec2();
+        sizes.probe_grid_usize = sizes.probe_grid_isize.as_uvec2();
 
         sizes
     }

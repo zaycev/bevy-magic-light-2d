@@ -1,4 +1,3 @@
-use bevy::asset::AssetPath;
 use bevy::core_pipeline::bloom::BloomSettings;
 use bevy::pbr::{MAX_CASCADES_PER_LIGHT, MAX_DIRECTIONAL_LIGHTS};
 use bevy::prelude::*;
@@ -13,7 +12,7 @@ use bevy::render::texture::BevyDefault;
 use bevy::render::view::RenderLayers;
 use bevy::sprite::{Material2d, Material2dKey, MaterialMesh2dBundle};
 
-use crate::gi::pipeline::{GiTargets, GiTargetsWrapper};
+use crate::gi::pipeline::GiTargetsWrapper;
 use crate::gi::resource::ComputedTargetSizes;
 use crate::gi::util::AssetUtil;
 
@@ -124,12 +123,10 @@ impl CameraTargets {
         walls_image.resize(target_size);
         objects_image.resize(target_size);
 
-        let make_path = |name: &str| AssetPath::new("camera/target".into(), Some(name.into()));
-
         Self {
-            floor_target: images.set(make_path("floor"), floor_image),
-            walls_target: images.set(make_path("walls"), walls_image),
-            objects_target: images.set(make_path("objects"), objects_image),
+            floor_target: images.set(AssetUtil::camera("floor"), floor_image),
+            walls_target: images.set(AssetUtil::camera("walls"), walls_image),
+            objects_target: images.set(AssetUtil::camera("objects"), objects_image),
         }
     }
 }
@@ -202,12 +199,10 @@ pub fn setup_post_processing_camera(
         layer,
     ));
 
-
     commands.spawn((
         Name::new("post_processing_camera"),
         Camera2dBundle {
             camera: Camera {
-                // renders after the first main camera which has default value: 0.
                 order: 1,
                 hdr: true,
                 ..default()
