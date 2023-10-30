@@ -42,7 +42,7 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands, post_processing_target: Res<PostProcessingTarget>) {
+fn setup(mut commands: Commands, post_processing_target: Res<CameraTargets>) {
     let mut occluders = vec![];
     let occluder_entity = commands
         .spawn((

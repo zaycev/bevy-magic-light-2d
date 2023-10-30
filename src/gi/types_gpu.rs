@@ -134,7 +134,7 @@ impl Default for GpuProbeDataBuffer {
             count: MAX_PROBES,
             data: vec![
                 GpuProbeData {
-                    camera_pose: Vec2::ZERO
+                    camera_pose: Vec2::ZERO,
                 };
                 MAX_PROBES as usize
             ],

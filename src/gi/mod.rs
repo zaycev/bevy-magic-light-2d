@@ -1,25 +1,29 @@
+use crate::{FloorCamera, ObjectsCamera, SpriteCamera, WallsCamera};
 use bevy::asset::load_internal_asset;
 use bevy::prelude::*;
+use bevy::render::camera::RenderTarget;
 use bevy::render::extract_resource::ExtractResourcePlugin;
 use bevy::render::render_graph::{self, RenderGraph};
 use bevy::render::render_resource::*;
 use bevy::render::renderer::RenderContext;
 use bevy::render::{Render, RenderApp, RenderSet};
-use bevy::sprite::Material2dPlugin;
-use bevy::window::PrimaryWindow;
+use bevy::sprite::{Material2dPlugin, MaterialMesh2dBundle};
+use bevy::window::{PrimaryWindow, WindowResized};
 
+use self::pipeline::GiTargets;
 use crate::gi::compositing::{
-    setup_post_processing_camera, PostProcessingMaterial, PostProcessingTarget,
+    setup_post_processing_camera, CameraTargets, PostProcessingMaterial, PostProcessingQuad,
 };
 use crate::gi::constants::*;
 use crate::gi::pipeline::{
-    system_queue_bind_groups, system_setup_gi_pipeline, LightPassPipeline,
-    LightPassPipelineBindGroups, PipelineTargetsWrapper,
+    system_queue_bind_groups, system_setup_gi_pipeline, GiTargetsWrapper, LightPassPipeline,
+    LightPassPipelineBindGroups,
 };
 use crate::gi::pipeline_assets::{
     system_extract_pipeline_assets, system_prepare_pipeline_assets, LightPassPipelineAssets,
 };
 use crate::gi::resource::ComputedTargetSizes;
+use crate::gi::util::AssetUtil;
 use crate::prelude::BevyMagicLight2DSettings;
 
 mod constants;
@@ -31,6 +35,7 @@ pub mod compositing;
 pub mod render_layer;
 pub mod resource;
 pub mod types;
+pub mod util;
 
 const WORKGROUP_SIZE: u32 = 8;
 
@@ -39,11 +44,11 @@ pub struct BevyMagicLight2DPlugin;
 impl Plugin for BevyMagicLight2DPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
-            ExtractResourcePlugin::<PipelineTargetsWrapper>::default(),
+            ExtractResourcePlugin::<GiTargetsWrapper>::default(),
             Material2dPlugin::<PostProcessingMaterial>::default(),
         ))
-        .init_resource::<PostProcessingTarget>()
-        .init_resource::<PipelineTargetsWrapper>()
+        .init_resource::<CameraTargets>()
+        .init_resource::<GiTargetsWrapper>()
         .init_resource::<BevyMagicLight2DSettings>()
         .init_resource::<ComputedTargetSizes>()
         .add_systems(
@@ -54,7 +59,8 @@ impl Plugin for BevyMagicLight2DPlugin {
                 setup_post_processing_camera.after(system_setup_gi_pipeline),
             )
                 .chain(),
-        );
+        )
+        .add_systems(PreUpdate, recreate_targets_on_window_resize);
 
         load_internal_asset!(
             app,
@@ -128,24 +134,92 @@ impl Plugin for BevyMagicLight2DPlugin {
 #[derive(Default)]
 struct LightPass2DNode {}
 
+pub fn recreate_targets_on_window_resize(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<PostProcessingMaterial>>,
+
+    query_window: Query<&Window, With<PrimaryWindow>>,
+    mut query_cameras: Query<(Entity, &mut Camera), With<SpriteCamera>>,
+
+    query_floor_camera: Query<Entity, With<FloorCamera>>,
+    query_walls_camera: Query<Entity, With<WallsCamera>>,
+    query_objects_camera: Query<Entity, With<ObjectsCamera>>,
+    query_post_processing_quad: Query<Entity, With<PostProcessingQuad>>,
+
+    mut window_resized_evr: EventReader<WindowResized>,
+    mut res_target_sizes: ResMut<ComputedTargetSizes>,
+    res_plugin_config: Res<BevyMagicLight2DSettings>,
+
+    mut images: ResMut<Assets<Image>>,
+
+    mut gi_targets_wrapper: ResMut<GiTargetsWrapper>,
+    mut camera_targets: ResMut<CameraTargets>,
+) {
+    for _ in window_resized_evr.iter() {
+        let window = query_window
+            .get_single()
+            .expect("Expected exactly one primary window");
+
+        *res_target_sizes =
+            ComputedTargetSizes::from_window(window, &res_plugin_config.target_scaling_params);
+
+        let quad_handle = meshes.set(
+            AssetUtil::mesh("pp"),
+            Mesh::from(shape::Quad::new(Vec2::new(
+                res_target_sizes.primary_target_size.x,
+                res_target_sizes.primary_target_size.y,
+            ))),
+        );
+
+        let material_handle = materials.set(
+            AssetUtil::material("pp"),
+            PostProcessingMaterial::create(&camera_targets, &gi_targets_wrapper),
+        );
+
+        let new_gi_targets = GiTargets::create(&mut images, &res_target_sizes);
+        let new_camera_targets = CameraTargets::create(&mut images, &res_target_sizes);
+
+        // Recreate post-processing material.
+        let post_processing_quad = query_post_processing_quad
+            .get_single()
+            .expect("Expected exactly one post-processing quad");
+        commands
+            .entity(post_processing_quad)
+            .insert(MaterialMesh2dBundle {
+                mesh: quad_handle.into(),
+                material: material_handle,
+                transform: Transform {
+                    translation: Vec3::new(0.0, 0.0, 1.5),
+                    ..default()
+                },
+                ..default()
+            });
+
+        // Update cameras.
+
+        for (camera_entity, mut camera) in &mut query_cameras {
+
+            // if let Ok(_) = query_floor_camera.get(camera_entity)   { camera.target = RenderTarget::Image(new_gi_targets.) }
+            // if let Ok(_) = query_walls_camera.get(camera_entity)   { camera.target = }
+            // if let Ok(_) = query_objects_camera.get(camera_entity) { }
+        }
+
+        gi_targets_wrapper.targets = Some(new_gi_targets);
+        *camera_targets = new_camera_targets;
+    }
+}
+
 #[rustfmt::skip]
 pub(crate) fn detect_target_sizes(
-    windows: Query<&Window, With<PrimaryWindow>>,
-    mut target_sizes: ResMut<ComputedTargetSizes>)
+        query_window:      Query<&Window, With<PrimaryWindow>>,
+
+        res_plugin_config: Res<BevyMagicLight2DSettings>,
+    mut res_target_sizes:  ResMut<ComputedTargetSizes>,
+)
 {
-    let window = windows.get_single().expect("No primary window");
-    let primary_size = Vec2::new(
-        (window.physical_width() as f64 / window.scale_factor()) as f32,
-        (window.physical_height() as f64 / window.scale_factor()) as f32,
-    );
-
-    target_sizes.primary_target_size = primary_size;
-    target_sizes.primary_target_isize = target_sizes.primary_target_size.as_ivec2();
-    target_sizes.primary_target_usize = target_sizes.primary_target_size.as_uvec2();
-
-    target_sizes.sdf_target_size = primary_size * 0.5;
-    target_sizes.sdf_target_isize = target_sizes.sdf_target_size.as_ivec2();
-    target_sizes.sdf_target_usize = target_sizes.sdf_target_size.as_uvec2();
+    let window = query_window.get_single().expect("Expected exactly one primary window");
+    *res_target_sizes = ComputedTargetSizes::from_window(window, &res_plugin_config.target_scaling_params);
 }
 
 impl render_graph::Node for LightPass2DNode {
