@@ -58,10 +58,10 @@ cargo run --example krypta
 
 - [ ] Light can bounce from occluders.
 - [ ] Arbitrary number of bounces via configuration.
-- [ ] Handle camera scale and rotation.
+- [x] Handle camera scale and rotation.
 - [ ] Support multiple layers.
 - [x] Expose settings instead of harcoding them.
-- [ ] Support resize of targets.
+- [x] Support resize of targets.
 - [ ] Support transparent occluders.
 - [ ] Support color transfer from occluders.
 - [x] Add inspector for GI settings.
