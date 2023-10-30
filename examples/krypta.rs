@@ -15,7 +15,7 @@ pub const TILE_SIZE: f32 = 16.0;
 pub const SPRITE_SCALE: f32 = 4.0;
 pub const Z_BASE_FLOOR: f32 = 100.0; // Base z-coordinate for 2D layers.
 pub const Z_BASE_OBJECTS: f32 = 200.0; // Ground object sprites.
-pub const SCREEN_SIZE: (f32, f32) = (768.0, 768.0);
+pub const SCREEN_SIZE: (f32, f32) = (1280.0, 720.0);
 pub const CAMERA_SCALE: f32 = 1.2;
 
 // Misc components.
@@ -38,7 +38,7 @@ fn main() {
                     primary_window: Some(Window {
                         resolution: SCREEN_SIZE.into(),
                         title: "Bevy Magic Light 2D: Krypta Example".into(),
-                        resizable: false,
+                        resizable: true,
                         ..default()
                     }),
                     ..default()
@@ -62,6 +62,7 @@ fn main() {
                 indirect_light_contrib: 0.8,
                 ..default()
             },
+            ..default()
         })
         .register_type::<LightOccluder2D>()
         .register_type::<OmniLightSource2D>()
@@ -80,8 +81,8 @@ fn setup(
     mut commands:               Commands,
     mut meshes:                 ResMut<Assets<Mesh>>,
     mut materials:              ResMut<Assets<ColorMaterial>>,
-        post_processing_target: Res<PostProcessingTarget>,
-        asset_server:           Res<AssetServer>,
+    camera_targets: Res<CameraTargets>,
+    asset_server:           Res<AssetServer>,
     mut texture_atlases:        ResMut<Assets<TextureAtlas>>,
 ) {
 
@@ -317,7 +318,6 @@ fn setup(
         .push_children(&walls);
 
     // Add decorations.
-    // TODO: consider adding some utility function to avoid code duplication.
     let mut decorations = vec![];
     {
         let mut decorations_atlas = TextureAtlas::new_empty(
@@ -747,10 +747,6 @@ fn setup(
         .insert(RenderLayers::all())
         .insert(MouseLight);
 
-    let (floor_target, walls_target, objects_target) = post_processing_target
-        .handles
-        .clone()
-        .expect("No post processing target");
 
     let projection = OrthographicProjection {
         scale: CAMERA_SCALE,
@@ -765,13 +761,13 @@ fn setup(
             Camera2dBundle {
                 camera: Camera {
                     hdr: false,
-                    target: RenderTarget::Image(floor_target),
+                    target: RenderTarget::Image(camera_targets.floor_target.clone()),
                     ..default()
                 },
                 projection: projection.clone(),
                 ..default()
             },
-            Name::new("main_camera_floor"),
+            Name::new("floors_target_camera"),
         ))
         .insert(SpriteCamera)
         .insert(FloorCamera)
@@ -784,13 +780,13 @@ fn setup(
             Camera2dBundle {
                 camera: Camera {
                     hdr: false,
-                    target: RenderTarget::Image(walls_target),
+                    target: RenderTarget::Image(camera_targets.walls_target.clone()),
                     ..default()
                 },
                 projection: projection.clone(),
                 ..default()
             },
-            Name::new("main_camera_walls"),
+            Name::new("walls_target_camera"),
         ))
         .insert(SpriteCamera)
         .insert(WallsCamera)
@@ -803,13 +799,13 @@ fn setup(
             Camera2dBundle {
                 camera: Camera {
                     hdr: false,
-                    target: RenderTarget::Image(objects_target),
+                    target: RenderTarget::Image(camera_targets.objects_target.clone()),
                     ..default()
                 },
                 projection: projection.clone(),
                 ..default()
             },
-            Name::new("main_camera_objects"),
+            Name::new("objects_targets_camera"),
         ))
         .insert(SpriteCamera)
         .insert(ObjectsCamera)
@@ -879,24 +875,14 @@ fn system_move_camera(
     mut query_cameras:  Query<&mut Transform, With<SpriteCamera>>,
         keyboard:       Res<Input<KeyCode>>,
 ) {
-
-    let speed = 10.0;
-
-    if keyboard.pressed(KeyCode::W) {
-        camera_target.y += speed;
-    }
-    if keyboard.pressed(KeyCode::S) {
-        camera_target.y -= speed;
-    }
-    if keyboard.pressed(KeyCode::A) {
-        camera_target.x -= speed;
-    }
-    if keyboard.pressed(KeyCode::D) {
-        camera_target.x += speed;
-    }
+    let speed = 18.0;
+    if keyboard.pressed(KeyCode::W) { camera_target.y += speed; }
+    if keyboard.pressed(KeyCode::S) { camera_target.y -= speed; }
+    if keyboard.pressed(KeyCode::A) { camera_target.x -= speed; }
+    if keyboard.pressed(KeyCode::D) { camera_target.x += speed; }
 
     // Smooth camera.
-    let blend_ratio = 0.12;
+    let blend_ratio = 0.2;
     let movement = *camera_target - *camera_current;
     *camera_current += movement * blend_ratio;
 

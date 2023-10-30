@@ -17,7 +17,7 @@ use crate::FloorCamera;
 
 #[rustfmt::skip]
 #[derive(Default, Resource)]
-pub(crate) struct LightPassPipelineAssets {
+pub struct LightPassPipelineAssets {
     pub camera_params:     UniformBuffer<GpuCameraParams>,
     pub light_pass_params: UniformBuffer<GpuLightPassParams>,
     pub light_sources:     StorageBuffer<GpuLightSourceBuffer>,
@@ -38,7 +38,7 @@ impl LightPassPipelineAssets {
 }
 
 #[rustfmt::skip]
-pub(crate) fn system_prepare_pipeline_assets(
+pub fn system_prepare_pipeline_assets(
     render_device:         Res<RenderDevice>,
     render_queue:          Res<RenderQueue>,
     mut gi_compute_assets: ResMut<LightPassPipelineAssets>,
@@ -47,7 +47,7 @@ pub(crate) fn system_prepare_pipeline_assets(
 }
 
 #[rustfmt::skip]
-pub(crate) fn system_extract_pipeline_assets(
+pub fn system_extract_pipeline_assets(
     res_light_settings:         Extract<Res<BevyMagicLight2DSettings>>,
     res_target_sizes:           Extract<Res<ComputedTargetSizes>>,
 
@@ -152,14 +152,11 @@ pub(crate) fn system_extract_pipeline_assets(
     }
 
     {
-        let cols = gpu_target_sizes.primary_target_isize.x as i32 / GI_SCREEN_PROBE_SIZE;
-        let rows = gpu_target_sizes.primary_target_isize.y as i32 / GI_SCREEN_PROBE_SIZE;
-
         let light_pass_params = gpu_pipeline_assets.light_pass_params.get_mut();
         light_pass_params.frame_counter = *gpu_frame_counter;
         light_pass_params.probe_size = GI_SCREEN_PROBE_SIZE;
-        light_pass_params.probe_atlas_cols            = cols;
-        light_pass_params.probe_atlas_rows            = rows;
+        light_pass_params.probe_atlas_cols            = gpu_target_sizes.probe_grid_isize.x;
+        light_pass_params.probe_atlas_rows            = gpu_target_sizes.probe_grid_isize.y;
         light_pass_params.reservoir_size              = light_pass_config.reservoir_size;
         light_pass_params.smooth_kernel_size_h        = light_pass_config.smooth_kernel_size.0;
         light_pass_params.smooth_kernel_size_w        = light_pass_config.smooth_kernel_size.1;

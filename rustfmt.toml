@@ -1,7 +1,10 @@
-reorder_imports = true
-use_field_init_shorthand = true
-newline_style = "Unix"
-indent_style = "Block"
-unstable_features = true
 imports_granularity = "Module"
+reorder_imports = true
 group_imports = "StdExternalCrate"
+brace_style = "AlwaysNextLine"
+control_brace_style = "AlwaysSameLine"
+newline_style = "Unix"
+unstable_features = true
+imports_layout = "HorizontalVertical"
+struct_field_align_threshold = 64
+enum_discrim_align_threshold = 64

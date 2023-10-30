@@ -38,11 +38,12 @@ fn main() {
                 indirect_light_contrib: 0.5,
                 ..default()
             },
+            ..default()
         })
         .run();
 }
 
-fn setup(mut commands: Commands, post_processing_target: Res<PostProcessingTarget>) {
+fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>) {
     let mut occluders = vec![];
     let occluder_entity = commands
         .spawn((
@@ -115,19 +116,12 @@ fn setup(mut commands: Commands, post_processing_target: Res<PostProcessingTarge
         .insert(Name::new("lights"))
         .push_children(&lights);
 
-    let render_target = post_processing_target
-        .handles
-        .as_ref()
-        .expect("No post processing target")
-        .0
-        .clone();
-
     commands
         .spawn((
             Camera2dBundle {
                 camera: Camera {
                     hdr: true,
-                    target: RenderTarget::Image(render_target),
+                    target: RenderTarget::Image(camera_targets.floor_target.clone()),
                     ..Default::default()
                 },
                 ..Default::default()

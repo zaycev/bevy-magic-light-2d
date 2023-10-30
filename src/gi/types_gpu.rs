@@ -7,7 +7,7 @@ use crate::gi::types::OmniLightSource2D;
 
 #[rustfmt::skip]
 #[derive(Default, Clone, ShaderType)]
-pub(crate) struct GpuOmniLightSource {
+pub struct GpuOmniLightSource {
     pub center:    Vec2,
     pub intensity: f32,
     pub color:     Vec3,
@@ -28,7 +28,7 @@ impl GpuOmniLightSource {
 
 #[rustfmt::skip]
 #[derive(Default, Clone, ShaderType)]
-pub(crate) struct GpuLightSourceBuffer {
+pub struct GpuLightSourceBuffer {
     pub count: u32,
     #[size(runtime)]
     pub data:  Vec<GpuOmniLightSource>,
@@ -36,7 +36,7 @@ pub(crate) struct GpuLightSourceBuffer {
 
 #[rustfmt::skip]
 #[derive(Default, Clone, ShaderType)]
-pub(crate) struct GpuLightOccluder2D {
+pub struct GpuLightOccluder2D {
     pub center: Vec2,
     pub rotation: Vec4,
     pub h_extent: Vec2,
@@ -57,7 +57,7 @@ impl GpuLightOccluder2D {
 
 #[rustfmt::skip]
 #[derive(Default, Clone, ShaderType)]
-pub(crate) struct GpuLightOccluderBuffer {
+pub struct GpuLightOccluderBuffer {
     pub count: u32,
     #[size(runtime)]
     pub data:  Vec<GpuLightOccluder2D>,
@@ -65,7 +65,7 @@ pub(crate) struct GpuLightOccluderBuffer {
 
 #[rustfmt::skip]
 #[derive(Default, Clone, ShaderType)]
-pub(crate) struct GpuCameraParams {
+pub struct GpuCameraParams {
     pub screen_size:       Vec2,
     pub screen_size_inv:   Vec2,
     pub view_proj:         Mat4,
@@ -76,7 +76,7 @@ pub(crate) struct GpuCameraParams {
 
 #[rustfmt::skip]
 #[derive(Clone, ShaderType, Debug)]
-pub(crate) struct GpuLightPassParams {
+pub struct GpuLightPassParams {
     pub frame_counter:          i32,
     pub probe_size:             i32,
     pub probe_atlas_cols:       i32,
@@ -121,7 +121,7 @@ pub struct GpuProbeData {
 
 #[rustfmt::skip]
 #[derive(Clone, ShaderType)]
-pub(crate) struct GpuProbeDataBuffer {
+pub struct GpuProbeDataBuffer {
     pub count: u32,
     #[size(runtime)]
     pub data:  Vec<GpuProbeData>,
@@ -134,7 +134,7 @@ impl Default for GpuProbeDataBuffer {
             count: MAX_PROBES,
             data: vec![
                 GpuProbeData {
-                    camera_pose: Vec2::ZERO
+                    camera_pose: Vec2::ZERO,
                 };
                 MAX_PROBES as usize
             ],
@@ -144,7 +144,7 @@ impl Default for GpuProbeDataBuffer {
 
 #[rustfmt::skip]
 #[derive(Clone, ShaderType, Default)]
-pub(crate) struct GpuSkylightMaskData {
+pub struct GpuSkylightMaskData {
     pub center:   Vec2,
     pub h_extent: Vec2,
 }
@@ -157,7 +157,7 @@ impl GpuSkylightMaskData {
 
 #[rustfmt::skip]
 #[derive(Clone, ShaderType, Default)]
-pub(crate) struct GpuSkylightMaskBuffer {
+pub struct GpuSkylightMaskBuffer {
     pub count: u32,
     #[size(runtime)]
     pub data: Vec<GpuSkylightMaskData>,

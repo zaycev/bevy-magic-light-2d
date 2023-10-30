@@ -5,13 +5,13 @@ use bevy::render::render_resource::*;
 use bevy::render::renderer::RenderDevice;
 use bevy::render::texture::ImageSampler;
 
-use super::constants::GI_SCREEN_PROBE_SIZE;
-use super::pipeline_assets::LightPassPipelineAssets;
-use super::types_gpu::{
+use crate::gi::pipeline_assets::LightPassPipelineAssets;
+use crate::gi::resource::ComputedTargetSizes;
+use crate::gi::types_gpu::{
     GpuCameraParams, GpuLightOccluderBuffer, GpuLightPassParams, GpuLightSourceBuffer,
     GpuProbeDataBuffer, GpuSkylightMaskBuffer,
 };
-use crate::gi::resource::ComputedTargetSizes;
+use crate::gi::util::AssetUtil;
 
 const SDF_TARGET_FORMAT: TextureFormat = TextureFormat::R16Float;
 const SS_PROBE_TARGET_FORMAT: TextureFormat = TextureFormat::Rgba16Float;
@@ -28,28 +28,94 @@ const SS_FILTER_PIPELINE_ENTRY: &str = "main";
 
 #[allow(dead_code)]
 #[derive(Clone, Resource, ExtractResource, Default)]
-pub struct PipelineTargetsWrapper {
-    pub(crate) targets: Option<GiPipelineTargets>,
+pub struct GiTargetsWrapper {
+    pub targets: Option<GiTargets>,
 }
 
 #[derive(Clone)]
-pub struct GiPipelineTargets {
-    pub(crate) sdf_target: Handle<Image>,
-    pub(crate) ss_probe_target: Handle<Image>,
-    pub(crate) ss_bounce_target: Handle<Image>,
-    pub(crate) ss_blend_target: Handle<Image>,
-    pub(crate) ss_filter_target: Handle<Image>,
-    pub(crate) ss_pose_target: Handle<Image>,
+pub struct GiTargets {
+    pub sdf_target: Handle<Image>,
+    pub ss_probe_target: Handle<Image>,
+    pub ss_bounce_target: Handle<Image>,
+    pub ss_blend_target: Handle<Image>,
+    pub ss_filter_target: Handle<Image>,
+    pub ss_pose_target: Handle<Image>,
+}
+
+impl GiTargets {
+    pub fn create(images: &mut Assets<Image>, sizes: &ComputedTargetSizes) -> Self {
+        let sdf_tex = create_texture_2d(
+            sizes.sdf_target_usize.into(),
+            SDF_TARGET_FORMAT,
+            FilterMode::Linear,
+        );
+        let ss_probe_tex = create_texture_2d(
+            sizes.primary_target_usize.into(),
+            SS_PROBE_TARGET_FORMAT,
+            FilterMode::Nearest,
+        );
+        let ss_bounce_tex = create_texture_2d(
+            sizes.primary_target_usize.into(),
+            SS_BOUNCE_TARGET_FORMAT,
+            FilterMode::Nearest,
+        );
+        let ss_blend_tex = create_texture_2d(
+            sizes.probe_grid_usize.into(),
+            SS_BLEND_TARGET_FORMAT,
+            FilterMode::Nearest,
+        );
+        let ss_filter_tex = create_texture_2d(
+            sizes.primary_target_usize.into(),
+            SS_FILTER_TARGET_FORMAT,
+            FilterMode::Nearest,
+        );
+        let ss_pose_tex = create_texture_2d(
+            sizes.primary_target_usize.into(),
+            SS_POSE_TARGET_FORMAT,
+            FilterMode::Nearest,
+        );
+
+        let sdf_target = images.set(images.get_handle(AssetUtil::gi("sdf_target")), sdf_tex);
+        let ss_probe_target = images.set(
+            images.get_handle(AssetUtil::gi("ss_probe_target")),
+            ss_probe_tex,
+        );
+        let ss_bounce_target = images.set(
+            images.get_handle(AssetUtil::gi("ss_bounce_target")),
+            ss_bounce_tex,
+        );
+        let ss_blend_target = images.set(
+            images.get_handle(AssetUtil::gi("ss_blend_target")),
+            ss_blend_tex,
+        );
+        let ss_filter_target = images.set(
+            images.get_handle(AssetUtil::gi("ss_filter_target")),
+            ss_filter_tex,
+        );
+        let ss_pose_target = images.set(
+            images.get_handle(AssetUtil::gi("ss_pose_target")),
+            ss_pose_tex,
+        );
+
+        Self {
+            sdf_target,
+            ss_probe_target,
+            ss_bounce_target,
+            ss_blend_target,
+            ss_filter_target,
+            ss_pose_target,
+        }
+    }
 }
 
 #[allow(dead_code)]
 #[derive(Resource)]
 pub struct LightPassPipelineBindGroups {
-    pub(crate) sdf_bind_group: BindGroup,
-    pub(crate) ss_blend_bind_group: BindGroup,
-    pub(crate) ss_probe_bind_group: BindGroup,
-    pub(crate) ss_bounce_bind_group: BindGroup,
-    pub(crate) ss_filter_bind_group: BindGroup,
+    pub sdf_bind_group: BindGroup,
+    pub ss_blend_bind_group: BindGroup,
+    pub ss_probe_bind_group: BindGroup,
+    pub ss_bounce_bind_group: BindGroup,
+    pub ss_filter_bind_group: BindGroup,
 }
 
 #[rustfmt::skip]
@@ -88,64 +154,10 @@ fn create_texture_2d(size: (u32, u32), format: TextureFormat, filter: FilterMode
 #[rustfmt::skip]
 pub fn system_setup_gi_pipeline(
     mut images:          ResMut<Assets<Image>>,
-    mut targets_wrapper: ResMut<PipelineTargetsWrapper>,
-        targets_sizes:   ResMut<ComputedTargetSizes>,
+    mut targets_wrapper: ResMut<GiTargetsWrapper>,
+    targets_sizes:   Res<ComputedTargetSizes>,
 ) {
-    let target_size = Extent3d {
-        width:  targets_sizes.primary_target_usize.x,
-        height: targets_sizes.primary_target_usize.y,
-        ..default()
-    };
-
-    let sdf_tex = create_texture_2d(
-        targets_sizes.sdf_target_usize.into(),
-        SDF_TARGET_FORMAT,
-        FilterMode::Linear,
-    );
-    let ss_probe_tex = create_texture_2d(
-        (target_size.width, target_size.height),
-        SS_PROBE_TARGET_FORMAT,
-        FilterMode::Nearest,
-    );
-    let ss_bounce_tex = create_texture_2d(
-        (target_size.width, target_size.height),
-        SS_BOUNCE_TARGET_FORMAT,
-        FilterMode::Nearest,
-    );
-    let ss_blend_tex = create_texture_2d(
-        (
-            target_size.width  / (GI_SCREEN_PROBE_SIZE as u32),
-            target_size.height / (GI_SCREEN_PROBE_SIZE as u32),
-        ),
-        SS_BLEND_TARGET_FORMAT,
-        FilterMode::Nearest,
-    );
-    let ss_filter_tex = create_texture_2d(
-        (target_size.width, target_size.height),
-        SS_FILTER_TARGET_FORMAT,
-        FilterMode::Nearest,
-    );
-    let ss_pose_tex = create_texture_2d(
-        (target_size.width, target_size.height),
-        SS_POSE_TARGET_FORMAT,
-        FilterMode::Nearest,
-    );
-
-    let sdf_target       = images.add(sdf_tex);
-    let ss_probe_target  = images.add(ss_probe_tex);
-    let ss_bounce_target = images.add(ss_bounce_tex);
-    let ss_blend_target  = images.add(ss_blend_tex);
-    let ss_filter_target = images.add(ss_filter_tex);
-    let ss_pose_target   = images.add(ss_pose_tex);
-
-    targets_wrapper.targets = Some(GiPipelineTargets {
-        sdf_target,
-        ss_probe_target,
-        ss_bounce_target,
-        ss_blend_target,
-        ss_filter_target,
-        ss_pose_target,
-    });
+    targets_wrapper.targets = Some(GiTargets::create(&mut images, &targets_sizes));
 }
 
 #[derive(Resource)]
@@ -162,11 +174,11 @@ pub struct LightPassPipeline {
     pub ss_filter_pipeline: CachedComputePipelineId,
 }
 
-pub(crate) fn system_queue_bind_groups(
+pub fn system_queue_bind_groups(
     mut commands: Commands,
     pipeline: Res<LightPassPipeline>,
     gpu_images: Res<RenderAssets<Image>>,
-    targets_wrapper: Res<PipelineTargetsWrapper>,
+    targets_wrapper: Res<GiTargetsWrapper>,
     gi_compute_assets: Res<LightPassPipelineAssets>,
     render_device: Res<RenderDevice>,
 ) {
