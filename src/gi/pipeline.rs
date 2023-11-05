@@ -3,7 +3,9 @@ use bevy::render::extract_resource::ExtractResource;
 use bevy::render::render_asset::RenderAssets;
 use bevy::render::render_resource::*;
 use bevy::render::renderer::RenderDevice;
-use bevy::render::texture::ImageSampler;
+use bevy::render::texture::{
+    ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor,
+};
 
 use crate::gi::pipeline_assets::LightPassPipelineAssets;
 use crate::gi::resource::ComputedTargetSizes;
@@ -11,7 +13,6 @@ use crate::gi::types_gpu::{
     GpuCameraParams, GpuLightOccluderBuffer, GpuLightPassParams, GpuLightSourceBuffer,
     GpuProbeDataBuffer, GpuSkylightMaskBuffer,
 };
-use crate::gi::util::AssetUtil;
 
 const SDF_TARGET_FORMAT: TextureFormat = TextureFormat::R16Float;
 const SS_PROBE_TARGET_FORMAT: TextureFormat = TextureFormat::Rgba16Float;
@@ -47,63 +48,55 @@ impl GiTargets {
         let sdf_tex = create_texture_2d(
             sizes.sdf_target_usize.into(),
             SDF_TARGET_FORMAT,
-            FilterMode::Linear,
+            ImageFilterMode::Linear,
         );
         let ss_probe_tex = create_texture_2d(
             sizes.primary_target_usize.into(),
             SS_PROBE_TARGET_FORMAT,
-            FilterMode::Nearest,
+            ImageFilterMode::Nearest,
         );
         let ss_bounce_tex = create_texture_2d(
             sizes.primary_target_usize.into(),
             SS_BOUNCE_TARGET_FORMAT,
-            FilterMode::Nearest,
+            ImageFilterMode::Nearest,
         );
         let ss_blend_tex = create_texture_2d(
             sizes.probe_grid_usize.into(),
             SS_BLEND_TARGET_FORMAT,
-            FilterMode::Nearest,
+            ImageFilterMode::Nearest,
         );
         let ss_filter_tex = create_texture_2d(
             sizes.primary_target_usize.into(),
             SS_FILTER_TARGET_FORMAT,
-            FilterMode::Nearest,
+            ImageFilterMode::Nearest,
         );
         let ss_pose_tex = create_texture_2d(
             sizes.primary_target_usize.into(),
             SS_POSE_TARGET_FORMAT,
-            FilterMode::Nearest,
+            ImageFilterMode::Nearest,
         );
 
-        let sdf_target = images.set(images.get_handle(AssetUtil::gi("sdf_target")), sdf_tex);
-        let ss_probe_target = images.set(
-            images.get_handle(AssetUtil::gi("ss_probe_target")),
-            ss_probe_tex,
-        );
-        let ss_bounce_target = images.set(
-            images.get_handle(AssetUtil::gi("ss_bounce_target")),
-            ss_bounce_tex,
-        );
-        let ss_blend_target = images.set(
-            images.get_handle(AssetUtil::gi("ss_blend_target")),
-            ss_blend_tex,
-        );
-        let ss_filter_target = images.set(
-            images.get_handle(AssetUtil::gi("ss_filter_target")),
-            ss_filter_tex,
-        );
-        let ss_pose_target = images.set(
-            images.get_handle(AssetUtil::gi("ss_pose_target")),
-            ss_pose_tex,
-        );
+        let sdf_target: Handle<Image> = Handle::weak_from_u128(2390847209461232343);
+        let ss_probe_target: Handle<Image> = Handle::weak_from_u128(3423231236817235162);
+        let ss_bounce_target: Handle<Image> = Handle::weak_from_u128(3198273198312367527);
+        let ss_blend_target: Handle<Image> = Handle::weak_from_u128(7782312739182735881);
+        let ss_filter_target: Handle<Image> = Handle::weak_from_u128(8761232615172413412);
+        let ss_pose_target: Handle<Image> = Handle::weak_from_u128(4728165084756128470);
+
+        images.insert(sdf_target.clone(), sdf_tex);
+        images.insert(ss_probe_target.clone(), ss_probe_tex);
+        images.insert(ss_bounce_target.clone(), ss_bounce_tex);
+        images.insert(ss_blend_target.clone(), ss_blend_tex);
+        images.insert(ss_filter_target.clone(), ss_filter_tex);
+        images.insert(ss_pose_target.clone(), ss_pose_tex);
 
         Self {
-            sdf_target,
-            ss_probe_target,
-            ss_bounce_target,
-            ss_blend_target,
-            ss_filter_target,
-            ss_pose_target,
+            sdf_target: sdf_target,
+            ss_probe_target: ss_probe_target,
+            ss_bounce_target: ss_bounce_target,
+            ss_blend_target: ss_blend_target,
+            ss_filter_target: ss_filter_target,
+            ss_pose_target: ss_pose_target,
         }
     }
 }
@@ -119,7 +112,7 @@ pub struct LightPassPipelineBindGroups {
 }
 
 #[rustfmt::skip]
-fn create_texture_2d(size: (u32, u32), format: TextureFormat, filter: FilterMode) -> Image {
+fn create_texture_2d(size: (u32, u32), format: TextureFormat, filter: ImageFilterMode) -> Image {
     let mut image = Image::new_fill(
         Extent3d {
             width: size.0,
@@ -139,12 +132,12 @@ fn create_texture_2d(size: (u32, u32), format: TextureFormat, filter: FilterMode
     image.texture_descriptor.usage =
         TextureUsages::COPY_DST | TextureUsages::STORAGE_BINDING | TextureUsages::TEXTURE_BINDING;
 
-    image.sampler_descriptor = ImageSampler::Descriptor(SamplerDescriptor {
+    image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
         mag_filter: filter,
         min_filter: filter,
-        address_mode_u: AddressMode::ClampToBorder,
-        address_mode_v: AddressMode::ClampToBorder,
-        address_mode_w: AddressMode::ClampToBorder,
+        address_mode_u: ImageAddressMode::ClampToBorder,
+        address_mode_v: ImageAddressMode::ClampToBorder,
+        address_mode_w: ImageAddressMode::ClampToBorder,
         ..Default::default()
     });
 
@@ -202,17 +195,29 @@ pub fn system_queue_bind_groups(
             .as_ref()
             .expect("Targets should be initialized");
 
-        let sdf_view_image = &gpu_images[&targets.sdf_target];
-        let ss_probe_image = &gpu_images[&targets.ss_probe_target];
-        let ss_bounce_image = &gpu_images[&targets.ss_bounce_target];
-        let ss_blend_image = &gpu_images[&targets.ss_blend_target];
-        let ss_filter_image = &gpu_images[&targets.ss_filter_target];
-        let ss_pose_image = &gpu_images[&targets.ss_pose_target];
+        let sdf_view_image = gpu_images
+            .get(&targets.sdf_target)
+            .expect("SDF target not found");
+        let ss_probe_image = gpu_images
+            .get(&targets.ss_probe_target)
+            .expect("SS Probe target not found");
+        let ss_bounce_image = gpu_images
+            .get(&targets.ss_bounce_target)
+            .expect("SS Bounce target not found");
+        let ss_blend_image = gpu_images
+            .get(&targets.ss_blend_target)
+            .expect("SS Blend target not found");
+        let ss_filter_image = gpu_images
+            .get(&targets.ss_filter_target)
+            .expect("SS Filter target not found");
+        let ss_pose_image = gpu_images
+            .get(&targets.ss_pose_target)
+            .expect("SS Pose target not found");
 
-        let sdf_bind_group = render_device.create_bind_group(&BindGroupDescriptor {
-            label: "gi_sdf_bind_group".into(),
-            layout: &pipeline.sdf_bind_group_layout,
-            entries: &[
+        let sdf_bind_group = render_device.create_bind_group(
+            "gi_sdf_bind_group",
+            &pipeline.sdf_bind_group_layout,
+            &[
                 BindGroupEntry {
                     binding: 0,
                     resource: camera_params.clone(),
@@ -226,12 +231,12 @@ pub fn system_queue_bind_groups(
                     resource: BindingResource::TextureView(&sdf_view_image.texture_view),
                 },
             ],
-        });
+        );
 
-        let ss_probe_bind_group = render_device.create_bind_group(&BindGroupDescriptor {
-            label: "gi_ss_probe_bind_group".into(),
-            layout: &pipeline.ss_probe_bind_group_layout,
-            entries: &[
+        let ss_probe_bind_group = render_device.create_bind_group(
+            "gi_ss_probe_bind_group",
+            &pipeline.ss_probe_bind_group_layout,
+            &[
                 BindGroupEntry {
                     binding: 0,
                     resource: camera_params.clone(),
@@ -265,12 +270,12 @@ pub fn system_queue_bind_groups(
                     resource: BindingResource::TextureView(&ss_probe_image.texture_view),
                 },
             ],
-        });
+        );
 
-        let ss_bounce_bind_group = render_device.create_bind_group(&BindGroupDescriptor {
-            label: "gi_bounce_bind_group".into(),
-            layout: &pipeline.ss_bounce_bind_group_layout,
-            entries: &[
+        let ss_bounce_bind_group = render_device.create_bind_group(
+            "gi_bounce_bind_group",
+            &pipeline.ss_bounce_bind_group_layout,
+            &[
                 BindGroupEntry {
                     binding: 0,
                     resource: camera_params.clone(),
@@ -296,12 +301,12 @@ pub fn system_queue_bind_groups(
                     resource: BindingResource::TextureView(&ss_bounce_image.texture_view),
                 },
             ],
-        });
+        );
 
-        let ss_blend_bind_group = render_device.create_bind_group(&BindGroupDescriptor {
-            label: "gi_blend_bind_group".into(),
-            layout: &pipeline.ss_blend_bind_group_layout,
-            entries: &[
+        let ss_blend_bind_group = render_device.create_bind_group(
+            "gi_blend_bind_group",
+            &pipeline.ss_blend_bind_group_layout,
+            &[
                 BindGroupEntry {
                     binding: 0,
                     resource: camera_params.clone(),
@@ -331,12 +336,12 @@ pub fn system_queue_bind_groups(
                     resource: BindingResource::TextureView(&ss_blend_image.texture_view),
                 },
             ],
-        });
+        );
 
-        let ss_filter_bind_group = render_device.create_bind_group(&BindGroupDescriptor {
-            label: "ss_filter_bind_group".into(),
-            layout: &pipeline.ss_filter_bind_group_layout,
-            entries: &[
+        let ss_filter_bind_group = render_device.create_bind_group(
+            "ss_filter_bind_group",
+            &pipeline.ss_filter_bind_group_layout,
+            &[
                 BindGroupEntry {
                     binding: 0,
                     resource: camera_params.clone(),
@@ -370,7 +375,7 @@ pub fn system_queue_bind_groups(
                     resource: BindingResource::TextureView(&ss_pose_image.texture_view),
                 },
             ],
-        });
+        );
 
         commands.insert_resource(LightPassPipelineBindGroups {
             sdf_bind_group,

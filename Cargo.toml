@@ -8,7 +8,7 @@ default = ["egui"]
 egui = ["dep:bevy-inspector-egui"]
 
 [dependencies]
-bevy = { version = "0.11.2", default-features = false, features = [
+bevy = { version = "0.12", default-features = false, features = [
   "bevy_render",
   "bevy_core_pipeline",
   "bevy_winit",
@@ -21,7 +21,7 @@ log = "0.4.20"
 rand = "0.8.5"
 
 [dev-dependencies]
-bevy = "0.11"
+bevy = "0.12"
 
 [profile.release]
 codegen-units = 1

@@ -1,9 +1,7 @@
-use std::time::Duration;
-
-use bevy::asset::ChangeWatcher;
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::{FilterMode, SamplerDescriptor};
+use bevy::render::texture::{ImageFilterMode, ImageSamplerDescriptor};
 use bevy::render::view::RenderLayers;
 use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::PrimaryWindow;
@@ -31,7 +29,7 @@ fn main() {
         .add_plugins((
             DefaultPlugins
                 .set(AssetPlugin {
-                    watch_for_changes: ChangeWatcher::with_delay(Duration::from_millis(200)),
+                    watch_for_changes_override: Some(true),
                     ..default()
                 })
                 .set(WindowPlugin {
@@ -44,15 +42,13 @@ fn main() {
                     ..default()
                 })
                 .set(ImagePlugin {
-                    default_sampler: SamplerDescriptor {
-                        mag_filter: FilterMode::Nearest,
-                        min_filter: FilterMode::Nearest,
+                    default_sampler: ImageSamplerDescriptor {
+                        mag_filter: ImageFilterMode::Nearest,
+                        min_filter: ImageFilterMode::Nearest,
                         ..default()
                     },
                 }),
             BevyMagicLight2DPlugin,
-            WorldInspectorPlugin::new(),
-            ResourceInspectorPlugin::<BevyMagicLight2DSettings>::new(),
         ))
         .insert_resource(BevyMagicLight2DSettings {
             light_pass_params: LightPassParams {
@@ -64,12 +60,12 @@ fn main() {
             },
             ..default()
         })
-        .register_type::<LightOccluder2D>()
-        .register_type::<OmniLightSource2D>()
-        .register_type::<SkylightMask2D>()
-        .register_type::<SkylightLight2D>()
-        .register_type::<BevyMagicLight2DSettings>()
-        .register_type::<LightPassParams>()
+        // .register_type::<LightOccluder2D>()
+        // .register_type::<OmniLightSource2D>()
+        // .register_type::<SkylightMask2D>()
+        // .register_type::<SkylightLight2D>()
+        // .register_type::<BevyMagicLight2DSettings>()
+        // .register_type::<LightPassParams>()
         .add_systems(Startup, setup.after(setup_post_processing_camera))
         .add_systems(Update, system_move_camera)
         .add_systems(Update, system_control_mouse_light.after(system_move_camera))

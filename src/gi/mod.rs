@@ -154,16 +154,16 @@ pub fn handle_window_resize(
         *res_target_sizes =
             ComputedTargetSizes::from_window(window, &res_plugin_config.target_scaling_params);
 
-        let _ = assets_mesh.set(
-            AssetUtil::mesh("pp"),
+        assets_mesh.insert(
+            POST_PROCESSING_QUAD.clone(),
             Mesh::from(shape::Quad::new(Vec2::new(
                 res_target_sizes.primary_target_size.x,
                 res_target_sizes.primary_target_size.y,
             ))),
         );
 
-        let _ = assets_material.set(
-            AssetUtil::material("pp"),
+        assets_material.insert(
+            POST_PROCESSING_MATERIAL.clone(),
             PostProcessingMaterial::create(&res_camera_targets, &res_gi_targets_wrapper),
         );
 

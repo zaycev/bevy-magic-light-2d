@@ -12,6 +12,7 @@ use bevy::render::texture::BevyDefault;
 use bevy::render::view::RenderLayers;
 use bevy::sprite::{Material2d, Material2dKey, MaterialMesh2dBundle};
 
+use crate::gi::constants::{POST_PROCESSING_MATERIAL, POST_PROCESSING_QUAD};
 use crate::gi::pipeline::GiTargetsWrapper;
 use crate::gi::resource::ComputedTargetSizes;
 use crate::gi::util::AssetUtil;
@@ -20,7 +21,7 @@ use crate::gi::util::AssetUtil;
 pub struct PostProcessingQuad;
 
 #[rustfmt::skip]
-#[derive(AsBindGroup, TypeUuid, Clone, TypePath)]
+#[derive(AsBindGroup, TypeUuid, Clone, TypePath, Asset)]
 #[uuid = "bc2f08eb-a0fb-43f1-a908-54871ea597d5"]
 pub struct PostProcessingMaterial {
     #[texture(0)]
@@ -123,10 +124,18 @@ impl CameraTargets {
         walls_image.resize(target_size);
         objects_image.resize(target_size);
 
+        let floor_image_handle: Handle<Image> = Handle::weak_from_u128(9127312736151891273);
+        let walls_image_handle: Handle<Image> = Handle::weak_from_u128(7264512947825624361);
+        let objects_image_handle: Handle<Image> = Handle::weak_from_u128(2987462343287146234);
+
+        images.insert(floor_image_handle.clone(), floor_image);
+        images.insert(walls_image_handle.clone(), walls_image);
+        images.insert(objects_image_handle.clone(), objects_image);
+
         Self {
-            floor_target: images.set(AssetUtil::camera("floor"), floor_image),
-            walls_target: images.set(AssetUtil::camera("walls"), walls_image),
-            objects_target: images.set(AssetUtil::camera("objects"), objects_image),
+            floor_target: floor_image_handle,
+            walls_target: walls_image_handle,
+            objects_target: objects_image_handle,
         }
     }
 }
@@ -168,18 +177,19 @@ pub fn setup_post_processing_camera(
 
     target_sizes:                 Res<ComputedTargetSizes>,
     gi_targets_wrapper:           Res<GiTargetsWrapper>,
-
 ) {
-    let quad_handle = meshes.set(AssetUtil::mesh("pp"), Mesh::from(shape::Quad::new(Vec2::new(
+
+    let quad =  Mesh::from(shape::Quad::new(Vec2::new(
         target_sizes.primary_target_size.x,
         target_sizes.primary_target_size.y,
-    ))));
+    )));
+
+    meshes.insert(POST_PROCESSING_QUAD.clone(), quad);
 
     *camera_targets = CameraTargets::create(&mut images, &target_sizes);
 
-    let material_handle = materials.set(
-        AssetUtil::material("pp"),
-        PostProcessingMaterial::create(&camera_targets, &gi_targets_wrapper));
+    let material = PostProcessingMaterial::create(&camera_targets, &gi_targets_wrapper);
+    materials.insert(POST_PROCESSING_MATERIAL.clone(), material);
 
     // This specifies the layer used for the post processing camera, which
     // will be attached to the post processing camera and 2d quad.
@@ -188,8 +198,8 @@ pub fn setup_post_processing_camera(
     commands.spawn((
         PostProcessingQuad,
         MaterialMesh2dBundle {
-            mesh: quad_handle.into(),
-            material: material_handle,
+            mesh: POST_PROCESSING_QUAD.clone().into(),
+            material: POST_PROCESSING_MATERIAL.clone(),
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 1.5),
                 ..default()

@@ -10,8 +10,8 @@ struct RayMarchResult {
 }
 
 fn raymarch(
-    ray_origin:         vec2<f32>,
-    ray_target:         vec2<f32>,
+    in_ray_origin:      vec2<f32>,
+    in_ray_target:      vec2<f32>,
     max_steps:          i32,
     sdf:                texture_2d<f32>,
     sdf_sampler:        sampler,
@@ -19,15 +19,15 @@ fn raymarch(
     rm_jitter_contrib:  f32,
 ) -> RayMarchResult {
 
-    var ray_origin  = ray_origin;
-    var ray_target  = ray_target;
+    var ray_target  = in_ray_target;
+    var ray_origin  = in_ray_origin;
     let target_uv   = world_to_sdf_uv(ray_target, camera_params.view_proj, camera_params.inv_sdf_scale);
     let target_dist = bilinear_sample_r(sdf, sdf_sampler, target_uv);
 
     if (target_dist < 0.0) {
-        let temp = ray_target;
+        let t = ray_target;
         ray_target = ray_origin;
-        ray_origin = temp;
+        ray_origin = t;
     }
 
     let ray_direction          = fast_normalize_2d(ray_target - ray_origin);
@@ -78,8 +78,8 @@ fn raymarch(
 }
 
 fn raymarch_primary(
-    ray_origin:         vec2<f32>,
-    ray_target:         vec2<f32>,
+    in_ray_origin:      vec2<f32>,
+    in_ray_target:      vec2<f32>,
     max_steps:          i32,
     sdf:                texture_2d<f32>,
     sdf_sampler:        sampler,
@@ -87,8 +87,8 @@ fn raymarch_primary(
     rm_jitter_contrib:  f32,
 ) -> RayMarchResult {
 
-    var ray_origin  = ray_origin;
-    var ray_target  = ray_target;
+    var ray_target  = in_ray_target;
+    var ray_origin  = in_ray_origin;
 
     let ray_direction          = normalize(ray_target - ray_origin);
     let stop_at                = distance_squared(ray_origin, ray_target);
@@ -128,8 +128,8 @@ fn raymarch_primary(
 
 
 fn raymarch_bounce(
-    ray_origin:         vec2<f32>,
-    ray_target:         vec2<f32>,
+    in_ray_origin:      vec2<f32>,
+    in_ray_target:      vec2<f32>,
     max_steps:          i32,
     sdf:                texture_2d<f32>,
     sdf_sampler:        sampler,
@@ -137,8 +137,9 @@ fn raymarch_bounce(
     rm_jitter_contrib:  f32,
 ) -> RayMarchResult {
 
-    var ray_origin  = ray_origin;
-    var ray_target  = ray_target;
+    var ray_target  = in_ray_target;
+    var ray_origin  = in_ray_origin;
+
     let target_uv   = world_to_sdf_uv(ray_target, camera_params.view_proj, camera_params.inv_sdf_scale);
     let target_dist = bilinear_sample_r(sdf, sdf_sampler, target_uv);
 

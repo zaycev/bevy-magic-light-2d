@@ -55,9 +55,9 @@ fn world_to_sdf_uv(world_pose: vec2<f32>, view_proj: mat4x4<f32>, inv_sdf_scale:
     return vec2<f32>(uv.x, y);
 }
 
-fn sdf_uv_to_world(uv: vec2<f32>, inverse_view_proj: mat4x4<f32>, sdf_scale: vec2<f32>) -> vec2<f32> {
-    let y = 1.0 - uv.y;
-    let uv = vec2<f32>(uv.x, y);
+fn sdf_uv_to_world(uv_in: vec2<f32>, inverse_view_proj: mat4x4<f32>, sdf_scale: vec2<f32>) -> vec2<f32> {
+    let y = 1.0 - uv_in.y;
+    let uv = vec2<f32>(uv_in.x, y);
     let ndc_sdf = (uv * 2.0) - 1.0;
     let ndc = ndc_sdf * sdf_scale;
     return (inverse_view_proj * vec4<f32>(ndc, 0.0, 1.0)).xy;
