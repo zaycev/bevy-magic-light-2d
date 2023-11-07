@@ -20,7 +20,8 @@ pub struct MouseLight;
 #[derive(Component)]
 pub struct Movable;
 
-fn main() {
+fn main()
+{
     // Basic setup.
     App::new()
         .insert_resource(ClearColor(Color::rgba_u8(0, 0, 0, 0)))
