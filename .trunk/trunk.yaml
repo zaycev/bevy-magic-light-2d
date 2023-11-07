@@ -4,13 +4,13 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v1.2.1
+      ref: v1.2.6
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
-    - checkov@2.5.9
-    - trivy@0.46.0
-    - trufflehog@3.60.0
+    - checkov@3.0.22
+    - trivy@0.47.0
+    - trufflehog@3.62.1
     - yamllint@1.32.0
     - actionlint@1.6.26
     - oxipng@9.0.0
@@ -25,8 +25,9 @@ lint:
 runtimes:
   enabled:
     - python@3.10.8
-    - go@1.19.5
+    - go@1.21.0
     - node@18.12.1
+
 actions:
   enabled:
     - trunk-upgrade-available
