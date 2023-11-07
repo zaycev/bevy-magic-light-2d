@@ -1,13 +1,9 @@
-use std::time::Duration;
-
-use bevy::asset::ChangeWatcher;
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
-use bevy::render::render_resource::{FilterMode, SamplerDescriptor};
+use bevy::render::texture::{ImageFilterMode, ImageSamplerDescriptor};
 use bevy::render::view::RenderLayers;
 use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::PrimaryWindow;
-use bevy_inspector_egui::quick::*;
 use bevy_magic_light_2d::prelude::*;
 use rand::prelude::*;
 
@@ -24,14 +20,15 @@ pub struct MouseLight;
 #[derive(Component)]
 pub struct Movable;
 
-fn main() {
+fn main()
+{
     // Basic setup.
     App::new()
         .insert_resource(ClearColor(Color::rgba_u8(0, 0, 0, 0)))
         .add_plugins((
             DefaultPlugins
                 .set(AssetPlugin {
-                    watch_for_changes: ChangeWatcher::with_delay(Duration::from_millis(200)),
+                    watch_for_changes_override: Some(true),
                     ..default()
                 })
                 .set(WindowPlugin {
@@ -44,15 +41,13 @@ fn main() {
                     ..default()
                 })
                 .set(ImagePlugin {
-                    default_sampler: SamplerDescriptor {
-                        mag_filter: FilterMode::Nearest,
-                        min_filter: FilterMode::Nearest,
+                    default_sampler: ImageSamplerDescriptor {
+                        mag_filter: ImageFilterMode::Nearest,
+                        min_filter: ImageFilterMode::Nearest,
                         ..default()
                     },
                 }),
             BevyMagicLight2DPlugin,
-            WorldInspectorPlugin::new(),
-            ResourceInspectorPlugin::<BevyMagicLight2DSettings>::new(),
         ))
         .insert_resource(BevyMagicLight2DSettings {
             light_pass_params: LightPassParams {

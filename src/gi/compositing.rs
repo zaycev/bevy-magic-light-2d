@@ -4,23 +4,30 @@ use bevy::prelude::*;
 use bevy::reflect::{TypePath, TypeUuid};
 use bevy::render::mesh::MeshVertexBufferLayout;
 use bevy::render::render_resource::{
-    AsBindGroup, Extent3d, RenderPipelineDescriptor, ShaderDefVal, ShaderRef,
-    SpecializedMeshPipelineError, TextureDescriptor, TextureDimension, TextureFormat,
+    AsBindGroup,
+    Extent3d,
+    RenderPipelineDescriptor,
+    ShaderDefVal,
+    ShaderRef,
+    SpecializedMeshPipelineError,
+    TextureDescriptor,
+    TextureDimension,
+    TextureFormat,
     TextureUsages,
 };
 use bevy::render::texture::BevyDefault;
 use bevy::render::view::RenderLayers;
 use bevy::sprite::{Material2d, Material2dKey, MaterialMesh2dBundle};
 
+use crate::gi::constants::{POST_PROCESSING_MATERIAL, POST_PROCESSING_QUAD};
 use crate::gi::pipeline::GiTargetsWrapper;
 use crate::gi::resource::ComputedTargetSizes;
-use crate::gi::util::AssetUtil;
 
 #[derive(Component)]
 pub struct PostProcessingQuad;
 
 #[rustfmt::skip]
-#[derive(AsBindGroup, TypeUuid, Clone, TypePath)]
+#[derive(AsBindGroup, TypeUuid, Clone, TypePath, Asset)]
 #[uuid = "bc2f08eb-a0fb-43f1-a908-54871ea597d5"]
 pub struct PostProcessingMaterial {
     #[texture(0)]
@@ -40,12 +47,14 @@ pub struct PostProcessingMaterial {
     irradiance_image:  Handle<Image>,
 }
 
-impl PostProcessingMaterial {
-    pub fn create(camera_targets: &CameraTargets, gi_targets_wrapper: &GiTargetsWrapper) -> Self {
+impl PostProcessingMaterial
+{
+    pub fn create(camera_targets: &CameraTargets, gi_targets_wrapper: &GiTargetsWrapper) -> Self
+    {
         Self {
-            floor_image: camera_targets.floor_target.clone(),
-            walls_image: camera_targets.walls_target.clone(),
-            objects_image: camera_targets.objects_target.clone(),
+            floor_image:      camera_targets.floor_target.clone(),
+            walls_image:      camera_targets.walls_target.clone(),
+            objects_image:    camera_targets.objects_target.clone(),
             irradiance_image: gi_targets_wrapper
                 .targets
                 .as_ref()
@@ -57,14 +66,17 @@ impl PostProcessingMaterial {
 }
 
 #[derive(Resource, Default)]
-pub struct CameraTargets {
-    pub floor_target: Handle<Image>,
-    pub walls_target: Handle<Image>,
+pub struct CameraTargets
+{
+    pub floor_target:   Handle<Image>,
+    pub walls_target:   Handle<Image>,
     pub objects_target: Handle<Image>,
 }
 
-impl CameraTargets {
-    pub fn create(images: &mut Assets<Image>, sizes: &ComputedTargetSizes) -> Self {
+impl CameraTargets
+{
+    pub fn create(images: &mut Assets<Image>, sizes: &ComputedTargetSizes) -> Self
+    {
         let target_size = Extent3d {
             width: sizes.primary_target_usize.x,
             height: sizes.primary_target_usize.y,
@@ -73,47 +85,47 @@ impl CameraTargets {
 
         let mut floor_image = Image {
             texture_descriptor: TextureDescriptor {
-                label: Some("target_floor"),
-                size: target_size,
-                dimension: TextureDimension::D2,
-                format: TextureFormat::bevy_default(),
+                label:           Some("target_floor"),
+                size:            target_size,
+                dimension:       TextureDimension::D2,
+                format:          TextureFormat::bevy_default(),
                 mip_level_count: 1,
-                sample_count: 1,
-                usage: TextureUsages::TEXTURE_BINDING
+                sample_count:    1,
+                usage:           TextureUsages::TEXTURE_BINDING
                     | TextureUsages::COPY_DST
                     | TextureUsages::RENDER_ATTACHMENT,
-                view_formats: &[],
+                view_formats:    &[],
             },
             ..default()
         };
         let mut walls_image = Image {
             texture_descriptor: TextureDescriptor {
-                label: Some("target_walls"),
-                size: target_size,
-                dimension: TextureDimension::D2,
-                format: TextureFormat::bevy_default(),
+                label:           Some("target_walls"),
+                size:            target_size,
+                dimension:       TextureDimension::D2,
+                format:          TextureFormat::bevy_default(),
                 mip_level_count: 1,
-                sample_count: 1,
-                usage: TextureUsages::TEXTURE_BINDING
+                sample_count:    1,
+                usage:           TextureUsages::TEXTURE_BINDING
                     | TextureUsages::COPY_DST
                     | TextureUsages::RENDER_ATTACHMENT,
-                view_formats: &[],
+                view_formats:    &[],
             },
             ..default()
         };
 
         let mut objects_image = Image {
             texture_descriptor: TextureDescriptor {
-                label: Some("target_objects"),
-                size: target_size,
-                dimension: TextureDimension::D2,
-                format: TextureFormat::bevy_default(),
+                label:           Some("target_objects"),
+                size:            target_size,
+                dimension:       TextureDimension::D2,
+                format:          TextureFormat::bevy_default(),
                 mip_level_count: 1,
-                sample_count: 1,
-                usage: TextureUsages::TEXTURE_BINDING
+                sample_count:    1,
+                usage:           TextureUsages::TEXTURE_BINDING
                     | TextureUsages::COPY_DST
                     | TextureUsages::RENDER_ATTACHMENT,
-                view_formats: &[],
+                view_formats:    &[],
             },
             ..default()
         };
@@ -123,16 +135,26 @@ impl CameraTargets {
         walls_image.resize(target_size);
         objects_image.resize(target_size);
 
+        let floor_image_handle: Handle<Image> = Handle::weak_from_u128(9127312736151891273);
+        let walls_image_handle: Handle<Image> = Handle::weak_from_u128(7264512947825624361);
+        let objects_image_handle: Handle<Image> = Handle::weak_from_u128(2987462343287146234);
+
+        images.insert(floor_image_handle.clone(), floor_image);
+        images.insert(walls_image_handle.clone(), walls_image);
+        images.insert(objects_image_handle.clone(), objects_image);
+
         Self {
-            floor_target: images.set(AssetUtil::camera("floor"), floor_image),
-            walls_target: images.set(AssetUtil::camera("walls"), walls_image),
-            objects_target: images.set(AssetUtil::camera("objects"), objects_image),
+            floor_target:   floor_image_handle,
+            walls_target:   walls_image_handle,
+            objects_target: objects_image_handle,
         }
     }
 }
 
-impl Material2d for PostProcessingMaterial {
-    fn fragment_shader() -> ShaderRef {
+impl Material2d for PostProcessingMaterial
+{
+    fn fragment_shader() -> ShaderRef
+    {
         "shaders/gi_post_processing.wgsl".into()
     }
 
@@ -140,7 +162,8 @@ impl Material2d for PostProcessingMaterial {
         descriptor: &mut RenderPipelineDescriptor,
         _layout: &MeshVertexBufferLayout,
         _key: Material2dKey<Self>,
-    ) -> Result<(), SpecializedMeshPipelineError> {
+    ) -> Result<(), SpecializedMeshPipelineError>
+    {
         let shader_defs = &mut descriptor
             .fragment
             .as_mut()
@@ -168,18 +191,19 @@ pub fn setup_post_processing_camera(
 
     target_sizes:                 Res<ComputedTargetSizes>,
     gi_targets_wrapper:           Res<GiTargetsWrapper>,
-
 ) {
-    let quad_handle = meshes.set(AssetUtil::mesh("pp"), Mesh::from(shape::Quad::new(Vec2::new(
+
+    let quad =  Mesh::from(shape::Quad::new(Vec2::new(
         target_sizes.primary_target_size.x,
         target_sizes.primary_target_size.y,
-    ))));
+    )));
+
+    meshes.insert(POST_PROCESSING_QUAD.clone(), quad);
 
     *camera_targets = CameraTargets::create(&mut images, &target_sizes);
 
-    let material_handle = materials.set(
-        AssetUtil::material("pp"),
-        PostProcessingMaterial::create(&camera_targets, &gi_targets_wrapper));
+    let material = PostProcessingMaterial::create(&camera_targets, &gi_targets_wrapper);
+    materials.insert(POST_PROCESSING_MATERIAL.clone(), material);
 
     // This specifies the layer used for the post processing camera, which
     // will be attached to the post processing camera and 2d quad.
@@ -188,8 +212,8 @@ pub fn setup_post_processing_camera(
     commands.spawn((
         PostProcessingQuad,
         MaterialMesh2dBundle {
-            mesh: quad_handle.into(),
-            material: material_handle,
+            mesh: POST_PROCESSING_QUAD.clone().into(),
+            material: POST_PROCESSING_MATERIAL.clone(),
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 1.5),
                 ..default()

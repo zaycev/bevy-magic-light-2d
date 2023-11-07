@@ -8,8 +8,14 @@ use crate::gi::constants::GI_SCREEN_PROBE_SIZE;
 use crate::gi::resource::ComputedTargetSizes;
 use crate::gi::types::{LightOccluder2D, OmniLightSource2D, SkylightLight2D, SkylightMask2D};
 use crate::gi::types_gpu::{
-    GpuCameraParams, GpuLightOccluder2D, GpuLightOccluderBuffer, GpuLightPassParams,
-    GpuLightSourceBuffer, GpuOmniLightSource, GpuProbeDataBuffer, GpuSkylightMaskBuffer,
+    GpuCameraParams,
+    GpuLightOccluder2D,
+    GpuLightOccluderBuffer,
+    GpuLightPassParams,
+    GpuLightSourceBuffer,
+    GpuOmniLightSource,
+    GpuProbeDataBuffer,
+    GpuSkylightMaskBuffer,
     GpuSkylightMaskData,
 };
 use crate::prelude::BevyMagicLight2DSettings;
@@ -26,8 +32,10 @@ pub struct LightPassPipelineAssets {
     pub skylight_masks:    StorageBuffer<GpuSkylightMaskBuffer>,
 }
 
-impl LightPassPipelineAssets {
-    pub fn write_buffer(&mut self, device: &RenderDevice, queue: &RenderQueue) {
+impl LightPassPipelineAssets
+{
+    pub fn write_buffer(&mut self, device: &RenderDevice, queue: &RenderQueue)
+    {
         self.light_sources.write_buffer(device, queue);
         self.light_occluders.write_buffer(device, queue);
         self.camera_params.write_buffer(device, queue);
@@ -47,12 +55,13 @@ pub fn system_prepare_pipeline_assets(
 }
 
 #[rustfmt::skip]
+#[allow(clippy::too_many_arguments)]
 pub fn system_extract_pipeline_assets(
     res_light_settings:         Extract<Res<BevyMagicLight2DSettings>>,
     res_target_sizes:           Extract<Res<ComputedTargetSizes>>,
 
-    query_lights:               Extract<Query<(&Transform, &OmniLightSource2D, &ComputedVisibility)>>,
-    query_occluders:            Extract<Query<(&LightOccluder2D, &Transform, &ComputedVisibility)>>,
+    query_lights:               Extract<Query<(&Transform, &OmniLightSource2D, &InheritedVisibility, &ViewVisibility)>>,
+    query_occluders:            Extract<Query<(&LightOccluder2D, &Transform, &InheritedVisibility, &ViewVisibility)>>,
     query_camera:               Extract<Query<(&Camera, &GlobalTransform), With<FloorCamera>>>,
     query_masks:                Extract<Query<(&Transform, &SkylightMask2D)>>,
     query_skylight_light:       Extract<Query<&SkylightLight2D>>,
@@ -70,8 +79,8 @@ pub fn system_extract_pipeline_assets(
         let mut rng = thread_rng();
         light_sources.count = 0;
         light_sources.data.clear();
-        for (transform, light_source, visibility) in query_lights.iter() {
-            if visibility.is_visible() {
+        for (transform, light_source, hviz, vviz) in query_lights.iter() {
+            if hviz.get() && vviz.get() {
                 light_sources.count += 1;
                 light_sources.data.push(GpuOmniLightSource::new(
                     OmniLightSource2D {
@@ -94,8 +103,8 @@ pub fn system_extract_pipeline_assets(
         let light_occluders = gpu_pipeline_assets.light_occluders.get_mut();
         light_occluders.count = 0;
         light_occluders.data.clear();
-        for (occluder, transform, visibility) in query_occluders.iter() {
-            if visibility.is_visible() {
+        for (occluder, transform, hviz, vviz) in query_occluders.iter() {
+            if hviz.get() && vviz.get() {
                 light_occluders.count += 1;
                 light_occluders.data.push(GpuLightOccluder2D::new(
                     transform,

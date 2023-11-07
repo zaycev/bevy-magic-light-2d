@@ -3,7 +3,8 @@ use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
 use bevy_magic_light_2d::prelude::*;
 
-fn main() {
+fn main()
+{
     // Basic setup.
     App::new()
         .insert_resource(ClearColor(Color::rgb_u8(255, 255, 255)))
@@ -26,14 +27,12 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>) {
+fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>)
+{
     let mut occluders = vec![];
     let occluder_entity = commands
         .spawn((
-            Transform::from_translation(Vec3::new(0., 0., 0.)),
-            GlobalTransform::default(),
-            Visibility::Visible,
-            ComputedVisibility::default(),
+            SpatialBundle::from_transform(Transform::from_translation(Vec3::new(0., 0., 0.))),
             LightOccluder2D {
                 h_size: Vec2::new(40.0, 20.0),
             },
@@ -135,7 +134,8 @@ fn system_move_camera(
     mut query_camera: Query<&mut Transform, With<SpriteCamera>>,
 
     keyboard: Res<Input<KeyCode>>,
-) {
+)
+{
     if let Ok(mut camera_transform) = query_camera.get_single_mut() {
         let speed = 10.0;
 
