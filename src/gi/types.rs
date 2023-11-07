@@ -1,4 +1,4 @@
-use bevy::prelude::{Color, Component, Vec2, *};
+use bevy::prelude::*;
 
 #[rustfmt::skip]
 #[derive(Reflect, Component, Clone, Copy, Default)]
@@ -18,20 +18,16 @@ pub struct LightOccluder2D {
     pub h_size: Vec2,
 }
 
-impl From<(f32, f32)> for LightOccluder2D
-{
-    fn from(value: (f32, f32)) -> Self
-    {
+impl From<(f32, f32)> for LightOccluder2D {
+    fn from(value: (f32, f32)) -> Self {
         LightOccluder2D {
             h_size: value.into(),
         }
     }
 }
 
-impl From<Vec2> for LightOccluder2D
-{
-    fn from(value: Vec2) -> Self
-    {
+impl From<Vec2> for LightOccluder2D {
+    fn from(value: Vec2) -> Self {
         LightOccluder2D { h_size: value }
     }
 }
