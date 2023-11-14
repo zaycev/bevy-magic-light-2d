@@ -1,5 +1,5 @@
-#import bevy_magic_light_2d::gi_types LightPassParams
-#import bevy_magic_light_2d::gi_math fast_normalize_2d
+#import bevy_magic_light_2d::gi_types::LightPassParams
+#import bevy_magic_light_2d::gi_math::fast_normalize_2d
 #import bevy_magic_light_2d::gi_camera::{CameraParams, world_to_sdf_uv, bilinear_sample_rgba, screen_to_world, world_to_screen, world_to_ndc}
 #import bevy_magic_light_2d::gi_halton::radical_inverse_vdc
 #import bevy_magic_light_2d::gi_attenuation
