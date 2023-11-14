@@ -1,4 +1,4 @@
-#import bevy_magic_light_2d::gi_camera screen_to_world, world_to_sdf_uv, bilinear_sample_rgba
+#import bevy_magic_light_2d::gi_camera::{screen_to_world, world_to_sdf_uv, bilinear_sample_rgba}
 #import bevy_pbr::{
     mesh_view_bindings::view,
     forward_io::VertexOutput,

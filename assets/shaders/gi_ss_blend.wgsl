@@ -1,6 +1,6 @@
-#import bevy_magic_light_2d::gi_types LightOccluderBuffer, LightPassParams, ProbeDataBuffer
+#import bevy_magic_light_2d::gi_types::{LightOccluderBuffer, LightPassParams, ProbeDataBuffer}
 #import bevy_magic_light_2d::gi_math
-#import bevy_magic_light_2d::gi_camera CameraParams, screen_to_world, world_to_ndc, ndc_to_screen
+#import bevy_magic_light_2d::gi_camera::{CameraParams, screen_to_world, world_to_ndc, ndc_to_screen}
 #import bevy_magic_light_2d::gi_halton
 #import bevy_magic_light_2d::gi_attenuation
 

@@ -1,5 +1,5 @@
 #define_import_path bevy_magic_light_2d::gi_math
-#import bevy_magic_light_2d::gi_types Quaternion
+#import bevy_magic_light_2d::gi_types::Quaternion
 
 // [Drobot2014a] Low Level Optimizations for GCN
 fn fast_sqrt(x: f32) -> f32 {
