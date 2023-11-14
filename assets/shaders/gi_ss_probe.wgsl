@@ -1,9 +1,9 @@
-#import bevy_magic_light_2d::gi_types LightPassParams, ProbeDataBuffer, SkylightMaskBuffer, LightSourceBuffer
+#import bevy_magic_light_2d::gi_types::{LightPassParams, ProbeDataBuffer, SkylightMaskBuffer, LightSourceBuffer}
 #import bevy_magic_light_2d::gi_math
-#import bevy_magic_light_2d::gi_camera CameraParams, world_to_sdf_uv, bilinear_sample_rgba, screen_to_world, world_to_ndc, ndc_to_screen, bilinear_sample_r
-#import bevy_magic_light_2d::gi_attenuation light_attenuation_r_two
-#import bevy_magic_light_2d::gi_halton hammersley2d
-#import bevy_magic_light_2d::gi_raymarch raymarch_bounce, raymarch_primary
+#import bevy_magic_light_2d::gi_camera::{CameraParams, world_to_sdf_uv, bilinear_sample_rgba, screen_to_world, world_to_ndc, ndc_to_screen, bilinear_sample_r}
+#import bevy_magic_light_2d::gi_attenuation::light_attenuation_r_two
+#import bevy_magic_light_2d::gi_halton::hammersley2d
+#import bevy_magic_light_2d::gi_raymarch::{raymarch_bounce, raymarch_primary}
 
 @group(0) @binding(0) var<uniform> camera_params:         CameraParams;
 @group(0) @binding(1) var<uniform> cfg:                   LightPassParams;
