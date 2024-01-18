@@ -273,7 +273,7 @@ impl render_graph::Node for LightPass2DNode
                 }
             }
         } else {
-            log::warn!("Failed to get bind groups");
+            warn!("Failed to get bind groups");
         }
 
         Ok(())

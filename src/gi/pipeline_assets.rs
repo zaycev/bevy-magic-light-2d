@@ -154,7 +154,7 @@ pub fn system_extract_pipeline_assets(
             probes.data[*gpu_frame_counter as usize].camera_pose =
                 camera_global_transform.translation().truncate();
         } else {
-            log::warn!("Failed to get camera");
+            warn!("Failed to get camera");
             let probes = gpu_pipeline_assets.probes.get_mut();
             probes.data[*gpu_frame_counter as usize].camera_pose = Vec2::ZERO;
         }
