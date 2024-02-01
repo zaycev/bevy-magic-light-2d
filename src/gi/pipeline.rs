@@ -781,11 +781,11 @@ impl FromWorld for LightPassPipeline
         let (shader_sdf, gi_ss_probe, gi_ss_bounce, gi_ss_blend, gi_ss_filter) = {
             let assets_server = world.resource::<AssetServer>();
             (
-                assets_server.load("shaders/gi_sdf.wgsl"),
-                assets_server.load("shaders/gi_ss_probe.wgsl"),
-                assets_server.load("shaders/gi_ss_bounce.wgsl"),
-                assets_server.load("shaders/gi_ss_blend.wgsl"),
-                assets_server.load("shaders/gi_ss_filter.wgsl"),
+                assets_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_sdf.wgsl"),
+                assets_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_ss_probe.wgsl"),
+                assets_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_ss_bounce.wgsl"),
+                assets_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_ss_blend.wgsl"),
+                assets_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_ss_filter.wgsl"),
             )
         };
 
