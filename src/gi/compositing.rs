@@ -155,7 +155,7 @@ impl Material2d for PostProcessingMaterial
 {
     fn fragment_shader() -> ShaderRef
     {
-        "embedded://bevy_magic_light_2d/gi/shaders/gi_post_processing.wgsl".into()
+        "shaders/gi_post_processing.wgsl".into()
     }
 
     fn specialize(
