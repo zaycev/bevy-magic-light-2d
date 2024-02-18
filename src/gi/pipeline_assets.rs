@@ -60,9 +60,9 @@ pub fn system_extract_pipeline_assets(
     res_light_settings:         Extract<Res<BevyMagicLight2DSettings>>,
     res_target_sizes:           Extract<Res<ComputedTargetSizes>>,
 
-    query_lights:               Extract<Query<(&Transform, &OmniLightSource2D, &InheritedVisibility, &ViewVisibility)>>,
+    query_lights:               Extract<Query<(&GlobalTransform, &OmniLightSource2D, &InheritedVisibility, &ViewVisibility)>>,
     query_occluders:            Extract<Query<(&LightOccluder2D, &Transform, &InheritedVisibility, &ViewVisibility)>>,
-    query_camera:               Extract<Query<(&Camera, &GlobalTransform), With<FloorCamera>>>,
+    query_camera:               Extract<Query<(&Camera, &Transform), With<FloorCamera>>>,
     query_masks:                Extract<Query<(&Transform, &SkylightMask2D)>>,
     query_skylight_light:       Extract<Query<&SkylightLight2D>>,
 
@@ -89,9 +89,9 @@ pub fn system_extract_pipeline_assets(
                         ..*light_source
                     },
                     Vec2::new(
-                        transform.translation.x
+                        transform.translation().x
                             + rng.gen_range(-1.0..1.0) * light_source.jitter_translation,
-                        transform.translation.y
+                        transform.translation().y
                             + rng.gen_range(-1.0..1.0) * light_source.jitter_translation,
                     ),
                 ));
@@ -107,7 +107,7 @@ pub fn system_extract_pipeline_assets(
             if hviz.get() && vviz.get() {
                 light_occluders.count += 1;
                 light_occluders.data.push(GpuLightOccluder2D::new(
-                    transform,
+                    &transform,
                     occluder.h_size,
                 ));
             }
@@ -152,7 +152,7 @@ pub fn system_extract_pipeline_assets(
 
             let probes = gpu_pipeline_assets.probes.get_mut();
             probes.data[*gpu_frame_counter as usize].camera_pose =
-                camera_global_transform.translation().truncate();
+                camera_global_transform.translation.truncate();
         } else {
             warn!("Failed to get camera");
             let probes = gpu_pipeline_assets.probes.get_mut();
