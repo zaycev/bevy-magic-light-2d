@@ -62,8 +62,8 @@ pub fn system_extract_pipeline_assets(
 
     query_lights:               Extract<Query<(&GlobalTransform, &OmniLightSource2D, &InheritedVisibility, &ViewVisibility)>>,
     query_occluders:            Extract<Query<(&LightOccluder2D, &GlobalTransform, &Transform, &InheritedVisibility, &ViewVisibility)>>,
-    query_camera:               Extract<Query<(&Camera, &Transform), With<FloorCamera>>>,
-    query_masks:                Extract<Query<(&Transform, &SkylightMask2D)>>,
+    query_camera:               Extract<Query<(&Camera, &GlobalTransform), With<FloorCamera>>>,
+    query_masks:                Extract<Query<(&GlobalTransform, &SkylightMask2D)>>,
     query_skylight_light:       Extract<Query<&SkylightLight2D>>,
 
     mut gpu_target_sizes:       ResMut<ComputedTargetSizes>,
@@ -123,7 +123,7 @@ pub fn system_extract_pipeline_assets(
         for (transform, mask) in query_masks.iter() {
             skylight_masks.count += 1;
             skylight_masks.data.push(GpuSkylightMaskData::new(
-                transform.translation.truncate(),
+                transform.translation().truncate(),
                 mask.h_size,
             ));
         }
@@ -154,7 +154,7 @@ pub fn system_extract_pipeline_assets(
 
             let probes = gpu_pipeline_assets.probes.get_mut();
             probes.data[*gpu_frame_counter as usize].camera_pose =
-                camera_global_transform.translation.truncate();
+                camera_global_transform.translation().truncate();
         } else {
             warn!("Failed to get camera");
             let probes = gpu_pipeline_assets.probes.get_mut();
