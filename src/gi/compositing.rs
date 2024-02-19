@@ -210,20 +210,6 @@ pub fn setup_post_processing_camera(
     let layer = RenderLayers::layer((RenderLayers::TOTAL_LAYERS - 1) as u8);
 
     commands.spawn((
-        PostProcessingQuad,
-        MaterialMesh2dBundle {
-            mesh: POST_PROCESSING_QUAD.clone().into(),
-            material: POST_PROCESSING_MATERIAL.clone(),
-            transform: Transform {
-                translation: Vec3::new(0.0, 0.0, 1.5),
-                ..default()
-            },
-            ..default()
-        },
-        layer,
-    ));
-
-    commands.spawn((
         Name::new("post_processing_camera"),
         Camera2dBundle {
             camera: Camera {
@@ -238,5 +224,17 @@ pub fn setup_post_processing_camera(
             ..default()
         },
         layer
+    ))
+    .insert((
+        PostProcessingQuad,
+        MaterialMesh2dBundle {
+            mesh: POST_PROCESSING_QUAD.clone().into(),
+            material: POST_PROCESSING_MATERIAL.clone(),
+            transform: Transform {
+                translation: Vec3::new(0.0, 0.0, 1.5),
+                ..default()
+            },
+            ..default()
+        },
     ));
 }
