@@ -5,14 +5,14 @@
     utils::coords_to_viewport_uv,
 }
 
-@group(1) @binding(0) var in_floor_texture:              texture_2d<f32>;
-@group(1) @binding(1) var in_floor_sampler:              sampler;
-@group(1) @binding(2) var in_walls_texture:              texture_2d<f32>;
-@group(1) @binding(3) var in_walls_sampler:              sampler;
-@group(1) @binding(4) var in_objects_texture:            texture_2d<f32>;
-@group(1) @binding(5) var in_objects_sampler:            sampler;
-@group(1) @binding(6) var in_irradiance_texture:         texture_2d<f32>;
-@group(1) @binding(7) var in_irradiance_texture_sampler: sampler;
+@group(2) @binding(0) var in_floor_texture:              texture_2d<f32>;
+@group(2) @binding(1) var in_floor_sampler:              sampler;
+@group(2) @binding(2) var in_walls_texture:              texture_2d<f32>;
+@group(2) @binding(3) var in_walls_sampler:              sampler;
+@group(2) @binding(4) var in_objects_texture:            texture_2d<f32>;
+@group(2) @binding(5) var in_objects_sampler:            sampler;
+@group(2) @binding(6) var in_irradiance_texture:         texture_2d<f32>;
+@group(2) @binding(7) var in_irradiance_texture_sampler: sampler;
 
 fn lin_to_srgb(color: vec3<f32>) -> vec3<f32> {
    let x = color * 12.92;
