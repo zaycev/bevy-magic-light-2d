@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy::render::extract_resource::ExtractResource;
-use bevy::render::render_asset::RenderAssets;
+use bevy::render::render_asset::{RenderAssetUsages, RenderAssets};
 use bevy::render::render_resource::*;
 use bevy::render::renderer::RenderDevice;
 use bevy::render::texture::{
@@ -139,6 +139,7 @@ fn create_texture_2d(size: (u32, u32), format: TextureFormat, filter: ImageFilte
             0, 0, 0, 0, 0, 0, 0, 0,
         ],
         format,
+        RenderAssetUsages::default(),
     );
 
     image.texture_descriptor.usage =
@@ -407,376 +408,371 @@ impl FromWorld for LightPassPipeline
     {
         let render_device = world.resource::<RenderDevice>();
 
-        let sdf_bind_group_layout =
-            render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-                label:   Some("sdf_bind_group_layout"),
-                entries: &[
-                    // Camera.
-                    BindGroupLayoutEntry {
-                        binding:    0,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Buffer {
-                            ty:                 BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size:   Some(GpuCameraParams::min_size()),
-                        },
-                        count:      None,
+        let sdf_bind_group_layout = render_device.create_bind_group_layout(
+            "sdf_bind_group_layout",
+            &[
+                // Camera.
+                BindGroupLayoutEntry {
+                    binding:    0,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Buffer {
+                        ty:                 BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size:   Some(GpuCameraParams::min_size()),
                     },
-                    // Light occluders.
-                    BindGroupLayoutEntry {
-                        binding:    1,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Buffer {
-                            ty:                 BufferBindingType::Storage { read_only: true },
-                            has_dynamic_offset: false,
-                            min_binding_size:   Some(GpuLightOccluderBuffer::min_size()),
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // Light occluders.
+                BindGroupLayoutEntry {
+                    binding:    1,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Buffer {
+                        ty:                 BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size:   Some(GpuLightOccluderBuffer::min_size()),
                     },
-                    // SDF texture.
-                    BindGroupLayoutEntry {
-                        binding:    2,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::StorageTexture {
-                            access:         StorageTextureAccess::ReadWrite,
-                            format:         SDF_TARGET_FORMAT,
-                            view_dimension: TextureViewDimension::D2,
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // SDF texture.
+                BindGroupLayoutEntry {
+                    binding:    2,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::StorageTexture {
+                        access:         StorageTextureAccess::ReadWrite,
+                        format:         SDF_TARGET_FORMAT,
+                        view_dimension: TextureViewDimension::D2,
                     },
-                ],
-            });
+                    count:      None,
+                },
+            ],
+        );
 
-        let ss_probe_bind_group_layout =
-            render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-                label:   Some("ss_probe_bind_group_layout"),
-                entries: &[
-                    // Camera.
-                    BindGroupLayoutEntry {
-                        binding:    0,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Buffer {
-                            ty:                 BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size:   Some(GpuCameraParams::min_size()),
-                        },
-                        count:      None,
+        let ss_probe_bind_group_layout = render_device.create_bind_group_layout(
+            "ss_probe_bind_group_layout",
+            &[
+                // Camera.
+                BindGroupLayoutEntry {
+                    binding:    0,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Buffer {
+                        ty:                 BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size:   Some(GpuCameraParams::min_size()),
                     },
-                    // GI State.
-                    BindGroupLayoutEntry {
-                        binding:    1,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Buffer {
-                            ty:                 BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size:   Some(GpuLightPassParams::min_size()),
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // GI State.
+                BindGroupLayoutEntry {
+                    binding:    1,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Buffer {
+                        ty:                 BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size:   Some(GpuLightPassParams::min_size()),
                     },
-                    // Probes.
-                    BindGroupLayoutEntry {
-                        binding:    2,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Buffer {
-                            ty:                 BufferBindingType::Storage { read_only: true },
-                            has_dynamic_offset: false,
-                            min_binding_size:   Some(GpuProbeDataBuffer::min_size()),
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // Probes.
+                BindGroupLayoutEntry {
+                    binding:    2,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Buffer {
+                        ty:                 BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size:   Some(GpuProbeDataBuffer::min_size()),
                     },
-                    // SkylightMasks.
-                    BindGroupLayoutEntry {
-                        binding:    3,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Buffer {
-                            ty:                 BufferBindingType::Storage { read_only: true },
-                            has_dynamic_offset: false,
-                            min_binding_size:   Some(GpuSkylightMaskBuffer::min_size()),
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // SkylightMasks.
+                BindGroupLayoutEntry {
+                    binding:    3,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Buffer {
+                        ty:                 BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size:   Some(GpuSkylightMaskBuffer::min_size()),
                     },
-                    // Light sources.
-                    BindGroupLayoutEntry {
-                        binding:    4,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Buffer {
-                            ty:                 BufferBindingType::Storage { read_only: true },
-                            has_dynamic_offset: false,
-                            min_binding_size:   Some(GpuLightSourceBuffer::min_size()),
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // Light sources.
+                BindGroupLayoutEntry {
+                    binding:    4,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Buffer {
+                        ty:                 BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size:   Some(GpuLightSourceBuffer::min_size()),
                     },
-                    // SDF.
-                    BindGroupLayoutEntry {
-                        binding:    5,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Texture {
-                            sample_type:    TextureSampleType::Float { filterable: true },
-                            view_dimension: TextureViewDimension::D2,
-                            multisampled:   false,
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // SDF.
+                BindGroupLayoutEntry {
+                    binding:    5,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Texture {
+                        sample_type:    TextureSampleType::Float { filterable: true },
+                        view_dimension: TextureViewDimension::D2,
+                        multisampled:   false,
                     },
-                    // SDF Sampler.
-                    BindGroupLayoutEntry {
-                        binding:    6,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Sampler(SamplerBindingType::Filtering),
-                        count:      None,
+                    count:      None,
+                },
+                // SDF Sampler.
+                BindGroupLayoutEntry {
+                    binding:    6,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Sampler(SamplerBindingType::Filtering),
+                    count:      None,
+                },
+                // SS Probe.
+                BindGroupLayoutEntry {
+                    binding:    7,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::StorageTexture {
+                        access:         StorageTextureAccess::WriteOnly,
+                        format:         SS_PROBE_TARGET_FORMAT,
+                        view_dimension: TextureViewDimension::D2,
                     },
-                    // SS Probe.
-                    BindGroupLayoutEntry {
-                        binding:    7,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::StorageTexture {
-                            access:         StorageTextureAccess::WriteOnly,
-                            format:         SS_PROBE_TARGET_FORMAT,
-                            view_dimension: TextureViewDimension::D2,
-                        },
-                        count:      None,
-                    },
-                ],
-            });
+                    count:      None,
+                },
+            ],
+        );
 
-        let ss_bounce_bind_group_layout =
-            render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-                label:   Some("ss_bounce_bind_group_layout"),
-                entries: &[
-                    // Camera.
-                    BindGroupLayoutEntry {
-                        binding:    0,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Buffer {
-                            ty:                 BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size:   Some(GpuCameraParams::min_size()),
-                        },
-                        count:      None,
+        let ss_bounce_bind_group_layout = render_device.create_bind_group_layout(
+            "ss_bounce_bind_group_layout",
+            &[
+                // Camera.
+                BindGroupLayoutEntry {
+                    binding:    0,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Buffer {
+                        ty:                 BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size:   Some(GpuCameraParams::min_size()),
                     },
-                    // GI State.
-                    BindGroupLayoutEntry {
-                        binding:    1,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Buffer {
-                            ty:                 BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size:   Some(GpuLightPassParams::min_size()),
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // GI State.
+                BindGroupLayoutEntry {
+                    binding:    1,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Buffer {
+                        ty:                 BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size:   Some(GpuLightPassParams::min_size()),
                     },
-                    // SDF.
-                    BindGroupLayoutEntry {
-                        binding:    2,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Texture {
-                            sample_type:    TextureSampleType::Float { filterable: true },
-                            view_dimension: TextureViewDimension::D2,
-                            multisampled:   false,
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // SDF.
+                BindGroupLayoutEntry {
+                    binding:    2,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Texture {
+                        sample_type:    TextureSampleType::Float { filterable: true },
+                        view_dimension: TextureViewDimension::D2,
+                        multisampled:   false,
                     },
-                    // SDF Sampler.
-                    BindGroupLayoutEntry {
-                        binding:    3,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Sampler(SamplerBindingType::Filtering),
-                        count:      None,
+                    count:      None,
+                },
+                // SDF Sampler.
+                BindGroupLayoutEntry {
+                    binding:    3,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Sampler(SamplerBindingType::Filtering),
+                    count:      None,
+                },
+                // SS Probe.
+                BindGroupLayoutEntry {
+                    binding:    4,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::StorageTexture {
+                        access:         StorageTextureAccess::ReadOnly,
+                        format:         SS_PROBE_TARGET_FORMAT,
+                        view_dimension: TextureViewDimension::D2,
                     },
-                    // SS Probe.
-                    BindGroupLayoutEntry {
-                        binding:    4,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::StorageTexture {
-                            access:         StorageTextureAccess::ReadOnly,
-                            format:         SS_PROBE_TARGET_FORMAT,
-                            view_dimension: TextureViewDimension::D2,
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // SS Bounce.
+                BindGroupLayoutEntry {
+                    binding:    5,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::StorageTexture {
+                        access:         StorageTextureAccess::WriteOnly,
+                        format:         SS_BOUNCE_TARGET_FORMAT,
+                        view_dimension: TextureViewDimension::D2,
                     },
-                    // SS Bounce.
-                    BindGroupLayoutEntry {
-                        binding:    5,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::StorageTexture {
-                            access:         StorageTextureAccess::WriteOnly,
-                            format:         SS_BOUNCE_TARGET_FORMAT,
-                            view_dimension: TextureViewDimension::D2,
-                        },
-                        count:      None,
-                    },
-                ],
-            });
+                    count:      None,
+                },
+            ],
+        );
 
-        let ss_blend_bind_group_layout =
-            render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-                label:   Some("ss_blend_bind_group_layout"),
-                entries: &[
-                    // Camera.
-                    BindGroupLayoutEntry {
-                        binding:    0,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Buffer {
-                            ty:                 BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size:   Some(GpuCameraParams::min_size()),
-                        },
-                        count:      None,
+        let ss_blend_bind_group_layout = render_device.create_bind_group_layout(
+            "ss_blend_bind_group_layout",
+            &[
+                // Camera.
+                BindGroupLayoutEntry {
+                    binding:    0,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Buffer {
+                        ty:                 BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size:   Some(GpuCameraParams::min_size()),
                     },
-                    // GI State.
-                    BindGroupLayoutEntry {
-                        binding:    1,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Buffer {
-                            ty:                 BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size:   Some(GpuLightPassParams::min_size()),
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // GI State.
+                BindGroupLayoutEntry {
+                    binding:    1,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Buffer {
+                        ty:                 BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size:   Some(GpuLightPassParams::min_size()),
                     },
-                    // Probes.
-                    BindGroupLayoutEntry {
-                        binding:    2,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Buffer {
-                            ty:                 BufferBindingType::Storage { read_only: true },
-                            has_dynamic_offset: false,
-                            min_binding_size:   Some(GpuProbeDataBuffer::min_size()),
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // Probes.
+                BindGroupLayoutEntry {
+                    binding:    2,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Buffer {
+                        ty:                 BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size:   Some(GpuProbeDataBuffer::min_size()),
                     },
-                    // SDF.
-                    BindGroupLayoutEntry {
-                        binding:    3,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Texture {
-                            sample_type:    TextureSampleType::Float { filterable: true },
-                            view_dimension: TextureViewDimension::D2,
-                            multisampled:   false,
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // SDF.
+                BindGroupLayoutEntry {
+                    binding:    3,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Texture {
+                        sample_type:    TextureSampleType::Float { filterable: true },
+                        view_dimension: TextureViewDimension::D2,
+                        multisampled:   false,
                     },
-                    // SDF Sampler.
-                    BindGroupLayoutEntry {
-                        binding:    4,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Sampler(SamplerBindingType::Filtering),
-                        count:      None,
+                    count:      None,
+                },
+                // SDF Sampler.
+                BindGroupLayoutEntry {
+                    binding:    4,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Sampler(SamplerBindingType::Filtering),
+                    count:      None,
+                },
+                // SS Bounces.
+                BindGroupLayoutEntry {
+                    binding:    5,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::StorageTexture {
+                        access:         StorageTextureAccess::ReadOnly,
+                        format:         SS_BOUNCE_TARGET_FORMAT,
+                        view_dimension: TextureViewDimension::D2,
                     },
-                    // SS Bounces.
-                    BindGroupLayoutEntry {
-                        binding:    5,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::StorageTexture {
-                            access:         StorageTextureAccess::ReadOnly,
-                            format:         SS_BOUNCE_TARGET_FORMAT,
-                            view_dimension: TextureViewDimension::D2,
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // SS Blend.
+                BindGroupLayoutEntry {
+                    binding:    6,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::StorageTexture {
+                        access:         StorageTextureAccess::WriteOnly,
+                        format:         SS_BLEND_TARGET_FORMAT,
+                        view_dimension: TextureViewDimension::D2,
                     },
-                    // SS Blend.
-                    BindGroupLayoutEntry {
-                        binding:    6,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::StorageTexture {
-                            access:         StorageTextureAccess::WriteOnly,
-                            format:         SS_BLEND_TARGET_FORMAT,
-                            view_dimension: TextureViewDimension::D2,
-                        },
-                        count:      None,
-                    },
-                ],
-            });
+                    count:      None,
+                },
+            ],
+        );
 
-        let ss_filter_bind_group_layout =
-            render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-                label:   Some("ss_filter_bind_group_layout"),
-                entries: &[
-                    // Camera.
-                    BindGroupLayoutEntry {
-                        binding:    0,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Buffer {
-                            ty:                 BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size:   Some(GpuCameraParams::min_size()),
-                        },
-                        count:      None,
+        let ss_filter_bind_group_layout = render_device.create_bind_group_layout(
+            "ss_filter_bind_group_layout",
+            &[
+                // Camera.
+                BindGroupLayoutEntry {
+                    binding:    0,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Buffer {
+                        ty:                 BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size:   Some(GpuCameraParams::min_size()),
                     },
-                    // GI State.
-                    BindGroupLayoutEntry {
-                        binding:    1,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Buffer {
-                            ty:                 BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size:   Some(GpuLightPassParams::min_size()),
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // GI State.
+                BindGroupLayoutEntry {
+                    binding:    1,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Buffer {
+                        ty:                 BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size:   Some(GpuLightPassParams::min_size()),
                     },
-                    // Probes.
-                    BindGroupLayoutEntry {
-                        binding:    2,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Buffer {
-                            ty:                 BufferBindingType::Storage { read_only: true },
-                            has_dynamic_offset: false,
-                            min_binding_size:   Some(GpuProbeDataBuffer::min_size()),
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // Probes.
+                BindGroupLayoutEntry {
+                    binding:    2,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Buffer {
+                        ty:                 BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size:   Some(GpuProbeDataBuffer::min_size()),
                     },
-                    // SDF.
-                    BindGroupLayoutEntry {
-                        binding:    3,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Texture {
-                            sample_type:    TextureSampleType::Float { filterable: true },
-                            view_dimension: TextureViewDimension::D2,
-                            multisampled:   false,
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // SDF.
+                BindGroupLayoutEntry {
+                    binding:    3,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Texture {
+                        sample_type:    TextureSampleType::Float { filterable: true },
+                        view_dimension: TextureViewDimension::D2,
+                        multisampled:   false,
                     },
-                    // SDF Sampler.
-                    BindGroupLayoutEntry {
-                        binding:    4,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::Sampler(SamplerBindingType::Filtering),
-                        count:      None,
+                    count:      None,
+                },
+                // SDF Sampler.
+                BindGroupLayoutEntry {
+                    binding:    4,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::Sampler(SamplerBindingType::Filtering),
+                    count:      None,
+                },
+                // SS Blend.
+                BindGroupLayoutEntry {
+                    binding:    5,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::StorageTexture {
+                        access:         StorageTextureAccess::ReadOnly,
+                        format:         SS_BLEND_TARGET_FORMAT,
+                        view_dimension: TextureViewDimension::D2,
                     },
-                    // SS Blend.
-                    BindGroupLayoutEntry {
-                        binding:    5,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::StorageTexture {
-                            access:         StorageTextureAccess::ReadOnly,
-                            format:         SS_BLEND_TARGET_FORMAT,
-                            view_dimension: TextureViewDimension::D2,
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // SS Filter.
+                BindGroupLayoutEntry {
+                    binding:    6,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::StorageTexture {
+                        access:         StorageTextureAccess::WriteOnly,
+                        format:         SS_FILTER_TARGET_FORMAT,
+                        view_dimension: TextureViewDimension::D2,
                     },
-                    // SS Filter.
-                    BindGroupLayoutEntry {
-                        binding:    6,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::StorageTexture {
-                            access:         StorageTextureAccess::WriteOnly,
-                            format:         SS_FILTER_TARGET_FORMAT,
-                            view_dimension: TextureViewDimension::D2,
-                        },
-                        count:      None,
+                    count:      None,
+                },
+                // SS pose.
+                BindGroupLayoutEntry {
+                    binding:    7,
+                    visibility: ShaderStages::COMPUTE,
+                    ty:         BindingType::StorageTexture {
+                        access:         StorageTextureAccess::WriteOnly,
+                        format:         SS_POSE_TARGET_FORMAT,
+                        view_dimension: TextureViewDimension::D2,
                     },
-                    // SS pose.
-                    BindGroupLayoutEntry {
-                        binding:    7,
-                        visibility: ShaderStages::COMPUTE,
-                        ty:         BindingType::StorageTexture {
-                            access:         StorageTextureAccess::WriteOnly,
-                            format:         SS_POSE_TARGET_FORMAT,
-                            view_dimension: TextureViewDimension::D2,
-                        },
-                        count:      None,
-                    },
-                ],
-            });
+                    count:      None,
+                },
+            ],
+        );
 
         let (shader_sdf, gi_ss_probe, gi_ss_bounce, gi_ss_blend, gi_ss_filter) = {
             let assets_server = world.resource::<AssetServer>();

@@ -34,7 +34,6 @@ pub struct BevyMagicLight2DSettings
 #[cfg_attr(feature = "egui", derive(InspectorOptions))]
 #[cfg_attr(feature = "egui", reflect(InspectorOptions))]
 pub struct LightPassParams {
-
     /// Number of previous frames to keep in the reservoir.
     #[cfg_attr(feature = "egui", inspector(min = 1, max = 64))]
     pub reservoir_size: u32,
@@ -96,8 +95,8 @@ impl ComputedTargetSizes
     pub fn from_window(window: &Window, params: &TargetScalingParams) -> Self
     {
         let primary_size = Vec2::new(
-            (window.physical_width() as f64 / window.scale_factor()) as f32,
-            (window.physical_height() as f64 / window.scale_factor()) as f32,
+            window.physical_width() as f32 / window.scale_factor(),
+            window.physical_height() as f32 / window.scale_factor(),
         );
 
         let mut sizes = Self::default();

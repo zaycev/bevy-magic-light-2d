@@ -11,6 +11,6 @@ pub const SHADER_GI_HALTON: Handle<Shader> = Handle::weak_from_u128(128739128887
 pub const SHADER_GI_MATH: Handle<Shader> = Handle::weak_from_u128(2387462894328787238);
 pub const SHADER_GI_RAYMARCH: Handle<Shader> = Handle::weak_from_u128(9876835068496322894);
 
-pub const POST_PROCESSING_QUAD: Handle<Mesh> = Handle::weak_from_u128(23475629871623176235);
+pub const POST_PROCESSING_RECT: Handle<Mesh> = Handle::weak_from_u128(23475629871623176235);
 pub const POST_PROCESSING_MATERIAL: Handle<PostProcessingMaterial> =
     Handle::weak_from_u128(52374048672736472871);

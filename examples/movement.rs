@@ -115,44 +115,39 @@ fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>)
         .insert(Name::new("lights"))
         .push_children(&lights);
 
-    commands
-        .spawn((
-            Camera2dBundle {
-                camera: Camera {
-                    hdr: true,
-                    target: RenderTarget::Image(camera_targets.floor_target.clone()),
-                    ..Default::default()
-                },
+    commands.spawn((
+        Camera2dBundle {
+            camera: Camera {
+                hdr: true,
+                target: RenderTarget::Image(camera_targets.floor_target.clone()),
                 ..Default::default()
             },
-            Name::new("main_camera"),
-            FloorCamera,
-        ))
-        .insert(UiCameraConfig {
-            show_ui: false,
-            ..default()
-        });
+            ..Default::default()
+        },
+        Name::new("main_camera"),
+        FloorCamera,
+    ));
 }
 
 fn system_move_camera(
     mut camera_target: Local<Vec3>,
     mut query_camera: Query<&mut Transform>,
-    keyboard: Res<Input<KeyCode>>,
+    keyboard: Res<ButtonInput<KeyCode>>,
 )
 {
     if let Ok(mut camera_transform) = query_camera.get_single_mut() {
         let speed = 10.0;
 
-        if keyboard.pressed(KeyCode::W) {
+        if keyboard.pressed(KeyCode::KeyW) {
             camera_target.y += speed;
         }
-        if keyboard.pressed(KeyCode::S) {
+        if keyboard.pressed(KeyCode::KeyS) {
             camera_target.y -= speed;
         }
-        if keyboard.pressed(KeyCode::A) {
+        if keyboard.pressed(KeyCode::KeyA) {
             camera_target.x -= speed;
         }
-        if keyboard.pressed(KeyCode::D) {
+        if keyboard.pressed(KeyCode::KeyD) {
             camera_target.x += speed;
         }
 

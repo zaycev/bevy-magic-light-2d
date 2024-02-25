@@ -8,20 +8,20 @@ default = ["egui"]
 egui = ["dep:bevy-inspector-egui"]
 
 [dependencies]
-bevy = { version = "0.12", default-features = false, features = [
-  "bevy_render",
-  "bevy_core_pipeline",
-  "bevy_winit",
-  "bevy_asset",
-  "bevy_sprite",
-  "bevy_pbr",
+bevy = { version = "0.13", default-features = false, features = [
+    "bevy_render",
+    "bevy_core_pipeline",
+    "bevy_winit",
+    "bevy_asset",
+    "bevy_sprite",
+    "bevy_pbr",
 ] }
-bevy-inspector-egui = { version = "0.21.0", optional = true }
+bevy-inspector-egui = { version = "0.23.0", optional = true }
 log = "0.4.20"
 rand = "0.8.5"
 
 [dev-dependencies]
-bevy = "0.12"
+bevy = "0.13"
 
 [profile.release]
 codegen-units = 1
