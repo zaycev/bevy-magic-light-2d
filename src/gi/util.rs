@@ -28,5 +28,17 @@ impl AssetUtil
 pub fn align_to_work_group_grid(size: IVec2) -> IVec2
 {
     let wg_size = WORKGROUP_SIZE as i32;
-    size + IVec2::new(wg_size - size.x % wg_size, wg_size - size.y % wg_size)
+        // Only add padding if necessary
+    IVec2::new(
+        if size.x % wg_size == 0 {
+            size.x
+        } else {
+            size.x + wg_size - size.x % wg_size
+        },
+        if size.y % wg_size == 0 {
+            size.y
+        } else {
+            size.y + wg_size - size.y % wg_size
+        },
+    )
 }
