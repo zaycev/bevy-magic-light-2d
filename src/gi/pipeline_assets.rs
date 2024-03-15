@@ -110,8 +110,7 @@ pub fn system_extract_pipeline_assets(
                     center: global_transform.translation().xy(),
                     rotation: transform.rotation.inverse().into(),
                     h_extent: occluder.h_size,
-                }
-                );
+                });
             }
         }
     }

@@ -43,21 +43,6 @@ pub struct GpuLightOccluder2D {
     pub h_extent: Vec2,
 }
 
-// impl GpuLightOccluder2D
-// {
-//     pub fn new(transform: &GlobalTransform, h_extent: Vec2) -> Self
-//     {
-//         let center = transform.translation().xy();
-//         let rotation = transform.rotation.inverse().into();
-//         // let h_extent = h_extent * transform.scale.xy();
-//         Self {
-//             center,
-//             rotation,
-//             h_extent,
-//         }
-//     }
-// }
-
 #[rustfmt::skip]
 #[derive(Default, Clone, ShaderType)]
 pub struct GpuLightOccluderBuffer {
