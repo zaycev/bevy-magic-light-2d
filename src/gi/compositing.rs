@@ -237,5 +237,17 @@ pub fn setup_post_processing_camera(
             ..default()
         },
         layer
+    ))
+    .insert((
+        PostProcessingQuad,
+        MaterialMesh2dBundle {
+            mesh: POST_PROCESSING_RECT.clone().into(),
+            material: POST_PROCESSING_MATERIAL.clone(),
+            transform: Transform {
+                translation: Vec3::new(0.0, 0.0, 1.5),
+                ..default()
+            },
+            ..default()
+        },
     ));
 }
