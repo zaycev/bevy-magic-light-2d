@@ -60,10 +60,10 @@ pub fn system_extract_pipeline_assets(
     res_light_settings:         Extract<Res<BevyMagicLight2DSettings>>,
     res_target_sizes:           Extract<Res<ComputedTargetSizes>>,
 
-    query_lights:               Extract<Query<(&Transform, &OmniLightSource2D, &InheritedVisibility, &ViewVisibility)>>,
-    query_occluders:            Extract<Query<(&LightOccluder2D, &Transform, &InheritedVisibility, &ViewVisibility)>>,
+    query_lights:               Extract<Query<(&GlobalTransform, &OmniLightSource2D, &InheritedVisibility, &ViewVisibility)>>,
+    query_occluders:            Extract<Query<(&LightOccluder2D, &GlobalTransform, &Transform, &InheritedVisibility, &ViewVisibility)>>,
     query_camera:               Extract<Query<(&Camera, &GlobalTransform), With<FloorCamera>>>,
-    query_masks:                Extract<Query<(&Transform, &SkylightMask2D)>>,
+    query_masks:                Extract<Query<(&GlobalTransform, &SkylightMask2D)>>,
     query_skylight_light:       Extract<Query<&SkylightLight2D>>,
 
     mut gpu_target_sizes:       ResMut<ComputedTargetSizes>,
@@ -89,9 +89,9 @@ pub fn system_extract_pipeline_assets(
                         ..*light_source
                     },
                     Vec2::new(
-                        transform.translation.x
+                        transform.translation().x
                             + rng.gen_range(-1.0..1.0) * light_source.jitter_translation,
-                        transform.translation.y
+                        transform.translation().y
                             + rng.gen_range(-1.0..1.0) * light_source.jitter_translation,
                     ),
                 ));
@@ -103,13 +103,14 @@ pub fn system_extract_pipeline_assets(
         let light_occluders = gpu_pipeline_assets.light_occluders.get_mut();
         light_occluders.count = 0;
         light_occluders.data.clear();
-        for (occluder, transform, hviz, vviz) in query_occluders.iter() {
+        for (occluder, global_transform, transform, hviz, vviz) in query_occluders.iter() {
             if hviz.get() && vviz.get() {
                 light_occluders.count += 1;
-                light_occluders.data.push(GpuLightOccluder2D::new(
-                    transform,
-                    occluder.h_size,
-                ));
+                light_occluders.data.push(GpuLightOccluder2D {
+                    center: global_transform.translation().xy(),
+                    rotation: transform.rotation.inverse().into(),
+                    h_extent: occluder.h_size,
+                });
             }
         }
     }
@@ -121,7 +122,7 @@ pub fn system_extract_pipeline_assets(
         for (transform, mask) in query_masks.iter() {
             skylight_masks.count += 1;
             skylight_masks.data.push(GpuSkylightMaskData::new(
-                transform.translation.truncate(),
+                transform.translation().truncate(),
                 mask.h_size,
             ));
         }
