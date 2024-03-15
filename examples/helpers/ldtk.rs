@@ -1,30 +1,28 @@
-use bevy_ecs_tilemap::{
-    helpers::geometry::get_tilemap_center_transform,
-    map::{TilemapId, TilemapSize, TilemapTexture, TilemapTileSize},
-    tiles::{TileBundle, TilePos, TileStorage, TileTextureIndex},
-    TilemapBundle,
-};
-use std::{collections::HashMap, io::ErrorKind};
+use std::collections::HashMap;
+use std::io::ErrorKind;
+
+use bevy::asset::{AssetLoader, AssetPath, AsyncReadExt, LoadContext};
+use bevy::asset::io::Reader;
+use bevy::prelude::*;
+use bevy::reflect::TypePath;
+use bevy::render::view::RenderLayers;
+use bevy::utils::BoxedFuture;
+use bevy_ecs_tilemap::helpers::geometry::get_tilemap_center_transform;
+use bevy_ecs_tilemap::map::{TilemapId, TilemapSize, TilemapTexture, TilemapTileSize, TilemapType};
+use bevy_ecs_tilemap::TilemapBundle;
+use bevy_ecs_tilemap::tiles::{TileBundle, TilePos, TileStorage, TileTextureIndex};
+use serde_json::Value;
 use thiserror::Error;
 
-use bevy::{
-    asset::{io::Reader, AsyncReadExt},
-    reflect::TypePath,
-};
-use bevy::{
-    asset::{AssetLoader, AssetPath, LoadContext},
-    prelude::*,
-    utils::BoxedFuture,
-};
-use bevy_ecs_tilemap::map::TilemapType;
-use bevy::render::view::RenderLayers;
 use bevy_magic_light_2d::prelude::*;
 
 #[derive(Default)]
 pub struct LdtkPlugin;
 
-impl Plugin for LdtkPlugin {
-    fn build(&self, app: &mut App) {
+impl Plugin for LdtkPlugin
+{
+    fn build(&self, app: &mut App)
+    {
         app.init_asset::<LdtkMap>()
             .register_asset_loader(LdtkLoader)
             .add_systems(Update, process_loaded_tile_maps);
@@ -32,34 +30,42 @@ impl Plugin for LdtkPlugin {
 }
 
 #[derive(TypePath, Asset)]
-pub struct LdtkMap {
-    pub project: ldtk_rust::Project,
+pub struct LdtkMap
+{
+    pub project:  ldtk_rust::Project,
     pub tilesets: HashMap<i64, Handle<Image>>,
 }
 
 #[derive(Default, Component)]
-pub struct LdtkMapConfig {
+pub struct LdtkMapConfig
+{
     pub selected_level: usize,
 }
 
 #[derive(Default, Bundle)]
-pub struct LdtkMapBundle {
-    pub ldtk_map: Handle<LdtkMap>,
-    pub ldtk_map_config: LdtkMapConfig,
-    pub transform: Transform,
+pub struct LdtkMapBundle
+{
+    pub ldtk_map:         Handle<LdtkMap>,
+    pub ldtk_map_config:  LdtkMapConfig,
+    pub transform:        Transform,
     pub global_transform: GlobalTransform,
 }
 
 pub struct LdtkLoader;
 
+#[derive(Component)]
+pub struct Object;
+
 #[derive(Debug, Error)]
-pub enum LdtkAssetLoaderError {
+pub enum LdtkAssetLoaderError
+{
     /// An [IO](std::io) Error
     #[error("Could not load LDTk file: {0}")]
     Io(#[from] std::io::Error),
 }
 
-impl AssetLoader for LdtkLoader {
+impl AssetLoader for LdtkLoader
+{
     type Asset = LdtkMap;
     type Settings = ();
     type Error = LdtkAssetLoaderError;
@@ -69,7 +75,8 @@ impl AssetLoader for LdtkLoader {
         reader: &'a mut Reader,
         _settings: &'a Self::Settings,
         load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<LdtkMap, Self::Error>> {
+    ) -> BoxedFuture<'a, Result<LdtkMap, Self::Error>>
+    {
         Box::pin(async move {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
@@ -105,7 +112,8 @@ impl AssetLoader for LdtkLoader {
         })
     }
 
-    fn extensions(&self) -> &[&str] {
+    fn extensions(&self) -> &[&str]
+    {
         static EXTENSIONS: &[&str] = &["ldtk"];
         EXTENSIONS
     }
@@ -117,7 +125,9 @@ pub fn process_loaded_tile_maps(
     maps: Res<Assets<LdtkMap>>,
     mut query: Query<(Entity, &Handle<LdtkMap>, &LdtkMapConfig)>,
     new_maps: Query<&Handle<LdtkMap>, Added<Handle<LdtkMap>>>,
-) {
+    mut map_objects: Query<Entity, With<Object>>,
+)
+{
     let mut changed_maps = Vec::<AssetId<LdtkMap>>::default();
     for event in map_events.read() {
         match event {
@@ -145,6 +155,12 @@ pub fn process_loaded_tile_maps(
     }
 
     for changed_map in changed_maps.iter() {
+
+        for entity in map_objects.iter() {
+            commands.entity(entity).despawn();
+        }
+
+
         for (entity, map_handle, map_config) in query.iter_mut() {
             // only deal with currently changed map
             if map_handle.id() != *changed_map {
@@ -186,6 +202,103 @@ pub fn process_loaded_tile_maps(
                     .rev()
                     .enumerate()
                 {
+                    let width_px = level.px_wid as f32;
+                    let height_px = level.px_hei as f32;
+
+                    for instance in layer.entity_instances.iter() {
+                        let at = instance.px[0] as f32 - width_px * 0.5;
+                        let at_y = height_px - instance.px[1] as f32 - height_px * 0.5;
+                        let tile = instance
+                            .field_instances
+                            .iter()
+                            .find_map(|field| {
+                                if field.identifier == "Tile" {
+                                    if let Some(tile) = &field.tile
+                                    {
+                                        return Some(tile.clone())
+                                    }
+                                }
+                                None
+                            })
+                            .unwrap();
+                        let is_occluder = instance
+                            .field_instances
+                            .iter()
+                            .find_map(|field| {
+                                if field.identifier == "OccludeLight" {
+                                    if let Some(val) = &field.value
+                                    {
+                                        return Some(val.as_bool().unwrap())
+                                    }
+                                }
+                                None
+                            })
+                            .unwrap_or(false);
+                        let is_light = instance
+                            .field_instances
+                            .iter()
+                            .find_map(|field| {
+                                if field.identifier == "EmitLight" {
+                                    if let Some(val) = &field.value
+                                    {
+                                        return Some(val.as_bool().unwrap())
+                                    }
+                                }
+                                None
+                            })
+                            .unwrap_or(false);
+
+                        let color = instance
+                            .field_instances
+                            .iter()
+                            .find_map(|field| {
+                                if field.identifier == "Color" {
+                                    return Some(Color::hex(field.value.clone().unwrap().as_str().unwrap()).unwrap());
+                                }
+                                None
+                            }).unwrap_or(Color::BLACK);
+
+
+                        let uid = tile.tileset_uid;
+                        let (texture, _) = tilesets.get(&uid).unwrap().clone();
+                        let mut transform = Transform::from_xyz(at, at_y, 100.0);
+
+                        let entity = commands.spawn((
+                            Object,
+                            SpriteBundle {
+                                sprite: Sprite {
+                                    rect: Some(Rect {
+                                        min: Vec2::new(tile.x as f32, tile.y as f32),
+                                        max: Vec2::new((tile.x + tile.w) as f32, (tile.y + tile.h) as f32),
+                                    }),
+                                    ..default()
+                                },
+                                transform,
+                                texture: texture.clone(),
+                                ..default()
+                            },
+                            RenderLayers::from_layers(CAMERA_LAYER_OBJECTS),
+                        )).id();
+
+                        if is_occluder {
+                            commands.entity(entity).insert(LightOccluder2D {
+                                h_size: Vec2::splat(8.0),
+                            });
+                        }
+
+                        if is_light {
+                            commands.entity(entity).insert(OmniLightSource2D{
+                                intensity: 7.0,
+                                color,
+                                falloff: Vec3::new(25.0, 15.0, 0.5),
+                                jitter_intensity: 0.2,
+                                jitter_translation: 4.0,
+                                ..default()
+                            });
+                        }
+
+                    }
+
                     if let Some(uid) = layer.tileset_def_uid {
                         let (texture, tileset) = tilesets.get(&uid).unwrap().clone();
 
@@ -197,11 +310,28 @@ pub fn process_loaded_tile_maps(
 
                         // Pre-emptively create a map entity for tile creation
                         let map_entity = commands.spawn_empty().id();
+                        let grid_size = tile_size.into();
+                        let map_type = TilemapType::default();
+                        let center = get_tilemap_center_transform(
+                            &size,
+                            &grid_size,
+                            &map_type,
+                            layer_id as f32,
+                        );
 
                         // Create tiles for this layer from LDtk's grid_tiles and auto_layer_tiles
-                        let mut storage = TileStorage::empty(size);
+                        let mut floor_storage = TileStorage::empty(size);
+                        let mut wall_storage = TileStorage::empty(size);
 
-                        for tile in layer.grid_tiles.iter().chain(layer.auto_layer_tiles.iter()) {
+                        for (idx, tile) in layer
+                            .grid_tiles
+                            .iter()
+                            .chain(layer.auto_layer_tiles.iter())
+                            .enumerate()
+                        {
+                            let val = layer.int_grid_csv[idx];
+                            let is_wall = val == 2;
+
                             let mut position = TilePos {
                                 x: (tile.px[0] / default_grid_size) as u32,
                                 y: (tile.px[1] / default_grid_size) as u32,
@@ -221,28 +351,61 @@ pub fn process_loaded_tile_maps(
                                 ))
                                 .id();
 
-                            storage.set(&position, tile_entity);
+                            if is_wall {
+                                let at_x = ((idx as u32 % map_tile_count_x)
+                                    * default_grid_size as u32)
+                                    as f32
+                                    - width_px * 0.5
+                                    + 8.0;
+                                let at_y = (height_px
+                                    - ((idx as u32 / map_tile_count_x) * default_grid_size as u32)
+                                        as f32)
+                                    - height_px * 0.5
+                                    - 8.0;
+
+                                commands
+                                    .entity(tile_entity)
+                                    .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
+                                    .insert(SpatialBundle::from_transform(Transform::from_xyz(
+                                        at_x, at_y, 0.0,
+                                    )))
+                                    .insert(LightOccluder2D {
+                                        h_size: Vec2::splat(8.0),
+                                    });
+
+                                wall_storage.set(&position, tile_entity);
+                            } else {
+                                floor_storage.set(&position, tile_entity);
+                            }
                         }
 
-                        let grid_size = tile_size.into();
-                        let map_type = TilemapType::default();
+                        commands
+                            .entity(map_entity)
+                            .insert(TilemapBundle {
+                                grid_size,
+                                map_type,
+                                size,
+                                storage: floor_storage,
+                                texture: TilemapTexture::Single(texture.clone()),
+                                tile_size,
+                                transform: center,
+                                ..default()
+                            })
+                            .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR));
 
-                        // Create the tilemap
-                        commands.entity(map_entity).insert(TilemapBundle {
-                            grid_size,
-                            map_type,
-                            size,
-                            storage,
-                            texture: TilemapTexture::Single(texture),
-                            tile_size,
-                            transform: get_tilemap_center_transform(
-                                &size,
-                                &grid_size,
-                                &map_type,
-                                layer_id as f32,
-                            ),
-                            ..default()
-                        });
+                        commands
+                            .entity(map_entity)
+                            .insert(TilemapBundle {
+                                grid_size,
+                                map_type,
+                                size,
+                                storage: wall_storage,
+                                texture: TilemapTexture::Single(texture),
+                                tile_size,
+                                transform: center,
+                                ..default()
+                            })
+                            .insert(RenderLayers::from_layers(CAMERA_LAYER_WALLS));
                     }
                 }
             }

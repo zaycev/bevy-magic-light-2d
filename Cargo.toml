@@ -9,13 +9,15 @@ egui = ["dep:bevy-inspector-egui"]
 # bevy_ecs_tilemap = ["dep:bevy_ecs_tilemap"]
 
 [dependencies]
-bevy = { version = "0.13", default-features = false, features = [
+bevy = { version = "0.13", default-features = true, features = [
+    "bevy_gizmos",
     "bevy_render",
     "bevy_core_pipeline",
     "bevy_winit",
     "bevy_asset",
     "bevy_sprite",
     "bevy_pbr",
+    "bevy_ui",
     "file_watcher"
 ] }
 bevy-inspector-egui = { version = "0.23.0", optional = true }

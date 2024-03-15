@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::gi::compositing::PostProcessingMaterial;
 
-pub const GI_SCREEN_PROBE_SIZE: i32 = 8;
+pub const GI_SCREEN_PROBE_SIZE: i32 = 4;
 
 pub const SHADER_GI_CAMERA: Handle<Shader> = Handle::weak_from_u128(1371231089456109822);
 pub const SHADER_GI_TYPES: Handle<Shader> = Handle::weak_from_u128(4462033275253590181);

@@ -4,6 +4,7 @@ use bevy::render::texture::{ImageFilterMode, ImageSamplerDescriptor};
 use bevy::render::view::RenderLayers;
 use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::PrimaryWindow;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_magic_light_2d::prelude::*;
 use rand::prelude::*;
 
@@ -28,7 +29,7 @@ fn main()
         .add_plugins((
             DefaultPlugins
                 .set(AssetPlugin {
-                    watch_for_changes_override: Some(true),
+                    watch_for_changes_override: None,//Some(true),
                     ..default()
                 })
                 .set(WindowPlugin {
@@ -48,6 +49,7 @@ fn main()
                     },
                 }),
             BevyMagicLight2DPlugin,
+            WorldInspectorPlugin::default()
         ))
         .insert_resource(BevyMagicLight2DSettings {
             light_pass_params: LightPassParams {
