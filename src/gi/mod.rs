@@ -1,7 +1,7 @@
 use bevy::asset::load_internal_asset;
 use bevy::prelude::*;
 use bevy::render::extract_resource::ExtractResourcePlugin;
-use bevy::render::render_graph::{self, RenderGraph};
+use bevy::render::render_graph::{self, RenderGraph, RenderLabel};
 use bevy::render::render_resource::*;
 use bevy::render::renderer::RenderContext;
 use bevy::render::{Render, RenderApp, RenderSet};
@@ -40,6 +40,9 @@ pub mod util;
 const WORKGROUP_SIZE: u32 = 8;
 
 pub struct BevyMagicLight2DPlugin;
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, RenderLabel)]
+pub struct LightPass2DRenderLabel;
 
 impl Plugin for BevyMagicLight2DPlugin
 {
@@ -117,10 +120,10 @@ impl Plugin for BevyMagicLight2DPlugin
             );
 
         let mut render_graph = render_app.world.resource_mut::<RenderGraph>();
-        render_graph.add_node("light_pass_2d", LightPass2DNode::default());
+        render_graph.add_node(LightPass2DRenderLabel, LightPass2DNode::default());
         render_graph.add_node_edge(
-            "light_pass_2d",
-            bevy::render::main_graph::node::CAMERA_DRIVER,
+            LightPass2DRenderLabel,
+            bevy::render::graph::CameraDriverLabel,
         )
     }
 
@@ -163,11 +166,11 @@ pub fn handle_window_resize(
             ComputedTargetSizes::from_window(window, &res_plugin_config.target_scaling_params);
 
         assets_mesh.insert(
-            POST_PROCESSING_QUAD.clone(),
-            Mesh::from(shape::Quad::new(Vec2::new(
+            POST_PROCESSING_RECT.clone(),
+            Mesh::from(bevy::math::primitives::Rectangle::new(
                 res_target_sizes.primary_target_size.x,
                 res_target_sizes.primary_target_size.y,
-            ))),
+            )),
         );
 
         assets_material.insert(
@@ -227,9 +230,7 @@ impl render_graph::Node for LightPass2DNode
                 let mut pass =
                     render_context
                         .command_encoder()
-                        .begin_compute_pass(&ComputePassDescriptor {
-                            label: Some("light_pass_2d"),
-                        });
+                        .begin_compute_pass(&ComputePassDescriptor { label: Some("light_pass_2d"), ..default() });
 
                 {
                     let grid_w = sdf_w / WORKGROUP_SIZE;

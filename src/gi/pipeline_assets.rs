@@ -56,6 +56,7 @@ pub fn system_prepare_pipeline_assets(
 
 #[rustfmt::skip]
 #[allow(clippy::too_many_arguments)]
+#[allow(clippy::type_complexity)]
 pub fn system_extract_pipeline_assets(
     res_light_settings:         Extract<Res<BevyMagicLight2DSettings>>,
     res_target_sizes:           Extract<Res<ComputedTargetSizes>>,

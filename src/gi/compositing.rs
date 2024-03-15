@@ -1,7 +1,7 @@
 use bevy::core_pipeline::bloom::BloomSettings;
 use bevy::pbr::{MAX_CASCADES_PER_LIGHT, MAX_DIRECTIONAL_LIGHTS};
 use bevy::prelude::*;
-use bevy::reflect::{TypePath, TypeUuid};
+use bevy::reflect::TypePath;
 use bevy::render::mesh::MeshVertexBufferLayout;
 use bevy::render::render_resource::{
     AsBindGroup,
@@ -19,7 +19,7 @@ use bevy::render::texture::BevyDefault;
 use bevy::render::view::RenderLayers;
 use bevy::sprite::{Material2d, Material2dKey, MaterialMesh2dBundle};
 
-use crate::gi::constants::{POST_PROCESSING_MATERIAL, POST_PROCESSING_QUAD};
+use crate::gi::constants::{POST_PROCESSING_MATERIAL, POST_PROCESSING_RECT};
 use crate::gi::pipeline::GiTargetsWrapper;
 use crate::gi::resource::ComputedTargetSizes;
 
@@ -27,8 +27,7 @@ use crate::gi::resource::ComputedTargetSizes;
 pub struct PostProcessingQuad;
 
 #[rustfmt::skip]
-#[derive(AsBindGroup, TypeUuid, Clone, TypePath, Asset)]
-#[uuid = "bc2f08eb-a0fb-43f1-a908-54871ea597d5"]
+#[derive(AsBindGroup, Clone, TypePath, Asset)]
 pub struct PostProcessingMaterial {
     #[texture(0)]
     #[sampler(1)]
@@ -193,12 +192,12 @@ pub fn setup_post_processing_camera(
     gi_targets_wrapper:           Res<GiTargetsWrapper>,
 ) {
 
-    let quad =  Mesh::from(shape::Quad::new(Vec2::new(
+    let quad =  Mesh::from(bevy::math::primitives::Rectangle::new(
         target_sizes.primary_target_size.x,
         target_sizes.primary_target_size.y,
-    )));
+    ));
 
-    meshes.insert(POST_PROCESSING_QUAD.clone(), quad);
+    meshes.insert(POST_PROCESSING_RECT.clone(), quad);
 
     *camera_targets = CameraTargets::create(&mut images, &target_sizes);
 
@@ -212,7 +211,7 @@ pub fn setup_post_processing_camera(
     commands.spawn((
         PostProcessingQuad,
         MaterialMesh2dBundle {
-            mesh: POST_PROCESSING_QUAD.clone().into(),
+            mesh: POST_PROCESSING_RECT.clone().into(),
             material: POST_PROCESSING_MATERIAL.clone(),
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 1.5),
@@ -238,5 +237,17 @@ pub fn setup_post_processing_camera(
             ..default()
         },
         layer
+    ))
+    .insert((
+        PostProcessingQuad,
+        MaterialMesh2dBundle {
+            mesh: POST_PROCESSING_RECT.clone().into(),
+            material: POST_PROCESSING_MATERIAL.clone(),
+            transform: Transform {
+                translation: Vec3::new(0.0, 0.0, 1.5),
+                ..default()
+            },
+            ..default()
+        },
     ));
 }
