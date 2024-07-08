@@ -3,11 +3,10 @@ use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
 use bevy_magic_light_2d::prelude::*;
 
-fn main()
-{
+fn main() {
     // Basic setup.
     App::new()
-        .insert_resource(ClearColor(Color::rgb_u8(255, 255, 255)))
+        .insert_resource(ClearColor(Color::srgb_u8(255, 255, 255)))
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
@@ -27,8 +26,7 @@ fn main()
         .run();
 }
 
-fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>)
-{
+fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>) {
     let mut occluders = vec![];
     let occluder_entity = commands
         .spawn((
@@ -74,7 +72,7 @@ fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>)
             "left",
             OmniLightSource2D {
                 intensity: 1.0,
-                color: Color::rgb_u8(255, 0, 0),
+                color: Color::srgb_u8(255, 0, 0),
                 falloff: Vec3::new(1.5, 10.0, 0.005),
                 ..default()
             },
@@ -86,7 +84,7 @@ fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>)
             "right",
             OmniLightSource2D {
                 intensity: 1.0,
-                color: Color::rgb_u8(0, 0, 255),
+                color: Color::srgb_u8(0, 0, 255),
                 falloff: Vec3::new(1.5, 10.0, 0.005),
                 ..default()
             },
@@ -98,7 +96,7 @@ fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>)
             "rop",
             OmniLightSource2D {
                 intensity: 1.0,
-                color: Color::rgb_u8(0, 255, 0),
+                color: Color::srgb_u8(0, 255, 0),
                 falloff: Vec3::new(1.5, 10.0, 0.005),
                 ..default()
             },
@@ -130,8 +128,7 @@ fn system_move_camera(
     mut query_camera: Query<&mut Transform, With<SpriteCamera>>,
 
     keyboard: Res<ButtonInput<KeyCode>>,
-)
-{
+) {
     if let Ok(mut camera_transform) = query_camera.get_single_mut() {
         let speed = 10.0;
 

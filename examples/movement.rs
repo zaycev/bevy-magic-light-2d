@@ -8,11 +8,10 @@ use bevy_magic_light_2d::prelude::*;
 #[derive(Debug, Component)]
 struct Mover;
 
-fn main()
-{
+fn main() {
     // Basic setup.
     App::new()
-        .insert_resource(ClearColor(Color::rgb_u8(255, 255, 255)))
+        .insert_resource(ClearColor(Color::srgb_u8(255, 255, 255)))
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
@@ -44,8 +43,7 @@ fn main()
         .run();
 }
 
-fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>)
-{
+fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>) {
     let mut occluders = vec![];
     let occluder_entity = commands
         .spawn((
@@ -92,7 +90,7 @@ fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>)
             "left",
             OmniLightSource2D {
                 intensity: 10.0,
-                color: Color::rgb_u8(255, 255, 0),
+                color: Color::srgb_u8(255, 255, 0),
                 falloff: Vec3::new(1.5, 10.0, 0.01),
                 ..default()
             },
@@ -104,7 +102,7 @@ fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>)
             "right",
             OmniLightSource2D {
                 intensity: 10.0,
-                color: Color::rgb_u8(0, 255, 255),
+                color: Color::srgb_u8(0, 255, 255),
                 falloff: Vec3::new(1.5, 10.0, 0.01),
                 ..default()
             },
@@ -133,8 +131,7 @@ fn system_move_camera(
     mut camera_target: Local<Vec3>,
     mut query_camera: Query<&mut Transform>,
     keyboard: Res<ButtonInput<KeyCode>>,
-)
-{
+) {
     if let Ok(mut camera_transform) = query_camera.get_single_mut() {
         let speed = 10.0;
 
@@ -159,8 +156,7 @@ fn system_move_camera(
     }
 }
 
-fn move_collider(mut query_mover: Query<&mut Transform, With<Mover>>, time: Res<Time>)
-{
+fn move_collider(mut query_mover: Query<&mut Transform, With<Mover>>, time: Res<Time>) {
     let radius = 100.;
     let cycle_secs = 5.;
     let elapsed = time.elapsed().as_secs_f64();
