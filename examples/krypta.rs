@@ -26,7 +26,7 @@ pub struct Movable;
 fn main() {
     // Basic setup.
     App::new()
-        .insert_resource(ClearColor(Color::srgb_u8(0, 0, 0, 0)))
+        .insert_resource(ClearColor(Color::srgba_u8(0, 0, 0, 0)))
         .add_plugins((
             DefaultPlugins
                 .set(AssetPlugin {
