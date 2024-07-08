@@ -1,3 +1,4 @@
+use std::ops::DerefMut;
 use bevy::asset::load_internal_asset;
 use bevy::prelude::*;
 use bevy::render::extract_resource::ExtractResourcePlugin;
@@ -119,7 +120,7 @@ impl Plugin for BevyMagicLight2DPlugin
                 ),
             );
 
-        let mut render_graph = render_app.world.resource_mut::<RenderGraph>();
+        let mut render_graph = render_app.world_mut().resource_mut::<RenderGraph>();
         render_graph.add_node(LightPass2DRenderLabel, LightPass2DNode::default());
         render_graph.add_node_edge(
             LightPass2DRenderLabel,
@@ -166,7 +167,7 @@ pub fn handle_window_resize(
             ComputedTargetSizes::from_window(window, &res_plugin_config.target_scaling_params);
 
         assets_mesh.insert(
-            POST_PROCESSING_RECT.clone(),
+            POST_PROCESSING_RECT.id(),
             Mesh::from(bevy::math::primitives::Rectangle::new(
                 res_target_sizes.primary_target_size.x,
                 res_target_sizes.primary_target_size.y,
@@ -174,7 +175,7 @@ pub fn handle_window_resize(
         );
 
         assets_material.insert(
-            POST_PROCESSING_MATERIAL.clone(),
+            POST_PROCESSING_MATERIAL.id(),
             PostProcessingMaterial::create(&res_camera_targets, &res_gi_targets_wrapper),
         );
 
