@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use bevy::render::render_resource::{StorageBuffer, UniformBuffer};
 use bevy::render::renderer::{RenderDevice, RenderQueue};
 use bevy::render::Extract;
+use bevy::asset::{AssetPath, io::AssetSourceId};
+use std::path::Path;
 use rand::{thread_rng, Rng};
 
 use crate::gi::constants::GI_SCREEN_PROBE_SIZE;
@@ -32,13 +34,19 @@ pub(crate) fn system_load_embedded_shader_dependencies(
     mut embedded_shader_deps: ResMut<EmbeddedShaderDependencies>,
     asset_server: Res<AssetServer>,
 ) {
-    embedded_shader_deps.loaded_shaders.push(asset_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_attenuation.wgsl"));
-    embedded_shader_deps.loaded_shaders.push(asset_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_camera.wgsl"));
-    embedded_shader_deps.loaded_shaders.push(asset_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_halton.wgsl"));
-    embedded_shader_deps.loaded_shaders.push(asset_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_math.wgsl"));
-    embedded_shader_deps.loaded_shaders.push(asset_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_post_processing.wgsl"));
-    embedded_shader_deps.loaded_shaders.push(asset_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_raymarch.wgsl"));
-    embedded_shader_deps.loaded_shaders.push(asset_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_types.wgsl"));
+    embedded_shader_deps.loaded_shaders.push(load_embedded_shader(&asset_server, "gi_attenuation.wgsl"));
+    embedded_shader_deps.loaded_shaders.push(load_embedded_shader(&asset_server, "gi_camera.wgsl"));
+    embedded_shader_deps.loaded_shaders.push(load_embedded_shader(&asset_server, "gi_halton.wgsl"));
+    embedded_shader_deps.loaded_shaders.push(load_embedded_shader(&asset_server, "gi_math.wgsl"));
+    embedded_shader_deps.loaded_shaders.push(load_embedded_shader(&asset_server, "gi_post_processing.wgsl"));
+    embedded_shader_deps.loaded_shaders.push(load_embedded_shader(&asset_server, "gi_raymarch.wgsl"));
+    embedded_shader_deps.loaded_shaders.push(load_embedded_shader(&asset_server, "gi_types.wgsl"));
+}
+
+pub(crate) fn load_embedded_shader(asset_server: &AssetServer, shader_file: &str) -> Handle<Shader> {
+    let source = AssetSourceId::from("embedded");
+    let path = Path::new("bevy_magic_light_2d").join("gi/shaders/");
+    asset_server.load(AssetPath::from_path(&path.join(shader_file)).with_source(&source))
 }
 
 #[rustfmt::skip]
