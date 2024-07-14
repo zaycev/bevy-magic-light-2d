@@ -23,6 +23,26 @@ use crate::FloorCamera;
 
 #[rustfmt::skip]
 #[derive(Default, Resource)]
+pub(crate) struct EmbeddedShaderDependencies {
+    loaded_shaders: Vec<Handle<Shader>>,
+}
+
+#[rustfmt::skip]
+pub(crate) fn system_load_embedded_shader_dependencies(
+    mut embedded_shader_deps: ResMut<EmbeddedShaderDependencies>,
+    asset_server: Res<AssetServer>,
+) {
+    embedded_shader_deps.loaded_shaders.push(asset_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_attenuation.wgsl"));
+    embedded_shader_deps.loaded_shaders.push(asset_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_camera.wgsl"));
+    embedded_shader_deps.loaded_shaders.push(asset_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_halton.wgsl"));
+    embedded_shader_deps.loaded_shaders.push(asset_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_math.wgsl"));
+    embedded_shader_deps.loaded_shaders.push(asset_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_post_processing.wgsl"));
+    embedded_shader_deps.loaded_shaders.push(asset_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_raymarch.wgsl"));
+    embedded_shader_deps.loaded_shaders.push(asset_server.load("embedded://bevy_magic_light_2d/gi/shaders/gi_types.wgsl"));
+}
+
+#[rustfmt::skip]
+#[derive(Default, Resource)]
 pub struct LightPassPipelineAssets {
     pub camera_params:     UniformBuffer<GpuCameraParams>,
     pub light_pass_params: UniformBuffer<GpuLightPassParams>,

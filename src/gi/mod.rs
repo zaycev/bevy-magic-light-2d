@@ -19,9 +19,8 @@ use crate::gi::pipeline::{
     LightPassPipelineBindGroups,
 };
 use crate::gi::pipeline_assets::{
-    system_extract_pipeline_assets,
-    system_prepare_pipeline_assets,
-    LightPassPipelineAssets,
+    system_extract_pipeline_assets, system_prepare_pipeline_assets, system_load_embedded_shader_dependencies,
+    LightPassPipelineAssets, EmbeddedShaderDependencies
 };
 use crate::gi::resource::ComputedTargetSizes;
 use crate::prelude::BevyMagicLight2DSettings;
@@ -56,9 +55,11 @@ impl Plugin for BevyMagicLight2DPlugin
         .init_resource::<GiTargetsWrapper>()
         .init_resource::<BevyMagicLight2DSettings>()
         .init_resource::<ComputedTargetSizes>()
+        .init_resource::<EmbeddedShaderDependencies>()
         .add_systems(
             PreStartup,
             (
+                system_load_embedded_shader_dependencies,
                 detect_target_sizes,
                 system_setup_gi_pipeline.after(detect_target_sizes),
                 setup_post_processing_camera.after(system_setup_gi_pipeline),
