@@ -15,6 +15,7 @@ bevy = { version = "0.13", default-features = false, features = [
     "bevy_asset",
     "bevy_sprite",
     "bevy_pbr",
+    "embedded_watcher",
 ] }
 bevy-inspector-egui = { version = "0.23.0", optional = true }
 log = "0.4.20"
