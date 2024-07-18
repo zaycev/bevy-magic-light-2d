@@ -1,4 +1,4 @@
-use bevy::asset::load_internal_asset;
+use bevy::asset::embedded_asset;
 use bevy::prelude::*;
 use bevy::render::extract_resource::ExtractResourcePlugin;
 use bevy::render::render_graph::{self, RenderGraph, RenderLabel};
@@ -19,9 +19,8 @@ use crate::gi::pipeline::{
     LightPassPipelineBindGroups,
 };
 use crate::gi::pipeline_assets::{
-    system_extract_pipeline_assets,
-    system_prepare_pipeline_assets,
-    LightPassPipelineAssets,
+    system_extract_pipeline_assets, system_prepare_pipeline_assets, system_load_embedded_shader_dependencies,
+    LightPassPipelineAssets, EmbeddedShaderDependencies
 };
 use crate::gi::resource::ComputedTargetSizes;
 use crate::prelude::BevyMagicLight2DSettings;
@@ -56,9 +55,11 @@ impl Plugin for BevyMagicLight2DPlugin
         .init_resource::<GiTargetsWrapper>()
         .init_resource::<BevyMagicLight2DSettings>()
         .init_resource::<ComputedTargetSizes>()
+        .init_resource::<EmbeddedShaderDependencies>()
         .add_systems(
             PreStartup,
             (
+                system_load_embedded_shader_dependencies,
                 detect_target_sizes,
                 system_setup_gi_pipeline.after(detect_target_sizes),
                 setup_post_processing_camera.after(system_setup_gi_pipeline),
@@ -66,48 +67,19 @@ impl Plugin for BevyMagicLight2DPlugin
                 .chain(),
         )
         .add_systems(PreUpdate, handle_window_resize);
+        embedded_asset!(app, "shaders/gi_attenuation.wgsl");
+        embedded_asset!(app, "shaders/gi_camera.wgsl");
+        embedded_asset!(app, "shaders/gi_halton.wgsl");
+        embedded_asset!(app, "shaders/gi_math.wgsl");
+        embedded_asset!(app, "shaders/gi_post_processing.wgsl");
+        embedded_asset!(app, "shaders/gi_raymarch.wgsl");
+        embedded_asset!(app, "shaders/gi_sdf.wgsl");
+        embedded_asset!(app, "shaders/gi_ss_blend.wgsl");
+        embedded_asset!(app, "shaders/gi_ss_bounce.wgsl");
+        embedded_asset!(app, "shaders/gi_ss_filter.wgsl");
+        embedded_asset!(app, "shaders/gi_ss_probe.wgsl");
+        embedded_asset!(app, "shaders/gi_types.wgsl");
 
-        load_internal_asset!(
-            app,
-            SHADER_GI_CAMERA,
-            "shaders/gi_camera.wgsl",
-            Shader::from_wgsl
-        );
-
-        load_internal_asset!(
-            app,
-            SHADER_GI_TYPES,
-            "shaders/gi_types.wgsl",
-            Shader::from_wgsl
-        );
-
-        load_internal_asset!(
-            app,
-            SHADER_GI_ATTENUATION,
-            "shaders/gi_attenuation.wgsl",
-            Shader::from_wgsl
-        );
-
-        load_internal_asset!(
-            app,
-            SHADER_GI_HALTON,
-            "shaders/gi_halton.wgsl",
-            Shader::from_wgsl
-        );
-
-        load_internal_asset!(
-            app,
-            SHADER_GI_MATH,
-            "shaders/gi_math.wgsl",
-            Shader::from_wgsl
-        );
-
-        load_internal_asset!(
-            app,
-            SHADER_GI_RAYMARCH,
-            "shaders/gi_raymarch.wgsl",
-            Shader::from_wgsl
-        );
         let render_app = app.sub_app_mut(RenderApp);
         render_app
             .add_systems(ExtractSchedule, system_extract_pipeline_assets)
