@@ -5,7 +5,7 @@ use bevy::render::texture::{ImageFilterMode, ImageSamplerDescriptor};
 use bevy::render::view::RenderLayers;
 use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::PrimaryWindow;
-use bevy_inspector_egui::quick::{ResourceInspectorPlugin, WorldInspectorPlugin};
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_magic_light_2d::prelude::*;
 use rand::prelude::*;
 use bevy_magic_light_2d::gi::render_layer::ALL_LAYERS;
@@ -52,7 +52,6 @@ fn main()
                 }),
             BevyMagicLight2DPlugin,
             ResourceInspectorPlugin::<BevyMagicLight2DSettings>::new(),
-            WorldInspectorPlugin::new(),
         ))
         .insert_resource(BevyMagicLight2DSettings {
             light_pass_params: LightPassParams {
