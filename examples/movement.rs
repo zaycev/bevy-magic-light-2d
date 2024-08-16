@@ -12,7 +12,7 @@ fn main()
 {
     // Basic setup.
     App::new()
-        .insert_resource(ClearColor(Color::rgb_u8(255, 255, 255)))
+        .insert_resource(ClearColor(Color::srgba_u8(255, 255, 255, 0)))
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
@@ -92,7 +92,7 @@ fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>)
             "left",
             OmniLightSource2D {
                 intensity: 10.0,
-                color: Color::rgb_u8(255, 255, 0),
+                color: Color::srgb_u8(255, 255, 0),
                 falloff: Vec3::new(1.5, 10.0, 0.01),
                 ..default()
             },
@@ -104,7 +104,7 @@ fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>)
             "right",
             OmniLightSource2D {
                 intensity: 10.0,
-                color: Color::rgb_u8(0, 255, 255),
+                color: Color::srgb_u8(0, 255, 255),
                 falloff: Vec3::new(1.5, 10.0, 0.01),
                 ..default()
             },

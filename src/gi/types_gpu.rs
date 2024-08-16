@@ -1,4 +1,4 @@
-use bevy::prelude::{Mat4, Vec2, Vec3, Vec4};
+use bevy::prelude::*;
 use bevy::render::render_resource::ShaderType;
 
 use crate::gi::constants::GI_SCREEN_PROBE_SIZE;
@@ -17,11 +17,11 @@ impl GpuOmniLightSource
 {
     pub fn new(light: OmniLightSource2D, center: Vec2) -> Self
     {
-        let color = light.color.as_rgba_f32();
+        let color: Srgba = light.color.into();
         Self {
             center,
             intensity: light.intensity,
-            color: Vec3::new(color[0], color[1], color[2]),
+            color: color.to_vec3(),
             falloff: light.falloff,
         }
     }
