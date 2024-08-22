@@ -8,11 +8,7 @@ pub const CAMERA_LAYER_FLOOR: &[Layer] = &[LAYER_FLOOR_ID];
 pub const CAMERA_LAYER_WALLS: &[Layer] = &[LAYER_WALLS_ID];
 pub const CAMERA_LAYER_OBJECTS: &[Layer] = &[LAYER_OBJECTS_ID];
 
-pub const ALL_LAYERS: &[Layer] = &[
-    LAYER_FLOOR_ID,
-    LAYER_WALLS_ID,
-    LAYER_OBJECTS_ID,
-];
+pub const ALL_LAYERS: &[Layer] = &[LAYER_FLOOR_ID, LAYER_WALLS_ID, LAYER_OBJECTS_ID];
 
 pub const LAYER_POST_PROCESSING_ID: Layer = 42;
 pub const CAMERA_LAYER_POST_PROCESSING: &[Layer] = &[LAYER_POST_PROCESSING_ID];
