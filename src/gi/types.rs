@@ -36,18 +36,13 @@ impl From<Vec2> for LightOccluder2D
     }
 }
 
-///
-///
-///
 #[rustfmt::skip]
 #[derive(Reflect, Component, Default)]
 #[reflect(Component)]
 pub struct SkylightMask2D {
     pub h_size: Vec2,
 }
-///
-///
-///
+
 #[rustfmt::skip]
 #[derive(Reflect, Component, Clone, Copy, Default)]
 #[reflect(Component)]

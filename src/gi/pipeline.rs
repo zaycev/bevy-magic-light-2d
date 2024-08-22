@@ -772,11 +772,11 @@ impl FromWorld for LightPassPipeline
         let (shader_sdf, gi_ss_probe, gi_ss_bounce, gi_ss_blend, gi_ss_filter) = {
             let assets_server = world.resource::<AssetServer>();
             (
-                load_embedded_shader(&assets_server, "gi_sdf.wgsl"),
-                load_embedded_shader(&assets_server, "gi_ss_probe.wgsl"),
-                load_embedded_shader(&assets_server, "gi_ss_bounce.wgsl"),
-                load_embedded_shader(&assets_server, "gi_ss_blend.wgsl"),
-                load_embedded_shader(&assets_server, "gi_ss_filter.wgsl"),
+                load_embedded_shader(assets_server, "gi_sdf.wgsl"),
+                load_embedded_shader(assets_server, "gi_ss_probe.wgsl"),
+                load_embedded_shader(assets_server, "gi_ss_bounce.wgsl"),
+                load_embedded_shader(assets_server, "gi_ss_blend.wgsl"),
+                load_embedded_shader(assets_server, "gi_ss_filter.wgsl"),
             )
         };
 
