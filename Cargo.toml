@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "bevy_magic_light_2d"
-version = "0.7.0"
+version = "0.8.0"
 
 [features]
 default = ["egui"]
