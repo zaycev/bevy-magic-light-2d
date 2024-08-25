@@ -16,7 +16,7 @@ lint:
     - oxipng@9.1.2
     - taplo@0.9.3
     - markdownlint@0.41.0
-    - clippy@1.73.0
+    - clippy@SYSTEM
     - git-diff-check
     - rustfmt@1.73.0
     - prettier@3.3.3
@@ -37,7 +37,3 @@ actions:
     - trunk-fmt-pre-commit
     - trunk-cache-prune
     - trunk-upgrade-available
-
-merge:
-  required_statuses:
-    - Trunk Check

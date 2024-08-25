@@ -1,10 +1,12 @@
-use bevy::asset::{io::AssetSourceId, AssetPath};
+use std::path::Path;
+
+use bevy::asset::io::AssetSourceId;
+use bevy::asset::AssetPath;
 use bevy::prelude::*;
 use bevy::render::render_resource::{StorageBuffer, UniformBuffer};
 use bevy::render::renderer::{RenderDevice, RenderQueue};
 use bevy::render::Extract;
 use rand::{thread_rng, Rng};
-use std::path::Path;
 
 use crate::gi::constants::GI_SCREEN_PROBE_SIZE;
 use crate::gi::resource::ComputedTargetSizes;
