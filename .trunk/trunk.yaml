@@ -37,3 +37,7 @@ actions:
     - trunk-fmt-pre-commit
     - trunk-cache-prune
     - trunk-upgrade-available
+
+merge:
+  required_statuses:
+    - PR / Trunk Check (pull_request)
