@@ -2,7 +2,7 @@ use bevy::core_pipeline::bloom::BloomSettings;
 use bevy::pbr::{MAX_CASCADES_PER_LIGHT, MAX_DIRECTIONAL_LIGHTS};
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
-use bevy::render::mesh::MeshVertexBufferLayout;
+use bevy::render::mesh::MeshVertexBufferLayoutRef;
 use bevy::render::render_resource::{
     AsBindGroup,
     Extent3d,
@@ -21,6 +21,7 @@ use bevy::sprite::{Material2d, Material2dKey, MaterialMesh2dBundle};
 
 use crate::gi::constants::{POST_PROCESSING_MATERIAL, POST_PROCESSING_RECT};
 use crate::gi::pipeline::GiTargetsWrapper;
+use crate::gi::render_layer;
 use crate::gi::resource::ComputedTargetSizes;
 
 #[derive(Component)]
@@ -138,9 +139,9 @@ impl CameraTargets
         let walls_image_handle: Handle<Image> = Handle::weak_from_u128(7264512947825624361);
         let objects_image_handle: Handle<Image> = Handle::weak_from_u128(2987462343287146234);
 
-        images.insert(floor_image_handle.clone(), floor_image);
-        images.insert(walls_image_handle.clone(), walls_image);
-        images.insert(objects_image_handle.clone(), objects_image);
+        images.insert(floor_image_handle.id(), floor_image);
+        images.insert(walls_image_handle.id(), walls_image);
+        images.insert(objects_image_handle.id(), objects_image);
 
         Self {
             floor_target:   floor_image_handle,
@@ -150,14 +151,16 @@ impl CameraTargets
     }
 }
 
-impl Material2d for PostProcessingMaterial {
-    fn fragment_shader() -> ShaderRef {
+impl Material2d for PostProcessingMaterial
+{
+    fn fragment_shader() -> ShaderRef
+    {
         "embedded://bevy_magic_light_2d/gi/shaders/gi_post_processing.wgsl".into()
     }
 
     fn specialize(
         descriptor: &mut RenderPipelineDescriptor,
-        _layout: &MeshVertexBufferLayout,
+        _layout: &MeshVertexBufferLayoutRef,
         _key: Material2dKey<Self>,
     ) -> Result<(), SpecializedMeshPipelineError>
     {
@@ -195,16 +198,16 @@ pub fn setup_post_processing_camera(
         target_sizes.primary_target_size.y,
     ));
 
-    meshes.insert(POST_PROCESSING_RECT.clone(), quad);
+    meshes.insert(POST_PROCESSING_RECT.id(), quad);
 
     *camera_targets = CameraTargets::create(&mut images, &target_sizes);
 
     let material = PostProcessingMaterial::create(&camera_targets, &gi_targets_wrapper);
-    materials.insert(POST_PROCESSING_MATERIAL.clone(), material);
+    materials.insert(POST_PROCESSING_MATERIAL.id(), material);
 
     // This specifies the layer used for the post processing camera, which
     // will be attached to the post processing camera and 2d quad.
-    let layer = RenderLayers::layer((RenderLayers::TOTAL_LAYERS - 1) as u8);
+    let layer = RenderLayers::from_layers(render_layer::CAMERA_LAYER_POST_PROCESSING);
 
     commands.spawn((
         PostProcessingQuad,
@@ -217,7 +220,7 @@ pub fn setup_post_processing_camera(
             },
             ..default()
         },
-        layer,
+        layer.clone(),
     ));
 
     commands.spawn((

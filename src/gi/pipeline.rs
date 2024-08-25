@@ -4,13 +4,14 @@ use bevy::render::render_asset::{RenderAssetUsages, RenderAssets};
 use bevy::render::render_resource::*;
 use bevy::render::renderer::RenderDevice;
 use bevy::render::texture::{
+    GpuImage,
     ImageAddressMode,
     ImageFilterMode,
     ImageSampler,
     ImageSamplerDescriptor,
 };
 
-use crate::gi::pipeline_assets::{LightPassPipelineAssets, load_embedded_shader};
+use crate::gi::pipeline_assets::{load_embedded_shader, LightPassPipelineAssets};
 use crate::gi::resource::ComputedTargetSizes;
 use crate::gi::types_gpu::{
     GpuCameraParams,
@@ -94,12 +95,12 @@ impl GiTargets
         let ss_filter_target: Handle<Image> = Handle::weak_from_u128(8761232615172413412);
         let ss_pose_target: Handle<Image> = Handle::weak_from_u128(4728165084756128470);
 
-        images.insert(sdf_target.clone(), sdf_tex);
-        images.insert(ss_probe_target.clone(), ss_probe_tex);
-        images.insert(ss_bounce_target.clone(), ss_bounce_tex);
-        images.insert(ss_blend_target.clone(), ss_blend_tex);
-        images.insert(ss_filter_target.clone(), ss_filter_tex);
-        images.insert(ss_pose_target.clone(), ss_pose_tex);
+        images.insert(sdf_target.id(), sdf_tex);
+        images.insert(ss_probe_target.id(), ss_probe_tex);
+        images.insert(ss_bounce_target.id(), ss_bounce_tex);
+        images.insert(ss_blend_target.id(), ss_blend_tex);
+        images.insert(ss_filter_target.id(), ss_filter_tex);
+        images.insert(ss_pose_target.id(), ss_pose_tex);
 
         Self {
             sdf_target,
@@ -184,7 +185,7 @@ pub struct LightPassPipeline
 pub fn system_queue_bind_groups(
     mut commands: Commands,
     pipeline: Res<LightPassPipeline>,
-    gpu_images: Res<RenderAssets<Image>>,
+    gpu_images: Res<RenderAssets<GpuImage>>,
     targets_wrapper: Res<GiTargetsWrapper>,
     gi_compute_assets: Res<LightPassPipelineAssets>,
     render_device: Res<RenderDevice>,
@@ -777,11 +778,11 @@ impl FromWorld for LightPassPipeline
         let (shader_sdf, gi_ss_probe, gi_ss_bounce, gi_ss_blend, gi_ss_filter) = {
             let assets_server = world.resource::<AssetServer>();
             (
-                load_embedded_shader(&assets_server, "gi_sdf.wgsl"),
-                load_embedded_shader(&assets_server, "gi_ss_probe.wgsl"),
-                load_embedded_shader(&assets_server, "gi_ss_bounce.wgsl"),
-                load_embedded_shader(&assets_server, "gi_ss_blend.wgsl"),
-                load_embedded_shader(&assets_server, "gi_ss_filter.wgsl"),
+                load_embedded_shader(assets_server, "gi_sdf.wgsl"),
+                load_embedded_shader(assets_server, "gi_ss_probe.wgsl"),
+                load_embedded_shader(assets_server, "gi_ss_bounce.wgsl"),
+                load_embedded_shader(assets_server, "gi_ss_blend.wgsl"),
+                load_embedded_shader(assets_server, "gi_ss_filter.wgsl"),
             )
         };
 

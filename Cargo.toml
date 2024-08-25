@@ -1,28 +1,29 @@
 [package]
 edition = "2021"
 name = "bevy_magic_light_2d"
-version = "0.7.0"
+version = "0.8.0"
 
 [features]
 default = ["egui"]
 egui = ["dep:bevy-inspector-egui"]
 
 [dependencies]
-bevy = { version = "0.13", default-features = false, features = [
-    "bevy_render",
-    "bevy_core_pipeline",
-    "bevy_winit",
-    "bevy_asset",
-    "bevy_sprite",
-    "bevy_pbr",
-    "embedded_watcher",
+bevy = { version = "0.14.1", default-features = false, features = [
+  "bevy_render",
+  "bevy_core_pipeline",
+  "bevy_winit",
+  "bevy_asset",
+  "bevy_sprite",
+  "bevy_pbr",
+  "embedded_watcher",
+  "multi_threaded",
 ] }
-bevy-inspector-egui = { version = "0.23.0", optional = true }
+bevy-inspector-egui = { version = "0.25.2", optional = true }
 log = "0.4.20"
 rand = "0.8.5"
 
 [dev-dependencies]
-bevy = "0.13"
+bevy = "0.14.1"
 
 [profile.release]
 codegen-units = 1
