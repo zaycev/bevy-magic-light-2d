@@ -2,6 +2,13 @@
 edition = "2021"
 name = "bevy_magic_light_2d"
 version = "0.8.0"
+description = "Experimental dynamic 2D global illumination system for Bevy, based on SDF ray-marching and screen space irradiance cache probes"
+homepage = "https://github.com/zaycev/bevy-magic-light-2d"
+repository = "https://github.com/zaycev/bevy-magic-light-2d"
+authors = ["Vladimir Zaytsev"]
+license = "Apache-2.0"
+license-file = "LICENSE"
+readme = "README.md"
 
 [features]
 default = ["egui"]
