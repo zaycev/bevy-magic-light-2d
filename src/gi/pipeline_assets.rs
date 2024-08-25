@@ -12,8 +12,14 @@ use crate::gi::constants::GI_SCREEN_PROBE_SIZE;
 use crate::gi::resource::ComputedTargetSizes;
 use crate::gi::types::{LightOccluder2D, OmniLightSource2D, SkylightLight2D, SkylightMask2D};
 use crate::gi::types_gpu::{
-    GpuCameraParams, GpuLightOccluder2D, GpuLightOccluderBuffer, GpuLightPassParams,
-    GpuLightSourceBuffer, GpuOmniLightSource, GpuProbeDataBuffer, GpuSkylightMaskBuffer,
+    GpuCameraParams,
+    GpuLightOccluder2D,
+    GpuLightOccluderBuffer,
+    GpuLightPassParams,
+    GpuLightSourceBuffer,
+    GpuOmniLightSource,
+    GpuProbeDataBuffer,
+    GpuSkylightMaskBuffer,
     GpuSkylightMaskData,
 };
 use crate::prelude::BevyMagicLight2DSettings;
@@ -39,10 +45,9 @@ pub(crate) fn system_load_embedded_shader_dependencies(
     embedded_shader_deps.loaded_shaders.push(load_embedded_shader(&asset_server, "gi_types.wgsl"));
 }
 
-pub(crate) fn load_embedded_shader(
-    asset_server: &AssetServer,
-    shader_file: &str,
-) -> Handle<Shader> {
+pub(crate) fn load_embedded_shader(asset_server: &AssetServer, shader_file: &str)
+    -> Handle<Shader>
+{
     let source = AssetSourceId::from("embedded");
     let path = Path::new("bevy_magic_light_2d").join("gi/shaders/");
     asset_server.load(AssetPath::from_path(&path.join(shader_file)).with_source(&source))
@@ -59,8 +64,10 @@ pub struct LightPassPipelineAssets {
     pub skylight_masks:    StorageBuffer<GpuSkylightMaskBuffer>,
 }
 
-impl LightPassPipelineAssets {
-    pub fn write_buffer(&mut self, device: &RenderDevice, queue: &RenderQueue) {
+impl LightPassPipelineAssets
+{
+    pub fn write_buffer(&mut self, device: &RenderDevice, queue: &RenderQueue)
+    {
         self.light_sources.write_buffer(device, queue);
         self.light_occluders.write_buffer(device, queue);
         self.camera_params.write_buffer(device, queue);

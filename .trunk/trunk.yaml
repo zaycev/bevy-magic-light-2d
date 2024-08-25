@@ -17,8 +17,8 @@ lint:
     - taplo@0.9.3
     - markdownlint@0.41.0
     - clippy@SYSTEM
+    - rustfmt@SYSTEM
     - git-diff-check
-    - rustfmt@1.73.0
     - prettier@3.3.3
     - gitleaks@8.18.4
 
