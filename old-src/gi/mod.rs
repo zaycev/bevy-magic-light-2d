@@ -12,18 +12,12 @@ use self::pipeline::GiTargets;
 use crate::gi::compositing::{setup_post_processing_camera, CameraTargets, PostProcessingMaterial};
 use crate::gi::constants::*;
 use crate::gi::pipeline::{
-    system_queue_bind_groups,
-    system_setup_gi_pipeline,
-    GiTargetsWrapper,
-    LightPassPipeline,
+    system_queue_bind_groups, system_setup_gi_pipeline, GiTargetsWrapper, LightPassPipeline,
     LightPassPipelineBindGroups,
 };
 use crate::gi::pipeline_assets::{
-    system_extract_pipeline_assets,
-    system_load_embedded_shader_dependencies,
-    system_prepare_pipeline_assets,
-    EmbeddedShaderDependencies,
-    LightPassPipelineAssets,
+    system_extract_pipeline_assets, system_load_embedded_shader_dependencies,
+    system_prepare_pipeline_assets, EmbeddedShaderDependencies, LightPassPipelineAssets,
 };
 use crate::gi::resource::ComputedTargetSizes;
 use crate::prelude::BevyMagicLight2DSettings;
@@ -46,10 +40,8 @@ pub struct BevyMagicLight2DPlugin;
 #[derive(Debug, Hash, PartialEq, Eq, Clone, RenderLabel)]
 pub struct LightPass2DRenderLabel;
 
-impl Plugin for BevyMagicLight2DPlugin
-{
-    fn build(&self, app: &mut App)
-    {
+impl Plugin for BevyMagicLight2DPlugin {
+    fn build(&self, app: &mut App) {
         app.add_plugins((
             ExtractResourcePlugin::<GiTargetsWrapper>::default(),
             Material2dPlugin::<PostProcessingMaterial>::default(),
@@ -102,8 +94,7 @@ impl Plugin for BevyMagicLight2DPlugin
         )
     }
 
-    fn finish(&self, app: &mut App)
-    {
+    fn finish(&self, app: &mut App) {
         let render_app = app.sub_app_mut(RenderApp);
         render_app
             .init_resource::<LightPassPipeline>()
@@ -170,8 +161,7 @@ pub fn detect_target_sizes(
     *res_target_sizes = ComputedTargetSizes::from_window(window, &res_plugin_config.target_scaling_params);
 }
 
-impl render_graph::Node for LightPass2DNode
-{
+impl render_graph::Node for LightPass2DNode {
     fn update(&mut self, _world: &mut World) {}
 
     #[rustfmt::skip]

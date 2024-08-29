@@ -23,8 +23,7 @@ pub struct MouseLight;
 #[derive(Component)]
 pub struct Movable;
 
-fn main()
-{
+fn main() {
     // Basic setup.
     App::new()
         .insert_resource(ClearColor(Color::srgba_u8(0, 0, 0, 0)))
@@ -84,8 +83,7 @@ fn setup(
     camera_targets: Res<CameraTargets>,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
-)
-{
+) {
     // Utility functions to compute Z coordinate for floor and ground objects.
     let get_floor_z = |y| -> f32 { Z_BASE_FLOOR - y / SCREEN_SIZE.1 };
     let get_object_z = |y| -> f32 { Z_BASE_OBJECTS - y / SCREEN_SIZE.1 };
@@ -187,7 +185,7 @@ fn setup(
                         },
                         TextureAtlas {
                             layout: floor_atlas.clone(),
-                            index:  id as usize,
+                            index: id as usize,
                         },
                     ))
                     .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR))
@@ -317,7 +315,7 @@ fn setup(
                             },
                             TextureAtlas {
                                 layout: wall_atlas.clone(),
-                                index:  id as usize,
+                                index: id as usize,
                             },
                         ))
                         .insert(RenderLayers::from_layers(CAMERA_LAYER_WALLS))
@@ -387,7 +385,7 @@ fn setup(
                         },
                         TextureAtlas {
                             layout: texture_atlas_handle.clone(),
-                            index:  candle_rect_1,
+                            index: candle_rect_1,
                         },
                     ))
                     .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
@@ -422,7 +420,7 @@ fn setup(
                         },
                         TextureAtlas {
                             layout: texture_atlas_handle.clone(),
-                            index:  candle_rect_2,
+                            index: candle_rect_2,
                         },
                     ))
                     .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
@@ -457,7 +455,7 @@ fn setup(
                         },
                         TextureAtlas {
                             layout: texture_atlas_handle.clone(),
-                            index:  candle_rect_3,
+                            index: candle_rect_3,
                         },
                     ))
                     .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
@@ -492,7 +490,7 @@ fn setup(
                         },
                         TextureAtlas {
                             layout: texture_atlas_handle.clone(),
-                            index:  candle_rect_4,
+                            index: candle_rect_4,
                         },
                     ))
                     .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
@@ -526,7 +524,7 @@ fn setup(
                         },
                         TextureAtlas {
                             layout: texture_atlas_handle.clone(),
-                            index:  tomb_rect_1,
+                            index: tomb_rect_1,
                         },
                     ))
                     .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
@@ -560,7 +558,7 @@ fn setup(
                         },
                         TextureAtlas {
                             layout: texture_atlas_handle.clone(),
-                            index:  tomb_rect_1,
+                            index: tomb_rect_1,
                         },
                     ))
                     .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
@@ -595,7 +593,7 @@ fn setup(
                         },
                         TextureAtlas {
                             layout: texture_atlas_handle.clone(),
-                            index:  sewerage_rect_1,
+                            index: sewerage_rect_1,
                         },
                     ))
                     .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR)) // Add to floor
@@ -746,10 +744,10 @@ fn setup(
             -1163.2,
             "outdoor_light_9",
             OmniLightSource2D {
-                intensity:          1.2,
-                falloff:            Vec3::new(50.0, 40.0, 0.03),
-                color:              Color::srgb_u8(0, 206, 94),
-                jitter_intensity:   0.7,
+                intensity: 1.2,
+                falloff: Vec3::new(50.0, 40.0, 0.03),
+                color: Color::srgb_u8(0, 206, 94),
+                jitter_intensity: 0.7,
                 jitter_translation: 3.0,
             },
         ));
@@ -760,10 +758,10 @@ fn setup(
             -1210.0,
             "outdoor_light_10",
             OmniLightSource2D {
-                intensity:          1.2,
-                falloff:            Vec3::new(50.0, 40.0, 0.03),
-                color:              Color::srgb_u8(0, 206, 94),
-                jitter_intensity:   0.7,
+                intensity: 1.2,
+                falloff: Vec3::new(50.0, 40.0, 0.03),
+                color: Color::srgb_u8(0, 206, 94),
+                jitter_intensity: 0.7,
                 jitter_translation: 3.0,
             },
         ));
@@ -802,7 +800,7 @@ fn setup(
     // Add skylight light.
     commands.spawn((
         SkylightLight2D {
-            color:     Color::srgb_u8(93, 158, 179),
+            color: Color::srgb_u8(93, 158, 179),
             intensity: 0.025,
         },
         Name::new("global_skylight"),
@@ -895,8 +893,7 @@ fn system_control_mouse_light(
     query_cameras: Query<(&Camera, &GlobalTransform), With<SpriteCamera>>,
     mouse: Res<ButtonInput<MouseButton>>,
     keyboard: Res<ButtonInput<KeyCode>>,
-)
-{
+) {
     let mut rng = thread_rng();
 
     // We only need to iter over first camera matched.

@@ -8,24 +8,20 @@ use crate::gi::constants::GI_SCREEN_PROBE_SIZE;
 use crate::gi::util;
 
 #[derive(Copy, Clone, Reflect)]
-pub struct TargetScalingParams
-{
+pub struct TargetScalingParams {
     /// Scale factor for SDF map.
     pub sdf_scale: f32,
 }
 
-impl Default for TargetScalingParams
-{
-    fn default() -> Self
-    {
+impl Default for TargetScalingParams {
+    fn default() -> Self {
         Self { sdf_scale: 0.5 }
     }
 }
 
 #[derive(Resource, Default, Copy, Clone, Reflect)]
-pub struct BevyMagicLight2DSettings
-{
-    pub light_pass_params:     LightPassParams,
+pub struct BevyMagicLight2DSettings {
+    pub light_pass_params: LightPassParams,
     pub target_scaling_params: TargetScalingParams,
 }
 
@@ -59,41 +55,36 @@ pub struct LightPassParams {
     pub indirect_rays_radius_factor: f32,
 }
 
-impl Default for LightPassParams
-{
-    fn default() -> Self
-    {
+impl Default for LightPassParams {
+    fn default() -> Self {
         Self {
-            reservoir_size:              8,
-            smooth_kernel_size:          (2, 1),
-            direct_light_contrib:        0.5,
-            indirect_light_contrib:      0.5,
-            indirect_rays_per_sample:    32,
+            reservoir_size: 8,
+            smooth_kernel_size: (2, 1),
+            direct_light_contrib: 0.5,
+            indirect_light_contrib: 0.5,
+            indirect_rays_per_sample: 32,
             indirect_rays_radius_factor: 3.5,
         }
     }
 }
 
 #[derive(Default, Debug, Resource, Copy, Clone)]
-pub struct ComputedTargetSizes
-{
-    pub primary_target_size:  Vec2,
+pub struct ComputedTargetSizes {
+    pub primary_target_size: Vec2,
     pub primary_target_isize: IVec2,
     pub primary_target_usize: UVec2,
 
-    pub sdf_target_size:  Vec2,
+    pub sdf_target_size: Vec2,
     pub sdf_target_isize: IVec2,
     pub sdf_target_usize: UVec2,
 
-    pub probe_grid_size:  Vec2,
+    pub probe_grid_size: Vec2,
     pub probe_grid_isize: IVec2,
     pub probe_grid_usize: UVec2,
 }
 
-impl ComputedTargetSizes
-{
-    pub fn from_window(window: &Window, params: &TargetScalingParams) -> Self
-    {
+impl ComputedTargetSizes {
+    pub fn from_window(window: &Window, params: &TargetScalingParams) -> Self {
         let primary_size = Vec2::new(
             window.physical_width() as f32 / window.scale_factor(),
             window.physical_height() as f32 / window.scale_factor(),

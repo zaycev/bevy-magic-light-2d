@@ -1,13 +1,6 @@
-use bevy::prelude::*;
-
-pub mod gi;
+pub mod components;
+pub mod constants;
+pub mod gpu_types;
+pub mod pipelines;
+pub mod plugin;
 pub mod prelude;
-
-#[derive(Component)]
-pub struct SpriteCamera;
-#[derive(Component)]
-pub struct FloorCamera;
-#[derive(Component)]
-pub struct WallsCamera;
-#[derive(Component)]
-pub struct ObjectsCamera;

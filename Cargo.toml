@@ -10,6 +10,10 @@ license = "Apache-2.0"
 license-file = "LICENSE"
 readme = "README.md"
 
+[lib]
+name = "magic_2d"
+path = "src/lib.rs"
+
 [features]
 default = ["egui"]
 egui = ["dep:bevy-inspector-egui"]
@@ -23,7 +27,6 @@ bevy = { version = "0.14.1", default-features = false, features = [
   "bevy_sprite",
   "bevy_pbr",
   "embedded_watcher",
-  "multi_threaded",
 ] }
 bevy-inspector-egui = { version = "0.25.2", optional = true }
 log = "0.4.20"
