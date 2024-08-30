@@ -13,6 +13,8 @@ readme = "README.md"
 [features]
 default = ["egui"]
 egui = ["dep:bevy-inspector-egui"]
+# faster dev builds
+dev = ["bevy/dynamic_linking", "bevy/file_watcher", "bevy/asset_processor"]
 
 [dependencies]
 bevy = { version = "0.14.1", default-features = false, features = [
