@@ -17,6 +17,8 @@ pub const Z_BASE_FLOOR: f32 = 100.0; // Base z-coordinate for 2D layers.
 pub const Z_BASE_OBJECTS: f32 = 200.0; // Ground object sprites.
 pub const SCREEN_SIZE: (f32, f32) = (1280.0, 720.0);
 pub const CAMERA_SCALE: f32 = 1.0;
+pub const CAMERA_SCALE_BOUNDS: (f32, f32) = (1., 20.);
+pub const CAMERA_ZOOM_SPEED: f32 = 3.;
 
 // Misc components.
 #[derive(Component)]
@@ -964,11 +966,6 @@ fn system_move_camera(
     }
 }
 
-mod camera {
-    pub const MIN_SCALE: f32 =1.;
-    pub const MAX_SCALE: f32 = 20.;
-}
-
 fn system_camera_zoom(
     mut cameras: Query<&mut OrthographicProjection, With<SpriteCamera>>,
     time: Res<Time>,
@@ -977,7 +974,7 @@ fn system_camera_zoom(
     let mut projection_delta = 0.;
 
     for event in scroll_event_reader.read() {
-        projection_delta += event.y * 3.;
+        projection_delta += event.y * CAMERA_ZOOM_SPEED;
     }
 
     if projection_delta == 0. {
@@ -986,6 +983,6 @@ fn system_camera_zoom(
 
     for mut camera in cameras.iter_mut() {
         camera.scale = (camera.scale - projection_delta * time.delta_seconds())
-            .clamp(camera::MIN_SCALE, camera::MAX_SCALE);
+            .clamp(CAMERA_SCALE_BOUNDS.0, CAMERA_SCALE_BOUNDS.1);
     }
 }
