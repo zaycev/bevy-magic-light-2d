@@ -29,6 +29,7 @@ pub const Z_BASE_OBJECTS: f32 = 200.0; // Ground object sprites.
 pub const SCREEN_SIZE: (f32, f32) = (1280.0, 720.0);
 pub const CAMERA_SCALE: f32 = 1.0;
 pub const CAMERA_SCALE_BOUNDS: (f32, f32) = (1., 20.);
+pub const CAMERA_ZOOM_SPEED: f32 = 3.;
 
 fn main() {
     // Basic setup.
@@ -415,7 +416,7 @@ fn system_camera_zoom(
     let mut projection_delta = 0.;
 
     for event in scroll_event_reader.read() {
-        projection_delta += event.y * 3.;
+        projection_delta += event.y * CAMERA_ZOOM_SPEED;
     }
 
     if projection_delta == 0. {
