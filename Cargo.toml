@@ -6,7 +6,6 @@ description = "Experimental dynamic 2D global illumination system for Bevy, base
 homepage = "https://github.com/zaycev/bevy-magic-light-2d"
 repository = "https://github.com/zaycev/bevy-magic-light-2d"
 authors = ["Vladimir Zaytsev"]
-license = "Apache-2.0"
 license-file = "LICENSE"
 readme = "README.md"
 
