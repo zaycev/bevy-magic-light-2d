@@ -43,7 +43,7 @@ cargo run --example krypta
 ```
 
 - WASD to control camera.
-- LMC to place a light source.
+- SHIFT+LMC to place a light source.
 - RMC to change color of light source.
 
 ## TODOs
