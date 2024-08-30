@@ -93,8 +93,8 @@ pub fn system_extract_pipeline_assets(
     res_light_settings:         Extract<Res<BevyMagicLight2DSettings>>,
     res_target_sizes:           Extract<Res<ComputedTargetSizes>>,
 
-    query_lights:               Extract<Query<(&GlobalTransform, &OmniLightSource2D, &InheritedVisibility)>>,
-    query_occluders:            Extract<Query<(&LightOccluder2D, &GlobalTransform, &Transform, &InheritedVisibility)>>,
+    query_lights:               Extract<Query<(&GlobalTransform, &OmniLightSource2D, &InheritedVisibility, &ViewVisibility)>>,
+    query_occluders:            Extract<Query<(&LightOccluder2D, &GlobalTransform, &Transform, &InheritedVisibility, &ViewVisibility)>>,
     query_camera:               Extract<Query<(&Camera, &GlobalTransform), With<FloorCamera>>>,
     query_masks:                Extract<Query<(&GlobalTransform, &SkylightMask2D)>>,
     query_skylight_light:       Extract<Query<&SkylightLight2D>>,
@@ -112,8 +112,8 @@ pub fn system_extract_pipeline_assets(
         let mut rng = thread_rng();
         light_sources.count = 0;
         light_sources.data.clear();
-        for (transform, light_source, hviz) in query_lights.iter() {
-            if hviz.get() {
+        for (transform, light_source, hviz, vviz) in query_lights.iter() {
+            if hviz.get() && vviz.get() {
                 light_sources.count += 1;
                 light_sources.data.push(GpuOmniLightSource::new(
                     OmniLightSource2D {
@@ -136,8 +136,8 @@ pub fn system_extract_pipeline_assets(
         let light_occluders = gpu_pipeline_assets.light_occluders.get_mut();
         light_occluders.count = 0;
         light_occluders.data.clear();
-        for (occluder, global_transform, transform, hviz) in query_occluders.iter() {
-            if hviz.get() {
+        for (occluder, global_transform, transform, hviz, vviz) in query_occluders.iter() {
+            if hviz.get() && vviz.get() {
                 light_occluders.count += 1;
                 light_occluders.data.push(GpuLightOccluder2D {
                     center: global_transform.translation().xy(),
