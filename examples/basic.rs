@@ -1,13 +1,14 @@
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use magic_2d::pipelines::Magic2DPipelineParams;
-use magic_2d::prelude::{Magic2DPipelineLowParams, Magic2DPlugin, Magic2DPluginConfig};
+use magic_2d::prelude::{Magic2DPipelineBasicParams, Magic2DPlugin, Magic2DPluginConfig};
 
 fn main()
 {
-    // Basic setup.
+    let clear_color = ClearColor(Color::srgba_u8(255, 255, 255, 0));
+
     App::new()
-        .insert_resource(ClearColor(Color::srgba_u8(255, 255, 255, 0)))
+        .insert_resource(clear_color)
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
@@ -22,7 +23,7 @@ fn main()
             LogDiagnosticsPlugin::default(),
             Magic2DPlugin {
                 config: Magic2DPluginConfig {
-                    pipeline: Magic2DPipelineParams::Low(Magic2DPipelineLowParams {}),
+                    pipeline: Magic2DPipelineParams::Basic(Magic2DPipelineBasicParams {}),
                 },
             },
         ))
