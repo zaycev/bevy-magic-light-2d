@@ -1,12 +1,21 @@
-
 use std::time::Duration;
 
 use bevy::{
-    app::{App, Startup}, asset::AssetPlugin, color::{palettes, Color}, diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, input::mouse::MouseWheel, prelude::*, render::{
+    app::{App, Startup},
+    asset::AssetPlugin,
+    color::{palettes, Color},
+    diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
+    input::mouse::MouseWheel,
+    prelude::*,
+    render::{
         camera::RenderTarget,
         texture::{ImageFilterMode, ImageSamplerDescriptor},
         view::RenderLayers,
-    }, sprite::MaterialMesh2dBundle, time::common_conditions::on_timer, window::{Window, WindowPlugin}, DefaultPlugins
+    },
+    sprite::MaterialMesh2dBundle,
+    time::common_conditions::on_timer,
+    window::{Window, WindowPlugin},
+    DefaultPlugins,
 };
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_magic_light_2d::{
@@ -81,7 +90,7 @@ fn main() {
             Startup,
             (
                 (setup, setup_post_processing_camera).chain(),
-                create_fps_text,
+                create_debug_text,
             ),
         )
         .add_systems(
@@ -90,6 +99,18 @@ fn main() {
         )
         .run();
 }
+
+#[derive(Component)]
+pub struct Candle;
+
+#[derive(Component)]
+pub struct Wall;
+
+#[derive(Component)]
+pub struct CurrentFpsText;
+
+#[derive(Component)]
+pub struct MovingFpsText;
 
 #[allow(clippy::identity_op)]
 #[allow(clippy::erasing_op)]
@@ -186,21 +207,14 @@ fn setup(
 
             match rng.gen_range(0..=5) {
                 1 => {
-
                     let will_jitter = rng.gen_range(0..=2);
                     let potential_jitter = match will_jitter {
-                        1 => {
-                            OmniLightSource2D {
-                                jitter_intensity: 2.5,
-                                jitter_translation: 8.0,
-                                ..default()
-                            }
-                        }
-                        _ => {
-                            OmniLightSource2D {
-                                ..default()
-                            }
-                        }
+                        1 => OmniLightSource2D {
+                            jitter_intensity: 2.5,
+                            jitter_translation: 8.0,
+                            ..default()
+                        },
+                        _ => OmniLightSource2D { ..default() },
                     };
 
                     decorations.push(
@@ -219,6 +233,7 @@ fn setup(
                                     texture: decorations_image.clone(),
                                     ..default()
                                 },
+                                Candle,
                                 OmniLightSource2D {
                                     intensity: 0.5,
                                     color: Color::srgb_u8(137, 79, 24),
@@ -227,7 +242,7 @@ fn setup(
                                 },
                                 TextureAtlas {
                                     layout: decorations_atlas_handle.clone(),
-                                    index:  candle_rect,
+                                    index: candle_rect,
                                 },
                             ))
                             .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
@@ -251,9 +266,10 @@ fn setup(
                                     texture: wall_image.clone(),
                                     ..default()
                                 },
+                                Wall,
                                 TextureAtlas {
                                     layout: wall_atlas.clone(),
-                                    index:  (wall_atlas_cols * 4 + 0) as usize,
+                                    index: (wall_atlas_cols * 4 + 0) as usize,
                                 },
                             ))
                             .insert(RenderLayers::from_layers(CAMERA_LAYER_WALLS))
@@ -271,12 +287,12 @@ fn setup(
         .insert(SpatialBundle::default())
         .push_children(&floor_tiles);
 
-        commands
+    commands
         .spawn(Name::new("decorations"))
         .insert(SpatialBundle::default())
         .push_children(&walls);
 
-        commands
+    commands
         .spawn(Name::new("walls"))
         .insert(SpatialBundle::default())
         .push_children(&decorations);
@@ -348,38 +364,103 @@ fn setup(
         .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS));
 }
 
-#[derive(Component)]
-pub struct FpsText;
-
-fn create_fps_text(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn((
-        TextBundle::from_sections([
-            TextSection::new(
-                "FPS: ",
-                TextStyle {
-                    font_size: 60.0,
-                    ..default()
-                },
-            ),
-            TextSection::from_style(TextStyle {
-                font_size: 60.0,
-                color: Color::WHITE,
+fn create_debug_text(mut commands: Commands, walls: Query<&Wall>, candles: Query<&Candle>) {
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                height: Val::Percent(100.0),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Column,
                 ..default()
-            }),
-        ]),
-        FpsText,
-        RenderLayers::from_layers(ALL_LAYERS),
-    ));
+            },
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn((
+                TextBundle::from_sections([
+                    TextSection::new(
+                        "FPS: ",
+                        TextStyle {
+                            font_size: 40.0,
+                            ..default()
+                        },
+                    ),
+                    TextSection::from_style(TextStyle {
+                        font_size: 40.0,
+                        color: Color::WHITE,
+                        ..default()
+                    }),
+                ]),
+                CurrentFpsText,
+                RenderLayers::from_layers(ALL_LAYERS),
+            ));
+
+            parent.spawn((
+                TextBundle::from_sections([
+                    TextSection::new(
+                        "Moving FPS: ",
+                        TextStyle {
+                            font_size: 40.0,
+                            ..default()
+                        },
+                    ),
+                    TextSection::from_style(TextStyle {
+                        font_size: 40.0,
+                        color: Color::WHITE,
+                        ..default()
+                    }),
+                ]),
+                MovingFpsText,
+                RenderLayers::from_layers(ALL_LAYERS),
+            ));
+
+            // Occluder count
+
+            parent.spawn((
+                TextBundle::from_sections([TextSection::new(
+                    format!("Occluders: {}", walls.iter().len()),
+                    TextStyle {
+                        font_size: 20.0,
+                        ..default()
+                    },
+                )]),
+                RenderLayers::from_layers(ALL_LAYERS),
+            ));
+
+            // Candle count
+
+            parent.spawn((
+                TextBundle::from_sections([TextSection::new(
+                    format!("Occluders: {}", candles.iter().len()),
+                    TextStyle {
+                        font_size: 20.0,
+                        ..default()
+                    },
+                )]),
+                RenderLayers::from_layers(ALL_LAYERS),
+            ));
+        });
 }
 
-fn update_fps_text(diagnostics: Res<DiagnosticsStore>, mut query: Query<&mut Text, With<FpsText>>) {
-    for mut text in &mut query {
-        if let Some(fps) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) {
-            if let Some(value) = fps.smoothed() {
-                // Update the value of the second section
-                text.sections[1].value = format!("{value:.2}");
-            }
-        }
+fn update_fps_text(
+    diagnostics: Res<DiagnosticsStore>,
+    mut current: Query<&mut Text, (With<CurrentFpsText>, Without<MovingFpsText>)>,
+    mut moving: Query<&mut Text, With<MovingFpsText>>,
+) {
+    let mut current_text = current.single_mut();
+    let mut moving_text = moving.single_mut();
+
+    let Some(fps) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) else {
+        return;
+    };
+
+    if let Some(value) = fps.smoothed() {
+        // Update the value of the second section
+        current_text.sections[1].value = format!("{value:.2}");
+    }
+
+    if let Some(value) = fps.average() {
+        moving_text.sections[1].value = format!("{value:.2}");
     }
 }
 
