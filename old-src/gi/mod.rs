@@ -62,6 +62,7 @@ impl Plugin for BevyMagicLight2DPlugin {
                 .chain(),
         )
         .add_systems(PreUpdate, handle_window_resize);
+
         embedded_asset!(app, "shaders/gi_attenuation.wgsl");
         embedded_asset!(app, "shaders/gi_camera.wgsl");
         embedded_asset!(app, "shaders/gi_halton.wgsl");

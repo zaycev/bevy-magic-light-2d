@@ -15,5 +15,8 @@ pub struct Magic2DPlugin
 
 impl Plugin for Magic2DPlugin
 {
-    fn build(&self, _app: &mut App) {}
+    fn build(&self, app: &mut App)
+    {
+        todo!()
+    }
 }
