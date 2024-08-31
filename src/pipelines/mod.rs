@@ -1,3 +1,5 @@
+mod pipeline_low;
+
 pub struct Magic2DPipelineHighParams {}
 pub struct Magic2DPipelineMediumParams {}
 pub struct Magic2DPipelineLowParams {}

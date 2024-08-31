@@ -1,4 +1,4 @@
-use bevy::app::App;
+use bevy::app::{App, PreStartup};
 use bevy::prelude::Plugin;
 
 use crate::pipelines::Magic2DPipelineParams;
@@ -17,6 +17,12 @@ impl Plugin for Magic2DPlugin
 {
     fn build(&self, app: &mut App)
     {
-        todo!()
+        app.add_plugins(()); // TODO(zaycev): add material plugins.
+        app.add_systems((
+            PreStartup,
+            (
+
+            )
+        ))
     }
 }
