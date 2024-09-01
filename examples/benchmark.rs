@@ -55,6 +55,7 @@ fn main() {
                         resolution: SCREEN_SIZE.into(),
                         title: "Bevy Magic Light 2D: Krypta Example".into(),
                         resizable: true,
+                        present_mode: bevy::window::PresentMode::Immediate,
                         ..default()
                     }),
                     ..default()
@@ -89,8 +90,7 @@ fn main() {
         .add_systems(
             Startup,
             (
-                (setup, setup_post_processing_camera).chain(),
-                create_debug_text,
+                (setup, create_debug_text, setup_post_processing_camera).chain(),
             ),
         )
         .add_systems(
@@ -418,7 +418,7 @@ fn create_debug_text(mut commands: Commands, walls: Query<&Wall>, candles: Query
 
             parent.spawn((
                 TextBundle::from_sections([TextSection::new(
-                    format!("Occluders: {}", walls.iter().len()),
+                    format!("Candles: {}", candles.iter().len()),
                     TextStyle {
                         font_size: 20.0,
                         ..default()
