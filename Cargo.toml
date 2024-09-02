@@ -25,29 +25,26 @@ bevy = { version = "0.14.1", default-features = false, features = [
   "bevy_asset",
   "bevy_sprite",
   "bevy_pbr",
-  "embedded_watcher",
 ] }
 bevy-inspector-egui = { version = "0.25.2", optional = true }
 log = "0.4.20"
 rand = "0.8.5"
 
 [dev-dependencies]
-bevy = "0.14.1"
+bevy = { version = "0.14.1", default-features = false, features = [
+  "bevy_render",
+  "bevy_core_pipeline",
+  "bevy_winit",
+  "bevy_asset",
+  "bevy_sprite",
+  "bevy_pbr",
+  "embedded_watcher",
+] }
 
 [profile.release]
-codegen-units = 1
-debug = false
-lto = "thin"
 opt-level = 3
-panic = "abort"
-
-[profile.dev.package."*"]
-opt-level = 3
-debug = true
-incremental = true
 
 [profile.dev]
-codegen-units = 16
 opt-level = 0
 debug = true
 incremental = true

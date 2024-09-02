@@ -1,10 +1,8 @@
-pub struct Magic2DPipelineHighParams {}
-pub struct Magic2DPipelineMediumParams {}
-pub struct Magic2DPipelineLowParams {}
+pub mod pipeline_basic;
+
+pub struct Magic2DPipelineBasicParams {}
 
 pub enum Magic2DPipelineParams
 {
-    High(Magic2DPipelineHighParams), // Direct + indirect light with SDF-based occlusion.
-    Medium(Magic2DPipelineMediumParams), // Direct light + SDF-based occlusion.
-    Low(Magic2DPipelineLowParams),   // Only direct light and no occlusion.
+    Basic(Magic2DPipelineBasicParams), // Most basic model with only direct light and no occlusion.
 }
