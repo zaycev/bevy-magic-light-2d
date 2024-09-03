@@ -7,11 +7,11 @@
             {
                 "separator": "Platform style",
                 "type": "Set",
-                "value": "D:\\code\\bevy-magic-light-2d",
+                "value": ".",
                 "variable": "CARGO_MANIFEST_DIR"
             }
         ],
-        "executable": "D:\\code\\bevy-magic-light-2d\\target\\debug\\examples\\basic.exe",
+        "executable": "target\\debug\\examples\\basic.exe",
         "inject": false,
         "numQueuedFrames": 0,
         "options": {
@@ -29,6 +29,6 @@
             "verifyBufferAccess": false
         },
         "queuedFrameCap": 0,
-        "workingDir": ""
+        "workingDir": "."
     }
 }
