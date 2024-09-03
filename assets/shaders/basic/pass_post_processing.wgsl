@@ -50,8 +50,7 @@ fn fragment(in: FullscreenVertexOutput) -> @location(0) vec4<f32>
         total_irradiance += a * light.color * light.intensity;
     }
 
-    let out = color.xyz + total_irradiance;
-
+    let out = color.xyz * 0.01 + color.xyz * total_irradiance;
 
     return vec4<f32>(out, 1.0);
 }

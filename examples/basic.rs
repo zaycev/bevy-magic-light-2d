@@ -104,7 +104,7 @@ fn on_update(
     let world = proj
         .project_point3(Vec3::new(ndc.x, -ndc.y, 1.0))
         .truncate()
-        .extend(0.0);
+        .extend(1.0);
 
     for mut transform in query_lights.iter_mut() {
         transform.translation = world;
