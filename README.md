@@ -37,6 +37,15 @@ cargo +nightly fmt
 
 ### License
 
+### TODOs
+
+- [] Detect resolution
+- [] Create SDF target
+- [] Implement SDF pipeline
+- [] Add debug HUD
+
+
+
 ```
 Copyright 2022-2024 Vladimir Zaytsev <vladimir@xyzw.io>
 

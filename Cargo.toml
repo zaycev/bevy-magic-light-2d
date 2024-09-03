@@ -14,8 +14,9 @@ name = "magic_2d"
 path = "src/lib.rs"
 
 [features]
-default = ["egui"]
+default = ["egui", "debug_hud"]
 egui = ["dep:bevy-inspector-egui"]
+debug_hud = ["bevy/bevy_gizmos", "bevy/bevy_text"]
 
 [dependencies]
 bevy = { version = "0.14.1", default-features = false, features = [
@@ -39,6 +40,8 @@ bevy = { version = "0.14.1", default-features = false, features = [
   "bevy_sprite",
   "bevy_pbr",
   "embedded_watcher",
+  "multi_threaded",
+  "file_watcher"
 ] }
 
 [profile.release]
