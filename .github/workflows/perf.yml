@@ -1,0 +1,34 @@
+name: Performance Check
+permissions: read-all
+
+on: workflow_dispatch
+
+env:
+    CARGO_TERM_COLOR: always
+
+jobs:
+    performance:
+        name: Performance Check
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v3
+            - uses: Swatinem/rust-cache@v2
+            - uses: dtolnay/rust-toolchain@master
+              with:
+                toolchain: nightly
+                components: clippy, rustfmt
+
+            - name: Install alsa and udev
+              run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
+
+            - name: Cargo Build Krypta Example
+              run: cargo run --release --example krypta --features benchmark
+
+            - name: ls
+              run: ls -la
+
+            - uses: actions/upload-artifact@v4
+              with:
+                name: upload screenshot
+                path: ./screenshot.png

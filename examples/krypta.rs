@@ -1,8 +1,13 @@
+#[cfg(feature = "benchmark")]
+use std::path::Path;
+
 use bevy::color::palettes;
 use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
 use bevy::render::texture::{ImageFilterMode, ImageSamplerDescriptor};
+#[cfg(feature = "benchmark")]
+use bevy::render::view::screenshot::ScreenshotManager;
 use bevy::render::view::RenderLayers;
 use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::PrimaryWindow;
@@ -29,7 +34,8 @@ pub struct Movable;
 fn main()
 {
     // Basic setup.
-    App::new()
+    let mut app = App::new();
+    app
         .insert_resource(ClearColor(Color::srgba_u8(0, 0, 0, 0)))
         .add_plugins((
             DefaultPlugins
@@ -74,8 +80,12 @@ fn main()
         .register_type::<LightPassParams>()
         .add_systems(Startup, setup.after(setup_post_processing_camera))
         .add_systems(Update, (system_move_camera, system_camera_zoom))
-        .add_systems(Update, system_control_mouse_light.after(system_move_camera))
-        .run();
+        .add_systems(Update, system_control_mouse_light.after(system_move_camera));
+
+        #[cfg(feature = "benchmark")]
+        app.add_systems(Update, take_screenshot);
+
+        app.run();
 }
 
 #[allow(clippy::identity_op)]
@@ -984,5 +994,29 @@ fn system_camera_zoom(
     for mut camera in cameras.iter_mut() {
         camera.scale = (camera.scale - projection_delta * time.delta_seconds())
             .clamp(CAMERA_SCALE_BOUNDS.0, CAMERA_SCALE_BOUNDS.1);
+    }
+}
+
+#[cfg(feature = "benchmark")]
+fn take_screenshot(
+    time: Res<Time>,
+    main_window: Query<Entity, With<PrimaryWindow>>,
+    mut screenshot_manager: ResMut<ScreenshotManager>,
+    mut exit: EventWriter<AppExit>,
+    mut screenshot_requested: Local<bool>,
+) {
+    const SCREENSHOT_AFTER_SECONDS: f32 = 10.0;
+
+    if time.elapsed_seconds() > SCREENSHOT_AFTER_SECONDS && !*screenshot_requested {
+        // take screenshot
+        screenshot_manager
+            .save_screenshot_to_disk(main_window.single(), "./screenshot.png")
+            .unwrap();
+        *screenshot_requested = true;
+    }
+
+    if *screenshot_requested && Path::new("./screenshot.png").exists() {
+        // exit
+        exit.send(AppExit::Success);
     }
 }
