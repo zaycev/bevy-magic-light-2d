@@ -1,4 +1,5 @@
 use bevy::color::palettes;
+use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
 use bevy::render::texture::{ImageFilterMode, ImageSamplerDescriptor};
@@ -16,6 +17,8 @@ pub const Z_BASE_FLOOR: f32 = 100.0; // Base z-coordinate for 2D layers.
 pub const Z_BASE_OBJECTS: f32 = 200.0; // Ground object sprites.
 pub const SCREEN_SIZE: (f32, f32) = (1280.0, 720.0);
 pub const CAMERA_SCALE: f32 = 1.0;
+pub const CAMERA_SCALE_BOUNDS: (f32, f32) = (1., 20.);
+pub const CAMERA_ZOOM_SPEED: f32 = 3.;
 
 // Misc components.
 #[derive(Component)]
@@ -70,7 +73,7 @@ fn main()
         .register_type::<BevyMagicLight2DSettings>()
         .register_type::<LightPassParams>()
         .add_systems(Startup, setup.after(setup_post_processing_camera))
-        .add_systems(Update, system_move_camera)
+        .add_systems(Update, (system_move_camera, system_camera_zoom))
         .add_systems(Update, system_control_mouse_light.after(system_move_camera))
         .run();
 }
@@ -960,5 +963,26 @@ fn system_move_camera(
     for mut camera_transform in query_cameras.iter_mut() {
         camera_transform.translation.x = camera_current.x;
         camera_transform.translation.y = camera_current.y;
+    }
+}
+
+fn system_camera_zoom(
+    mut cameras: Query<&mut OrthographicProjection, With<SpriteCamera>>,
+    time: Res<Time>,
+    mut scroll_event_reader: EventReader<MouseWheel>,
+) {
+    let mut projection_delta = 0.;
+
+    for event in scroll_event_reader.read() {
+        projection_delta += event.y * CAMERA_ZOOM_SPEED;
+    }
+
+    if projection_delta == 0. {
+        return;
+    }
+
+    for mut camera in cameras.iter_mut() {
+        camera.scale = (camera.scale - projection_delta * time.delta_seconds())
+            .clamp(CAMERA_SCALE_BOUNDS.0, CAMERA_SCALE_BOUNDS.1);
     }
 }
