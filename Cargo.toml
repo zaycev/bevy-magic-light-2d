@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "bevy_magic_light_2d"
-version = "0.8.1"
+version = "0.9.0"
 description = "Experimental dynamic 2D global illumination system for Bevy, based on SDF ray-marching and screen space irradiance cache probes"
 homepage = "https://github.com/zaycev/bevy-magic-light-2d"
 repository = "https://github.com/zaycev/bevy-magic-light-2d"
@@ -14,7 +14,7 @@ default = ["egui"]
 egui = ["dep:bevy-inspector-egui"]
 
 [dependencies]
-bevy = { version = "0.14.1", default-features = false, features = [
+bevy = { version = "0.15.1", default-features = false, features = [
   "bevy_render",
   "bevy_core_pipeline",
   "bevy_winit",
@@ -23,13 +23,14 @@ bevy = { version = "0.14.1", default-features = false, features = [
   "bevy_pbr",
   "embedded_watcher",
   "multi_threaded",
+  "wayland",
 ] }
-bevy-inspector-egui = { version = "0.25.2", optional = true }
+bevy-inspector-egui = { version = "0.29.1", optional = true }
 log = "0.4.20"
 rand = "0.8.5"
 
 [dev-dependencies]
-bevy = "0.14.1"
+bevy = "0.15.1"
 
 [profile.release]
 codegen-units = 1
