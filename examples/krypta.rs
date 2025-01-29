@@ -167,13 +167,13 @@ fn setup(
     let decorations_image = asset_server.load("art/atlas_decoration.png");
 
     // Spawn floor tiles.
-    let mut rng = thread_rng();
+    let mut rng = rand::rng();
     let mut floor_tiles = vec![];
     for (i, row) in walls_info.iter().enumerate() {
         for (j, _) in row.iter().enumerate() {
             let xy = get_block_translation(i, j);
             let z = get_floor_z(xy.y);
-            let id = rng.gen_range(0..(floor_atlas_cols * floor_atlas_rows));
+            let id = rng.random_range(0..(floor_atlas_cols * floor_atlas_rows));
 
             floor_tiles.push(
                 commands
@@ -869,7 +869,7 @@ fn system_control_mouse_light(
     keyboard: Res<ButtonInput<KeyCode>>,
 )
 {
-    let mut rng = thread_rng();
+    let mut rng = rand::rng();
 
     // We only need to iter over first camera matched.
     let (camera, camera_transform) = query_cameras.iter().next().unwrap();
@@ -888,7 +888,7 @@ fn system_control_mouse_light(
         mouse_transform.translation = mouse_world.truncate().extend(1000.0);
 
         if mouse.just_pressed(MouseButton::Right) {
-            mouse_color.color = Color::srgba(rng.gen(), rng.gen(), rng.gen(), 1.0);
+            mouse_color.color = Color::srgba(rng.random(), rng.random(), rng.random(), 1.0);
         }
         if mouse.just_pressed(MouseButton::Left) && keyboard.pressed(KeyCode::ShiftLeft) {
             commands
