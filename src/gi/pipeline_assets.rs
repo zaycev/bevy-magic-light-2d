@@ -162,7 +162,7 @@ pub fn system_extract_pipeline_assets(
     }
 
     {
-        if let Ok((camera, camera_global_transform)) = query_camera.get_single() {
+        if let Ok((camera, camera_global_transform)) = query_camera.single() {
             let camera_params = gpu_pipeline_assets.camera_params.get_mut();
             let projection = camera.clip_from_view();
             let inverse_projection = projection.inverse();

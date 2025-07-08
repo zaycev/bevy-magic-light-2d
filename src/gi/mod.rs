@@ -4,11 +4,9 @@ use bevy::render::extract_resource::ExtractResourcePlugin;
 use bevy::render::render_graph::{self, RenderGraph, RenderLabel};
 use bevy::render::render_resource::*;
 use bevy::render::renderer::RenderContext;
-use bevy::render::view::{check_visibility, VisibilitySystems};
 use bevy::render::{Render, RenderApp, RenderSet};
 use bevy::sprite::Material2dPlugin;
 use bevy::window::{PrimaryWindow, WindowResized};
-use types::{LightOccluder2D, OmniLightSource2D};
 
 use self::pipeline::GiTargets;
 use crate::gi::compositing::{setup_post_processing_camera, CameraTargets, PostProcessingMaterial};
@@ -71,15 +69,7 @@ impl Plugin for BevyMagicLight2DPlugin
             )
                 .chain(),
         )
-        .add_systems(PreUpdate, handle_window_resize)
-        .add_systems(
-            PostUpdate,
-            (
-                check_visibility::<With<OmniLightSource2D>>,
-                check_visibility::<With<LightOccluder2D>>,
-            )
-                .in_set(VisibilitySystems::CheckVisibility),
-        );
+        .add_systems(PreUpdate, handle_window_resize);
         embedded_asset!(app, "shaders/gi_attenuation.wgsl");
         embedded_asset!(app, "shaders/gi_camera.wgsl");
         embedded_asset!(app, "shaders/gi_halton.wgsl");
@@ -144,7 +134,7 @@ pub fn handle_window_resize(
 ) {
     for _ in window_resized_evr.read() {
         let window = query_window
-            .get_single()
+            .single()
             .expect("Expected exactly one primary window");
 
         *res_target_sizes =
@@ -176,7 +166,7 @@ pub fn detect_target_sizes(
     mut res_target_sizes:  ResMut<ComputedTargetSizes>,
 )
 {
-    let window = query_window.get_single().expect("Expected exactly one primary window");
+    let window = query_window.single().expect("Expected exactly one primary window");
     *res_target_sizes = ComputedTargetSizes::from_window(window, &res_plugin_config.target_scaling_params);
 }
 

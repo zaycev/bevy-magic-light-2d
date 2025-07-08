@@ -1,8 +1,11 @@
 use bevy::prelude::*;
+use bevy::render::view::{self, VisibilityClass};
 
 #[rustfmt::skip]
 #[derive(Reflect, Component, Clone, Copy, Default)]
 #[reflect(Component)]
+#[require(VisibilityClass)]
+#[component(on_add = view::add_visibility_class::<OmniLightSource2D>)]
 pub struct OmniLightSource2D {
     pub intensity:          f32,
     pub color:              Color,
@@ -14,6 +17,8 @@ pub struct OmniLightSource2D {
 #[rustfmt::skip]
 #[derive(Reflect, Component, Default, Clone, Copy)]
 #[reflect(Component)]
+#[require(VisibilityClass)]
+#[component(on_add = view::add_visibility_class::<LightOccluder2D>)]
 pub struct LightOccluder2D {
     pub h_size: Vec2,
 }

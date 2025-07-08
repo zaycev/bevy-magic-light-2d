@@ -210,7 +210,7 @@ pub fn setup_post_processing_camera(
 
     commands.spawn((
         PostProcessingQuad,
-        Mesh2d(POST_PROCESSING_RECT.clone().into()),
+        Mesh2d(POST_PROCESSING_RECT.clone()),
         MeshMaterial2d(POST_PROCESSING_MATERIAL.clone()),
         Transform::from_translation(Vec3::new(0.0, 0.0, 1.5)),
         layer.clone(),
@@ -232,7 +232,7 @@ pub fn setup_post_processing_camera(
     ))
     .insert((
         PostProcessingQuad,
-        Mesh2d(POST_PROCESSING_RECT.clone().into()),
+        Mesh2d(POST_PROCESSING_RECT.clone()),
         MeshMaterial2d(POST_PROCESSING_MATERIAL.clone()),
         Transform::from_translation(Vec3::new(0.0, 0.0, 1.5)),
     ));
