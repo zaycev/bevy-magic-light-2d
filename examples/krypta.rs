@@ -1,10 +1,12 @@
 use bevy::color::palettes;
+use bevy::ecs::spawn::SpawnIter;
 use bevy::image::{ImageFilterMode, ImageSamplerDescriptor};
 use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
 use bevy::render::view::RenderLayers;
 use bevy::window::PrimaryWindow;
+use bevy_inspector_egui::bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_magic_light_2d::gi::render_layer::ALL_LAYERS;
 use bevy_magic_light_2d::prelude::*;
@@ -53,6 +55,9 @@ fn main()
                     },
                 }),
             BevyMagicLight2DPlugin,
+            EguiPlugin {
+                enable_multipass_for_primary_context: true,
+            },
             ResourceInspectorPlugin::<BevyMagicLight2DSettings>::new(),
         ))
         .insert_resource(BevyMagicLight2DSettings {
@@ -175,32 +180,30 @@ fn setup(
             let z = get_floor_z(xy.y);
             let id = rng.random_range(0..(floor_atlas_cols * floor_atlas_rows));
 
-            floor_tiles.push(
-                commands
-                    .spawn((
-                        Transform {
-                            translation: Vec3::new(xy.x, xy.y, z),
-                            scale: Vec2::splat(SPRITE_SCALE).extend(0.0),
-                            ..default()
-                        },
-                        Sprite::from_atlas_image(
-                            floor_image.clone(),
-                            TextureAtlas {
-                                layout: floor_atlas.clone(),
-                                index:  id as usize,
-                            },
-                        ),
-                    ))
-                    .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR))
-                    .id(),
-            );
+            floor_tiles.push((
+                Transform {
+                    translation: Vec3::new(xy.x, xy.y, z),
+                    scale: Vec2::splat(SPRITE_SCALE).extend(0.0),
+                    ..default()
+                },
+                Sprite::from_atlas_image(
+                    floor_image.clone(),
+                    TextureAtlas {
+                        layout: floor_atlas.clone(),
+                        index:  id as usize,
+                    },
+                ),
+                RenderLayers::from_layers(CAMERA_LAYER_FLOOR),
+            ));
         }
     }
 
-    commands
-        .spawn(Name::new("floor_tiles"))
-        .insert((Transform::default(), Visibility::default()))
-        .add_children(&floor_tiles);
+    commands.spawn((
+        Name::new("floor_tiles"),
+        Transform::default(),
+        Visibility::default(),
+        Children::spawn(SpawnIter(floor_tiles.into_iter())),
+    ));
 
     let maze_rows = walls_info.len() as i32;
     let maze_cols = walls_info[0].len() as i32;
@@ -304,33 +307,31 @@ fn setup(
                 let z = get_object_z(xy.y);
                 let id = get_wall_sprite_index(i, j);
 
-                walls.push(
-                    commands
-                        .spawn((
-                            Transform {
-                                translation: Vec3::new(xy.x, xy.y, z),
-                                scale: Vec2::splat(SPRITE_SCALE).extend(0.0),
-                                ..default()
-                            },
-                            Sprite::from_atlas_image(
-                                wall_image.clone(),
-                                TextureAtlas {
-                                    layout: wall_atlas.clone(),
-                                    index:  id as usize,
-                                },
-                            ),
-                        ))
-                        .insert(RenderLayers::from_layers(CAMERA_LAYER_WALLS))
-                        .insert(occluder_data)
-                        .id(),
-                );
+                walls.push((
+                    Transform {
+                        translation: Vec3::new(xy.x, xy.y, z),
+                        scale: Vec2::splat(SPRITE_SCALE).extend(0.0),
+                        ..default()
+                    },
+                    Sprite::from_atlas_image(
+                        wall_image.clone(),
+                        TextureAtlas {
+                            layout: wall_atlas.clone(),
+                            index:  id as usize,
+                        },
+                    ),
+                    RenderLayers::from_layers(CAMERA_LAYER_WALLS),
+                    occluder_data,
+                ));
             }
         }
     }
-    commands
-        .spawn((Transform::default(), Visibility::default()))
-        .insert(Name::new("walls"))
-        .add_children(&walls);
+    commands.spawn((
+        Name::new("walls"),
+        Transform::default(),
+        Visibility::default(),
+        Children::spawn(SpawnIter(walls.into_iter())),
+    ));
 
     // Add decorations.
     let mut decorations = vec![];
@@ -372,6 +373,7 @@ fn setup(
             decorations.push(
                 commands
                     .spawn((
+                        Name::new("candle_1"),
                         Visibility::default(),
                         Transform {
                             translation: Vec3::new(x, y, get_object_z(y)),
@@ -387,12 +389,11 @@ fn setup(
                             }),
                             ..default()
                         },
+                        RenderLayers::from_layers(CAMERA_LAYER_OBJECTS),
+                        LightOccluder2D {
+                            h_size: Vec2::splat(2.0),
+                        },
                     ))
-                    .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
-                    .insert(LightOccluder2D {
-                        h_size: Vec2::splat(2.0),
-                    })
-                    .insert(Name::new("candle_1"))
                     .id(),
             );
         }
@@ -405,6 +406,7 @@ fn setup(
             decorations.push(
                 commands
                     .spawn((
+                        Name::new("candle_2"),
                         Visibility::default(),
                         Transform {
                             translation: Vec3::new(x, y, get_object_z(y)),
@@ -420,12 +422,11 @@ fn setup(
                             image: decorations_image.clone(),
                             ..default()
                         },
+                        RenderLayers::from_layers(CAMERA_LAYER_OBJECTS),
+                        LightOccluder2D {
+                            h_size: Vec2::splat(2.0),
+                        },
                     ))
-                    .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
-                    .insert(LightOccluder2D {
-                        h_size: Vec2::splat(2.0),
-                    })
-                    .insert(Name::new("candle_2"))
                     .id(),
             );
         }
@@ -438,6 +439,7 @@ fn setup(
             decorations.push(
                 commands
                     .spawn((
+                        Name::new("candle_3"),
                         Visibility::default(),
                         Transform {
                             translation: Vec3::new(x, y, get_object_z(y)),
@@ -454,12 +456,11 @@ fn setup(
 
                             ..default()
                         },
+                        RenderLayers::from_layers(CAMERA_LAYER_OBJECTS),
+                        LightOccluder2D {
+                            h_size: Vec2::splat(2.0),
+                        },
                     ))
-                    .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
-                    .insert(LightOccluder2D {
-                        h_size: Vec2::splat(2.0),
-                    })
-                    .insert(Name::new("candle_3"))
                     .id(),
             );
         }
@@ -472,6 +473,7 @@ fn setup(
             decorations.push(
                 commands
                     .spawn((
+                        Name::new("candle_4"),
                         Visibility::default(),
                         Transform {
                             translation: Vec3::new(x, y, get_object_z(y)),
@@ -487,12 +489,11 @@ fn setup(
                             }),
                             ..default()
                         },
+                        RenderLayers::from_layers(CAMERA_LAYER_OBJECTS),
+                        LightOccluder2D {
+                            h_size: Vec2::splat(2.0),
+                        },
                     ))
-                    .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
-                    .insert(LightOccluder2D {
-                        h_size: Vec2::splat(2.0),
-                    })
-                    .insert(Name::new("candle_4"))
                     .id(),
             );
         }
@@ -504,6 +505,7 @@ fn setup(
             decorations.push(
                 commands
                     .spawn((
+                        Name::new("tomb_1"),
                         Transform {
                             translation: Vec3::new(x, y, get_object_z(y)),
                             scale: Vec2::splat(4.0).extend(0.0),
@@ -518,12 +520,11 @@ fn setup(
                             image: decorations_image.clone(),
                             ..default()
                         },
+                        RenderLayers::from_layers(CAMERA_LAYER_OBJECTS),
+                        LightOccluder2D {
+                            h_size: Vec2::new(72.8, 31.0),
+                        },
                     ))
-                    .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
-                    .insert(LightOccluder2D {
-                        h_size: Vec2::new(72.8, 31.0),
-                    })
-                    .insert(Name::new("tomb_1"))
                     .id(),
             );
         }
@@ -535,6 +536,7 @@ fn setup(
             decorations.push(
                 commands
                     .spawn((
+                        Name::new("tomb_1"),
                         Transform {
                             translation: Vec3::new(x, y, get_object_z(y)),
                             scale: Vec2::splat(4.0).extend(0.0),
@@ -549,12 +551,11 @@ fn setup(
                             image: decorations_image.clone(),
                             ..default()
                         },
+                        RenderLayers::from_layers(CAMERA_LAYER_OBJECTS),
+                        LightOccluder2D {
+                            h_size: Vec2::new(72.8, 31.0),
+                        },
                     ))
-                    .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS))
-                    .insert(LightOccluder2D {
-                        h_size: Vec2::new(72.8, 31.0),
-                    })
-                    .insert(Name::new("tomb_1"))
                     .id(),
             );
         }
@@ -567,6 +568,7 @@ fn setup(
             decorations.push(
                 commands
                     .spawn((
+                        Name::new("sewerage_1"),
                         Transform {
                             translation: Vec3::new(x, y, get_object_z(y)),
                             scale: Vec2::splat(4.0).extend(0.0),
@@ -576,237 +578,205 @@ fn setup(
                             color: Color::srgb_u8(255, 255, 255),
                             texture_atlas: Some(TextureAtlas {
                                 layout: texture_atlas_handle.clone(),
-                                index: sewerage_rect_1,
-                                ..default()
+                                index:  sewerage_rect_1,
                             }),
                             image: decorations_image.clone(),
                             ..default()
                         },
+                        RenderLayers::from_layers(CAMERA_LAYER_FLOOR),
                     ))
-                    .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR)) // Add to floor
-                    .insert(Name::new("sewerage_1"))
                     .id(),
             );
         }
     }
     commands
-        .spawn((Transform::default(), Visibility::default()))
-        .insert(Name::new("decorations"))
+        .spawn((
+            Name::new("decorations"),
+            Transform::default(),
+            Visibility::default(),
+        ))
         .add_children(&decorations);
 
-    // Add lights.
-    let mut lights = vec![];
-    {
-        let spawn_light = |cmd: &mut Commands,
-                           x: f32,
-                           y: f32,
-                           name: &'static str,
-                           light_source: OmniLightSource2D| {
-            cmd.spawn(Name::new(name))
-                .insert(light_source)
-                .insert((
-                    Visibility::default(),
-                    Transform {
-                        translation: Vec3::new(x, y, 0.0),
-                        ..default()
-                    },
-                ))
-                .insert(RenderLayers::from_layers(ALL_LAYERS))
-                .id()
-        };
+    let base = OmniLightSource2D {
+        falloff: Vec3::new(50.0, 20.0, 0.05),
+        intensity: 10.0,
+        ..default()
+    };
 
-        let base = OmniLightSource2D {
-            falloff: Vec3::new(50.0, 20.0, 0.05),
-            intensity: 10.0,
-            ..default()
-        };
-        lights.push(spawn_light(
-            &mut commands,
-            90.667,
-            -393.8,
-            "outdoor_krypta_torch_1",
-            OmniLightSource2D {
-                intensity: 4.5,
-                color: Color::srgb_u8(137, 79, 24),
-                jitter_intensity: 2.5,
-                jitter_translation: 8.0,
-                ..base
-            },
-        ));
-        lights.push(spawn_light(
-            &mut commands,
-            -36.000,
-            -393.8,
-            "outdoor_krypta_torch_2",
-            OmniLightSource2D {
-                intensity: 4.5,
-                color: Color::srgb_u8(137, 79, 24),
-                jitter_intensity: 2.5,
-                jitter_translation: 8.0,
-                ..base
-            },
-        ));
-        lights.push(spawn_light(
-            &mut commands,
-            230.9,
-            -284.6,
-            "indoor_krypta_light_1",
-            OmniLightSource2D {
-                intensity: 10.0,
-                color: Color::srgb_u8(76, 57, 211),
-                jitter_intensity: 2.0,
-                jitter_translation: 0.0,
-                ..base
-            },
-        ));
-        lights.push(spawn_light(
-            &mut commands,
-            -163.5,
-            -292.7,
-            "indoor_krypta_light_2",
-            OmniLightSource2D {
-                intensity: 10.0,
-                color: Color::srgb_u8(76, 57, 211),
-                jitter_intensity: 2.0,
-                jitter_translation: 0.0,
-                ..base
-            },
-        ));
-        lights.push(spawn_light(
-            &mut commands,
-            -352.000,
-            -131.2,
-            "outdoor_krypta_torch_3",
-            OmniLightSource2D {
-                intensity: 4.5,
-                color: Color::srgb_u8(137, 79, 24),
-                jitter_intensity: 2.5,
-                jitter_translation: 3.0,
-                ..base
-            },
-        ));
-        lights.push(spawn_light(
-            &mut commands,
-            410.667,
-            -141.8,
-            "outdoor_krypta_torch_4",
-            OmniLightSource2D {
-                intensity: 4.5,
-                color: Color::srgb_u8(137, 79, 24),
-                jitter_intensity: 2.5,
-                jitter_translation: 3.0,
-                ..base
-            },
-        ));
-        lights.push(spawn_light(
-            &mut commands,
-            28.0,
-            -34.0,
-            "indoor_krypta_ghost_1",
-            OmniLightSource2D {
-                intensity: 0.8,
-                color: Color::srgb_u8(6, 53, 6),
-                jitter_intensity: 0.2,
-                jitter_translation: 0.0,
-                ..base
-            },
-        ));
-        lights.push(spawn_light(
-            &mut commands,
-            31.392,
-            -168.3,
-            "indoor_krypta_tomb_1",
-            OmniLightSource2D {
-                intensity: 0.4,
-                color: Color::srgb_u8(252, 182, 182),
-                jitter_intensity: 0.05,
-                jitter_translation: 4.7,
-                ..base
-            },
-        ));
-
-        lights.push(spawn_light(
-            &mut commands,
-            40.0,
-            -1163.2,
-            "outdoor_light_9",
-            OmniLightSource2D {
-                intensity:          1.2,
-                falloff:            Vec3::new(50.0, 40.0, 0.03),
-                color:              Color::srgb_u8(0, 206, 94),
-                jitter_intensity:   0.7,
-                jitter_translation: 3.0,
-            },
-        ));
-
-        lights.push(spawn_light(
-            &mut commands,
-            182.3,
-            -1210.0,
-            "outdoor_light_10",
-            OmniLightSource2D {
-                intensity:          1.2,
-                falloff:            Vec3::new(50.0, 40.0, 0.03),
-                color:              Color::srgb_u8(0, 206, 94),
-                jitter_intensity:   0.7,
-                jitter_translation: 3.0,
-            },
-        ));
-    }
-    commands
-        .spawn((Transform::default(), Visibility::default()))
-        .insert(Name::new("lights"))
-        .add_children(&lights);
+    commands.spawn((
+        Name::new("lights"),
+        Transform::default(),
+        Visibility::default(),
+        children![
+            spawn_light(
+                90.667,
+                -393.8,
+                "outdoor_krypta_torch_1",
+                OmniLightSource2D {
+                    intensity: 4.5,
+                    color: Color::srgb_u8(137, 79, 24),
+                    jitter_intensity: 2.5,
+                    jitter_translation: 8.0,
+                    ..base
+                },
+            ),
+            spawn_light(
+                -36.000,
+                -393.8,
+                "outdoor_krypta_torch_2",
+                OmniLightSource2D {
+                    intensity: 4.5,
+                    color: Color::srgb_u8(137, 79, 24),
+                    jitter_intensity: 2.5,
+                    jitter_translation: 8.0,
+                    ..base
+                },
+            ),
+            spawn_light(
+                230.9,
+                -284.6,
+                "indoor_krypta_light_1",
+                OmniLightSource2D {
+                    intensity: 10.0,
+                    color: Color::srgb_u8(76, 57, 211),
+                    jitter_intensity: 2.0,
+                    jitter_translation: 0.0,
+                    ..base
+                },
+            ),
+            spawn_light(
+                -163.5,
+                -292.7,
+                "indoor_krypta_light_2",
+                OmniLightSource2D {
+                    intensity: 10.0,
+                    color: Color::srgb_u8(76, 57, 211),
+                    jitter_intensity: 2.0,
+                    jitter_translation: 0.0,
+                    ..base
+                },
+            ),
+            spawn_light(
+                -352.000,
+                -131.2,
+                "outdoor_krypta_torch_3",
+                OmniLightSource2D {
+                    intensity: 4.5,
+                    color: Color::srgb_u8(137, 79, 24),
+                    jitter_intensity: 2.5,
+                    jitter_translation: 3.0,
+                    ..base
+                },
+            ),
+            spawn_light(
+                410.667,
+                -141.8,
+                "outdoor_krypta_torch_4",
+                OmniLightSource2D {
+                    intensity: 4.5,
+                    color: Color::srgb_u8(137, 79, 24),
+                    jitter_intensity: 2.5,
+                    jitter_translation: 3.0,
+                    ..base
+                },
+            ),
+            spawn_light(
+                28.0,
+                -34.0,
+                "indoor_krypta_ghost_1",
+                OmniLightSource2D {
+                    intensity: 0.8,
+                    color: Color::srgb_u8(6, 53, 6),
+                    jitter_intensity: 0.2,
+                    jitter_translation: 0.0,
+                    ..base
+                },
+            ),
+            spawn_light(
+                31.392,
+                -168.3,
+                "indoor_krypta_tomb_1",
+                OmniLightSource2D {
+                    intensity: 0.4,
+                    color: Color::srgb_u8(252, 182, 182),
+                    jitter_intensity: 0.05,
+                    jitter_translation: 4.7,
+                    ..base
+                },
+            ),
+            spawn_light(
+                40.0,
+                -1163.2,
+                "outdoor_light_9",
+                OmniLightSource2D {
+                    intensity:          1.2,
+                    falloff:            Vec3::new(50.0, 40.0, 0.03),
+                    color:              Color::srgb_u8(0, 206, 94),
+                    jitter_intensity:   0.7,
+                    jitter_translation: 3.0,
+                },
+            ),
+            spawn_light(
+                182.3,
+                -1210.0,
+                "outdoor_light_10",
+                OmniLightSource2D {
+                    intensity:          1.2,
+                    falloff:            Vec3::new(50.0, 40.0, 0.03),
+                    color:              Color::srgb_u8(0, 206, 94),
+                    jitter_intensity:   0.7,
+                    jitter_translation: 3.0,
+                },
+            )
+        ],
+    ));
 
     // Add roofs.
-    commands
-        .spawn((
-            Visibility::default(),
-            Transform::from_translation(Vec3::new(30.0, -180.0, 0.0)),
-        ))
-        .insert(Name::new("skylight_mask_1"))
-        .insert(SkylightMask2D {
+    commands.spawn((
+        Name::new("skylight_mask_1"),
+        Visibility::default(),
+        Transform::from_translation(Vec3::new(30.0, -180.0, 0.0)),
+        SkylightMask2D {
             h_size: Vec2::new(430.0, 330.0),
-        });
-    commands
-        .spawn((
-            Visibility::default(),
-            Transform::from_translation(Vec3::new(101.6, -989.4, 0.0)),
-        ))
-        .insert(Name::new("skylight_mask_2"))
-        .insert(SkylightMask2D {
+        },
+    ));
+    commands.spawn((
+        Name::new("skylight_mask_2"),
+        Visibility::default(),
+        Transform::from_translation(Vec3::new(101.6, -989.4, 0.0)),
+        SkylightMask2D {
             h_size: Vec2::new(163.3, 156.1),
-        });
+        },
+    ));
 
     // Add skylight light.
     commands.spawn((
+        Name::new("global_skylight"),
         SkylightLight2D {
             color:     Color::srgb_u8(93, 158, 179),
             intensity: 0.025,
         },
-        Name::new("global_skylight"),
     ));
 
     // Add light source.
-    commands
-        .spawn((
-            Mesh2d(block_mesh.into()),
-            MeshMaterial2d(materials.add(ColorMaterial::from_color(palettes::basic::YELLOW))),
-            Transform {
-                translation: Vec3::new(0.0, 0.0, 1000.0),
-                scale: Vec3::splat(8.0),
-                ..default()
-            },
-        ))
-        .insert(Name::new("cursor_light"))
-        .insert(OmniLightSource2D {
+    commands.spawn((
+        Name::new("cursor_light"),
+        Mesh2d(block_mesh),
+        MeshMaterial2d(materials.add(ColorMaterial::from_color(palettes::basic::YELLOW))),
+        Transform {
+            translation: Vec3::new(0.0, 0.0, 1000.0),
+            scale: Vec3::splat(8.0),
+            ..default()
+        },
+        OmniLightSource2D {
             intensity: 10.0,
             color: Color::srgb_u8(254, 100, 34),
             falloff: Vec3::new(50.0, 20.0, 0.05),
             ..default()
-        })
-        .insert(RenderLayers::from_layers(ALL_LAYERS))
-        .insert(MouseLight);
+        },
+        RenderLayers::from_layers(ALL_LAYERS),
+        MouseLight,
+    ));
 
     let projection = OrthographicProjection {
         scale: CAMERA_SCALE,
@@ -816,54 +786,51 @@ fn setup(
     };
 
     // Setup separate camera for floor, walls and objects.
-    commands
-        .spawn((
-            Camera2d,
-            Camera {
-                hdr: false,
-                target: RenderTarget::Image(camera_targets.floor_target.clone()),
-                ..default()
-            },
-            projection.clone(),
-            Name::new("floors_target_camera"),
-        ))
-        .insert(SpriteCamera)
-        .insert(FloorCamera)
-        .insert(RenderLayers::from_layers(CAMERA_LAYER_FLOOR));
-    commands
-        .spawn((
-            Camera2d,
-            Camera {
-                hdr: false,
-                target: RenderTarget::Image(camera_targets.walls_target.clone()),
-                ..default()
-            },
-            projection.clone(),
-            Name::new("walls_target_camera"),
-        ))
-        .insert(SpriteCamera)
-        .insert(WallsCamera)
-        .insert(RenderLayers::from_layers(CAMERA_LAYER_WALLS));
-    commands
-        .spawn((
-            Camera2d,
-            Camera {
-                hdr: false,
-                target: RenderTarget::Image(camera_targets.objects_target.clone()),
-                ..default()
-            },
-            projection,
-            Name::new("objects_targets_camera"),
-        ))
-        .insert(SpriteCamera)
-        .insert(ObjectsCamera)
-        .insert(RenderLayers::from_layers(CAMERA_LAYER_OBJECTS));
+    commands.spawn((
+        Camera2d,
+        Camera {
+            hdr: false,
+            target: RenderTarget::Image(camera_targets.floor_target.clone().into()),
+            ..default()
+        },
+        Projection::Orthographic(projection.clone()),
+        Name::new("floors_target_camera"),
+        SpriteCamera,
+        FloorCamera,
+        RenderLayers::from_layers(CAMERA_LAYER_FLOOR),
+    ));
+    commands.spawn((
+        Camera2d,
+        Camera {
+            hdr: false,
+            target: RenderTarget::Image(camera_targets.walls_target.clone().into()),
+            ..default()
+        },
+        Projection::Orthographic(projection.clone()),
+        Name::new("walls_target_camera"),
+        SpriteCamera,
+        WallsCamera,
+        RenderLayers::from_layers(CAMERA_LAYER_WALLS),
+    ));
+    commands.spawn((
+        Camera2d,
+        Camera {
+            hdr: false,
+            target: RenderTarget::Image(camera_targets.objects_target.clone().into()),
+            ..default()
+        },
+        Projection::Orthographic(projection),
+        Name::new("objects_targets_camera"),
+        SpriteCamera,
+        ObjectsCamera,
+        RenderLayers::from_layers(CAMERA_LAYER_OBJECTS),
+    ));
 }
 
 fn system_control_mouse_light(
     mut commands: Commands,
     window: Query<&Window, With<PrimaryWindow>>,
-    mut query_light: Query<(&mut Transform, &mut OmniLightSource2D), With<MouseLight>>,
+    query_light: Single<(&mut Transform, &mut OmniLightSource2D), With<MouseLight>>,
     query_cameras: Query<(&Camera, &GlobalTransform), With<SpriteCamera>>,
     mouse: Res<ButtonInput<MouseButton>>,
     keyboard: Res<ButtonInput<KeyCode>>,
@@ -873,7 +840,7 @@ fn system_control_mouse_light(
 
     // We only need to iter over first camera matched.
     let (camera, camera_transform) = query_cameras.iter().next().unwrap();
-    let Ok(window) = window.get_single() else {
+    let Ok(window) = window.single() else {
         return;
     };
 
@@ -884,28 +851,27 @@ fn system_control_mouse_light(
         let ndc_to_world = camera_transform.compute_matrix() * camera.clip_from_view().inverse();
         let mouse_world = ndc_to_world.project_point3(mouse_ndc.extend(-1.0));
 
-        let (mut mouse_transform, mut mouse_color) = query_light.single_mut();
+        let (mut mouse_transform, mut mouse_color) = query_light.into_inner();
         mouse_transform.translation = mouse_world.truncate().extend(1000.0);
 
         if mouse.just_pressed(MouseButton::Right) {
             mouse_color.color = Color::srgba(rng.random(), rng.random(), rng.random(), 1.0);
         }
         if mouse.just_pressed(MouseButton::Left) && keyboard.pressed(KeyCode::ShiftLeft) {
-            commands
-                .spawn((
-                    Visibility::default(),
-                    Transform {
-                        translation: mouse_world.truncate().extend(0.0),
-                        ..default()
-                    },
-                ))
-                .insert(Name::new("point_light"))
-                .insert(RenderLayers::from_layers(ALL_LAYERS))
-                .insert(OmniLightSource2D {
+            commands.spawn((
+                Name::new("point_light"),
+                Visibility::default(),
+                Transform {
+                    translation: mouse_world.truncate().extend(0.0),
+                    ..default()
+                },
+                RenderLayers::from_layers(ALL_LAYERS),
+                OmniLightSource2D {
                     jitter_intensity: 0.0,
                     jitter_translation: 0.0,
                     ..*mouse_color
-                });
+                },
+            ));
         }
     }
 }
@@ -936,7 +902,7 @@ fn system_move_camera(
 }
 
 fn system_camera_zoom(
-    mut cameras: Query<&mut OrthographicProjection, With<SpriteCamera>>,
+    mut cameras: Query<&mut Projection, With<SpriteCamera>>,
     time: Res<Time>,
     mut scroll_event_reader: EventReader<MouseWheel>,
 )
@@ -951,8 +917,24 @@ fn system_camera_zoom(
         return;
     }
 
-    for mut camera in cameras.iter_mut() {
-        camera.scale = (camera.scale - projection_delta * time.delta_secs())
-            .clamp(CAMERA_SCALE_BOUNDS.0, CAMERA_SCALE_BOUNDS.1);
+    for mut projection in cameras.iter_mut() {
+        if let Projection::Orthographic(ref mut orthographic) = *projection {
+            orthographic.scale = (orthographic.scale - projection_delta * time.delta_secs())
+                .clamp(CAMERA_SCALE_BOUNDS.0, CAMERA_SCALE_BOUNDS.1);
+        }
     }
+}
+
+fn spawn_light(x: f32, y: f32, name: &'static str, light_source: OmniLightSource2D) -> impl Bundle
+{
+    (
+        Name::new(name),
+        light_source,
+        Visibility::default(),
+        Transform {
+            translation: Vec3::new(x, y, 0.0),
+            ..default()
+        },
+        RenderLayers::from_layers(ALL_LAYERS),
+    )
 }
