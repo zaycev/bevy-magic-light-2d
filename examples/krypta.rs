@@ -751,10 +751,7 @@ fn setup(
     // Setup separate camera for floor, walls and objects.
     commands.spawn((
         Camera2d,
-        Camera {
-            target: RenderTarget::Image(camera_targets.floor_target.clone().into()),
-            ..default()
-        },
+        RenderTarget::Image(camera_targets.floor_target.clone().into()),
         projection.clone(),
         Name::new("floors_target_camera"),
         SpriteCamera,
@@ -763,10 +760,7 @@ fn setup(
     ));
     commands.spawn((
         Camera2d,
-        Camera {
-            target: RenderTarget::Image(camera_targets.walls_target.clone().into()),
-            ..default()
-        },
+        RenderTarget::Image(camera_targets.walls_target.clone().into()),
         projection.clone(),
         Name::new("walls_target_camera"),
         SpriteCamera,
@@ -775,10 +769,7 @@ fn setup(
     ));
     commands.spawn((
         Camera2d,
-        Camera {
-            target: RenderTarget::Image(camera_targets.objects_target.clone().into()),
-            ..default()
-        },
+        RenderTarget::Image(camera_targets.objects_target.clone().into()),
         projection,
         Name::new("objects_targets_camera"),
         SpriteCamera,

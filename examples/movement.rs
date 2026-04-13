@@ -95,10 +95,7 @@ fn setup(mut commands: Commands, camera_targets: Res<CameraTargets>)
 
     commands.spawn((
         Camera2d,
-        Camera {
-            target: RenderTarget::Image(camera_targets.floor_target.clone().into()),
-            ..Default::default()
-        },
+        RenderTarget::Image(camera_targets.floor_target.clone().into()),
         Hdr,
         Name::new("main_camera"),
         FloorCamera,

@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use bevy::render::render_resource::{StorageBuffer, UniformBuffer};
 use bevy::render::renderer::{RenderDevice, RenderQueue};
 use bevy::render::Extract;
-use rand::Rng;
+use rand::RngExt;
 
 use crate::gi::constants::GI_SCREEN_PROBE_SIZE;
 use crate::gi::resource::ComputedTargetSizes;
